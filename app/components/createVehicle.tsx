@@ -27,13 +27,30 @@ const CreateVehicle: FC = () => {
         return;
       }
 
-      console.log('Neues Fahrzeug:', formData);
-      // TODO: API Call hier
-      alert('Fahrzeug erfasst (mock)');
-      
+      // Im Dev-Mode an das lokale Backend posten
+      if (process.env.NODE_ENV === 'development') {
+        const res = await fetch('http://localhost:3001/vehicles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`API error ${res.status}: ${text}`);
+        }
+
+        const created = await res.json();
+        console.log('Fahrzeug erstellt:', created);
+      } else {
+        console.log('Nicht-Dev-Modus: API-Aufruf übersprungen (Mock).');
+      }
+
       setFormData({ name: '', plate: '' });
+      alert('Fahrzeug erfolgreich erfasst');
     } catch (err) {
-      setError('Ein Fehler ist aufgetreten');
+      console.error('Fehler beim Erstellen des Fahrzeugs:', err);
+      setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten');
     } finally {
       setIsSubmitting(false);
     }

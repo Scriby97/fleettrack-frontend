@@ -1,6 +1,6 @@
-'use client';
+ 'use client';
 
-import { useState, type FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 
 interface Report {
   id: number;
@@ -8,6 +8,20 @@ interface Report {
   start: string;
   end: string;
   fuel: number;
+}
+
+interface Usage {
+  id: number | string;
+  vehicleId?: string;
+  startTime?: string;
+  endTime?: string;
+  fuelLitersRefilled?: number;
+}
+
+interface Vehicle {
+  id: string;
+  name: string;
+  plate?: string;
 }
 
 const calculateHours = (start: string, end: string): number => {
@@ -90,12 +104,16 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete }) => (
   </div>
 );
 
+const FALLBACK_REPORTS: Report[] = [
+  { id: 1, vehicle: 'Toyota Corolla', start: '2025-12-08 08:00', end: '2025-12-08 12:00', fuel: 8.5 },
+  { id: 2, vehicle: 'VW Golf', start: '2025-12-07 09:30', end: '2025-12-07 11:00', fuel: 4.2 },
+  { id: 3, vehicle: 'Mercedes Sprinter', start: '2025-12-07 22:00', end: '2025-12-08 06:30', fuel: 15.8 },
+];
+
 const UebersichtEintraege: FC = () => {
-  const [reports, setReports] = useState<Report[]>([
-    { id: 1, vehicle: "Toyota Corolla", start: "2025-12-08 08:00", end: "2025-12-08 12:00", fuel: 8.5 },
-    { id: 2, vehicle: "VW Golf", start: "2025-12-07 09:30", end: "2025-12-07 11:00", fuel: 4.2 },
-    { id: 3, vehicle: "Mercedes Sprinter", start: "2025-12-07 22:00", end: "2025-12-08 06:30", fuel: 15.8 },
-  ]);
+  const [reports, setReports] = useState<Report[]>(FALLBACK_REPORTS);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleEdit = (report: Report) => {
     console.log('Edit:', report);
@@ -107,6 +125,54 @@ const UebersichtEintraege: FC = () => {
     setReports((prev) => prev.filter((report) => report.id !== id));
   };
 
+  useEffect(() => {
+    // Nur im Dev-Mode lokales Backend anfragen
+    if (process.env.NODE_ENV !== 'development') return;
+
+    const controller = new AbortController();
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const [usagesRes, vehiclesRes] = await Promise.all([
+          fetch('http://localhost:3001/usages', { signal: controller.signal }),
+          fetch('http://localhost:3001/vehicles', { signal: controller.signal }),
+        ]);
+
+        if (!usagesRes.ok) throw new Error(`Usages HTTP ${usagesRes.status}`);
+        if (!vehiclesRes.ok) throw new Error(`Vehicles HTTP ${vehiclesRes.status}`);
+
+        const usages: Usage[] = await usagesRes.json();
+        const vehicles: Vehicle[] = await vehiclesRes.json();
+
+        const vehicleMap = new Map<string, Vehicle>();
+        vehicles.forEach((v) => vehicleMap.set(v.id, v));
+
+        const mapped: Report[] = usages.map((u) => ({
+          id: u.id,
+          vehicle: vehicleMap.get(String(u.vehicleId))?.name ?? String(u.vehicleId ?? 'Unbekannt'),
+          start: u.startTime ?? String(u.startTime ?? ''),
+          end: u.endTime ?? String(u.endTime ?? ''),
+          fuel: typeof u.fuelLitersRefilled === 'number' ? u.fuelLitersRefilled : Number(u.fuelLitersRefilled ?? 0),
+        }));
+
+        setReports(mapped);
+        setError(null);
+      } catch (err) {
+        console.error('Fehler beim Laden der Einträge:', err);
+        setError('Fehler beim Laden der Einträge (Fallback verwendet)');
+        // keep fallback reports
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+
+    return () => controller.abort();
+  }, []);
+
   return (
     <section className="space-y-4">
       <div>
@@ -114,11 +180,20 @@ const UebersichtEintraege: FC = () => {
           Übersicht Einträge
         </h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-          {reports.length} Einträge gefunden
+          {isLoading ? 'Lade Einträge...' : `${reports.length} Einträge gefunden`}
         </p>
+        {error && reports.length === 0 && (
+          <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 mt-3">
+            <p className="text-sm text-red-900 dark:text-red-100">{error}</p>
+          </div>
+        )}
       </div>
 
-      {reports.length > 0 ? (
+      {isLoading ? (
+        <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
+          <p className="text-zinc-600 dark:text-zinc-400">Lade Einträge…</p>
+        </div>
+      ) : reports.length > 0 ? (
         <div className="grid gap-3">
           {reports.map((report) => (
             <ReportItem
