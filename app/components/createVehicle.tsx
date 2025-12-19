@@ -5,12 +5,14 @@ import { useState, type FC, type FormEvent } from 'react';
 interface FormState {
   name: string;
   plate: string;
+  snowsatNumber: string;
 }
 
 const CreateVehicle: FC = () => {
   const [formData, setFormData] = useState<FormState>({
     name: '',
     plate: '',
+    snowsatNumber: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +24,7 @@ const CreateVehicle: FC = () => {
 
     try {
       // Validierung
-      if (!formData.name.trim() || !formData.plate.trim()) {
+      if (!formData.name.trim() || !formData.plate.trim() || !formData.snowsatNumber.trim()) {
         setError('Alle Felder sind erforderlich');
         return;
       }
@@ -46,7 +48,7 @@ const CreateVehicle: FC = () => {
         console.log('Nicht-Dev-Modus: API-Aufruf übersprungen (Mock).');
       }
 
-      setFormData({ name: '', plate: '' });
+      setFormData({ name: '', plate: '', snowsatNumber: '' });
       alert('Fahrzeug erfolgreich erfasst');
     } catch (err) {
       console.error('Fehler beim Erstellen des Fahrzeugs:', err);
@@ -107,6 +109,22 @@ const CreateVehicle: FC = () => {
             value={formData.plate}
             onChange={(e) => handleChange('plate', e.target.value)}
             placeholder="z.B. ZH-123456"
+            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+            required
+          />
+        </div>
+
+        {/* SNOWsat-Nummer */}
+        <div className="space-y-2">
+          <label htmlFor="snowsatNumber" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            SNOWsat-Nummer
+          </label>
+          <input
+            id="snowsatNumber"
+            type="text"
+            value={formData.snowsatNumber}
+            onChange={(e) => handleChange('snowsatNumber', e.target.value)}
+            placeholder="z.B. GSD-PB-09"
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
             required
           />

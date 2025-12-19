@@ -10,8 +10,8 @@ interface Vehicle {
 
 interface FormState {
   vehicleId: string;
-  startTime: string;
-  endTime: string;
+  startOperatingHours: string;
+  endOperatingHours: string;
   fuel: string;
 }
 
@@ -20,33 +20,19 @@ const FALLBACK_VEHICLES: Vehicle[] = [
   { id: '2', name: 'VW Golf', plate: 'ZH-789012' },
 ];
 
-// Parse a `datetime-local` input value (e.g. "2025-12-14T10:30") as local Date
-const parseDateTimeLocal = (s: string): Date | null => {
-  if (!s) return null;
-  const [datePart, timePart] = s.split('T');
-  if (!datePart || !timePart) return null;
-  const [y, m, d] = datePart.split('-').map((v) => parseInt(v, 10));
-  const [hh, mm] = timePart.split(':').map((v) => parseInt(v, 10));
-  if ([y, m, d, hh, mm].some((v) => Number.isNaN(v))) return null;
-  return new Date(y, m - 1, d, hh, mm);
+const calculateHoursDifference = (start: string, end: string): number | null => {
+  const startHours = parseInt(start, 10);
+  const endHours = parseInt(end, 10);
+  if (Number.isNaN(startHours) || Number.isNaN(endHours)) return null;
+  if (endHours <= startHours) return null;
+  return endHours - startHours;
 };
 
-const calculateHours = (start: string, end: string): number | null => {
-  const startDate = parseDateTimeLocal(start);
-  const endDate = parseDateTimeLocal(end);
-  if (!startDate || !endDate) return null;
-  // ensure calculation is end - start (positive when end is after start)
-  const diffMs = endDate.getTime() - startDate.getTime();
-  if (diffMs < 0) return null;
-  const diffHours = diffMs / (1000 * 60 * 60);
-  return Math.round(diffHours * 10) / 10;
-};
-
-const EintragErfassen: FC = () => {
+const CreateUsage: FC = () => {
   const [formData, setFormData] = useState<FormState>({
     vehicleId: FALLBACK_VEHICLES[0].id,
-    startTime: '',
-    endTime: '',
+    startOperatingHours: '',
+    endOperatingHours: '',
     fuel: '',
   });
   const [vehicles, setVehicles] = useState<Vehicle[]>(FALLBACK_VEHICLES);
@@ -58,27 +44,27 @@ const EintragErfassen: FC = () => {
   const [timeError, setTimeError] = useState<string | null>(null);
 
   const updateCalculatedHours = useCallback(() => {
-    const hours = calculateHours(formData.startTime, formData.endTime);
+    const hours = calculateHoursDifference(formData.startOperatingHours, formData.endOperatingHours);
     setCalculatedHours(hours);
-  }, [formData.startTime, formData.endTime]);
+  }, [formData.startOperatingHours, formData.endOperatingHours]);
 
-  const handleTimeChange = (field: 'startTime' | 'endTime', value: string) => {
+  const handleOperatingHoursChange = (field: 'startOperatingHours' | 'endOperatingHours', value: string) => {
     // compute new values immediately to avoid relying on state update timing
     const newValues = {
-      startTime: field === 'startTime' ? value : formData.startTime,
-      endTime: field === 'endTime' ? value : formData.endTime,
+      startOperatingHours: field === 'startOperatingHours' ? value : formData.startOperatingHours,
+      endOperatingHours: field === 'endOperatingHours' ? value : formData.endOperatingHours,
     };
 
     setFormData((prev) => ({ ...prev, [field]: value }));
-    const hours = calculateHours(newValues.startTime, newValues.endTime);
+    const hours = calculateHoursDifference(newValues.startOperatingHours, newValues.endOperatingHours);
     setCalculatedHours(hours);
 
     // Inline validation: ensure end > start
-    const parsedStart = parseDateTimeLocal(newValues.startTime);
-    const parsedEnd = parseDateTimeLocal(newValues.endTime);
-    if (parsedStart && parsedEnd) {
-      if (parsedEnd.getTime() <= parsedStart.getTime()) {
-        setTimeError('Endzeit muss nach Startzeit liegen');
+    const parsedStart = parseInt(newValues.startOperatingHours, 10);
+    const parsedEnd = parseInt(newValues.endOperatingHours, 10);
+    if (!Number.isNaN(parsedStart) && !Number.isNaN(parsedEnd)) {
+      if (parsedEnd <= parsedStart) {
+        setTimeError('End-Betriebsstunden müssen größer als Start-Betriebsstunden sein');
       } else {
         setTimeError(null);
       }
@@ -94,20 +80,20 @@ const EintragErfassen: FC = () => {
 
     try {
       if (!formData.vehicleId) throw new Error('Bitte ein Fahrzeug auswählen');
-      if (!formData.startTime || !formData.endTime) throw new Error('Start- und Endzeit sind erforderlich');
+      if (!formData.startOperatingHours || !formData.endOperatingHours) throw new Error('Start- und End-Betriebsstunden sind erforderlich');
 
-      const parsedStart = parseDateTimeLocal(formData.startTime);
-      const parsedEnd = parseDateTimeLocal(formData.endTime);
-      if (!parsedStart || !parsedEnd) throw new Error('Ungültiges Datumsformat');
-      if (parsedEnd.getTime() <= parsedStart.getTime()) throw new Error('Endzeit muss nach Startzeit liegen');
+      const parsedStart = parseInt(formData.startOperatingHours, 10);
+      const parsedEnd = parseInt(formData.endOperatingHours, 10);
+      if (Number.isNaN(parsedStart) || Number.isNaN(parsedEnd)) throw new Error('Ungültiges Zahlenformat');
+      if (parsedEnd <= parsedStart) throw new Error('End-Betriebsstunden müssen größer als Start-Betriebsstunden sein');
 
       const parsedFuel = formData.fuel.trim() === '' ? NaN : parseInt(formData.fuel, 10);
       const fuelLitersRefilled = Number.isNaN(parsedFuel) ? 0 : parsedFuel;
 
       const payload = {
         vehicleId: formData.vehicleId,
-        startTime: formData.startTime,
-        endTime: formData.endTime,
+        startOperatingHours: parsedStart,
+        endOperatingHours: parsedEnd,
         fuelLitersRefilled,
       };
 
@@ -130,11 +116,11 @@ const EintragErfassen: FC = () => {
         console.log('Nicht-Dev-Modus: POST /usages übersprungen', payload);
       }
 
-      setFormData({ vehicleId: vehicles[0]?.id ?? '', startTime: '', endTime: '', fuel: '' });
+      setFormData({ vehicleId: vehicles[0]?.id ?? '', startOperatingHours: '', endOperatingHours: '', fuel: '' });
       setCalculatedHours(null);
-      alert('Eintrag erfolgreich gespeichert');
+      alert('Nutzung erfolgreich gespeichert');
     } catch (err) {
-      console.error('Fehler beim Speichern des Eintrags:', err);
+      console.error('Fehler beim Speichern der Nutzung:', err);
       setError(err instanceof Error ? err.message : 'Fehler beim Speichern des Eintrags');
     } finally {
       setIsSubmitting(false);
@@ -180,19 +166,12 @@ const EintragErfassen: FC = () => {
 
   return (
     <section className="space-y-6">
-      <style>{`
-        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-          filter: invert(1) brightness(1.2);
-          cursor: pointer;
-        }
-      `}</style>
-
       <div>
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-          Eintrag erfassen
+          Nutzung erfassen
         </h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-          Erfasse die Nutzungsdaten für ein Fahrzeug
+          Nutzung die Nutzungsdaten für ein Fahrzeug
         </p>
       </div>
 
@@ -236,32 +215,36 @@ const EintragErfassen: FC = () => {
             </select>
         </div>
 
-        {/* Startzeit */}
+        {/* Start-Betriebsstunden */}
         <div className="space-y-2">
-          <label htmlFor="startTime" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Startzeit
+          <label htmlFor="startOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Start-Betriebsstunden
           </label>
           <input
-            id="startTime"
-            type="datetime-local"
-            value={formData.startTime}
-            onChange={(e) => handleTimeChange('startTime', e.target.value)}
+            id="startOperatingHours"
+            type="number"
+            value={formData.startOperatingHours}
+            onChange={(e) => handleOperatingHoursChange('startOperatingHours', e.target.value)}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+            min="0"
+            step="1"
             required
           />
         </div>
 
-        {/* Endzeit */}
+        {/* End-Betriebsstunden */}
         <div className="space-y-2">
-          <label htmlFor="endTime" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Endzeit
+          <label htmlFor="endOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            End-Betriebsstunden
           </label>
           <input
-            id="endTime"
-            type="datetime-local"
-            value={formData.endTime}
-            onChange={(e) => handleTimeChange('endTime', e.target.value)}
+            id="endOperatingHours"
+            type="number"
+            value={formData.endOperatingHours}
+            onChange={(e) => handleOperatingHoursChange('endOperatingHours', e.target.value)}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+            min="0"
+            step="1"
             required
           />
           {timeError && (
@@ -300,11 +283,11 @@ const EintragErfassen: FC = () => {
           disabled={isSubmitting || !!timeError}
           className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
         >
-          {isSubmitting ? 'Wird gespeichert...' : 'Eintrag speichern'}
+          {isSubmitting ? 'Wird gespeichert...' : 'Nutzung speichern'}
         </button>
       </form>
     </section>
   );
 };
 
-export default EintragErfassen;
+export default CreateUsage;

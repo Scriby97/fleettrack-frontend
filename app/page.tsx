@@ -2,15 +2,15 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import EintragErfassen from "./components/createEntry";
-import UebersichtEintraege from "./components/entries";
+import CreateUsage from "./components/createUsage";
+import UebersichtEintraege from "./components/usages";
 import FlottenUebersicht from "./components/vehicles";
 import FahrzeugErfassen from "./components/createVehicle";
 
-type MenuKey = "eintrag" | "uebersichtEintraege" | "uebersicht" | "fahrzeug";
+type MenuKey = "nutzung" | "uebersichtEintraege" | "uebersicht" | "fahrzeug";
 
 export default function Home() {
-  const [active, setActive] = useState<MenuKey>("eintrag");
+  const [active, setActive] = useState<MenuKey>("nutzung");
 
   return (
     <div className="flex min-h-screen bg-zinc-50 dark:bg-black font-sans">
@@ -23,15 +23,15 @@ export default function Home() {
 
         <nav className="flex flex-col gap-2">
           <button
-            onClick={() => setActive("eintrag")}
+            onClick={() => setActive("nutzung")}
             className={
               "text-left px-4 py-3 rounded-md transition-colors " +
-              (active === "eintrag"
+              (active === "nutzung"
                 ? "bg-foreground text-background font-medium"
                 : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
             }
           >
-            Eintrag erfassen
+            Nutzung erfassen
           </button>
 
           <button
@@ -43,7 +43,7 @@ export default function Home() {
                 : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
             }
           >
-            Übersicht Einträge
+            Übersicht Nutzungen
           </button>
 
           <button
@@ -74,7 +74,7 @@ export default function Home() {
 
       {/* Main content */}
       <main className="flex-1 p-10">
-        {active === "eintrag" && <EintragErfassen />}
+        {active === "nutzung" && <CreateUsage />}
         {active === "uebersichtEintraege" && <UebersichtEintraege />}
         {active === "uebersicht" && <FlottenUebersicht />}
         {active === "fahrzeug" && <FahrzeugErfassen />}

@@ -1,20 +1,21 @@
  'use client';
 
 import { useState, useEffect, type FC } from 'react';
+import CalendarView from './CalendarView';
 
 interface Report {
   id: number;
   vehicle: string;
-  start: string;
-  end: string;
+  startOperatingHours: number;
+  endOperatingHours: number;
   fuel: number;
 }
 
 interface Usage {
   id: number | string;
   vehicleId?: string;
-  startTime?: string;
-  endTime?: string;
+  startOperatingHours?: number;
+  endOperatingHours?: number;
   fuelLitersRefilled?: number;
 }
 
@@ -24,13 +25,7 @@ interface Vehicle {
   plate?: string;
 }
 
-const calculateHours = (start: string, end: string): number => {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  const diffMs = endDate.getTime() - startDate.getTime();
-  const diffHours = diffMs / (1000 * 60 * 60);
-  return Math.round(diffHours * 10) / 10;
-};
+
 
 interface ReportItemProps {
   report: Report;
@@ -46,8 +41,8 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete }) => (
       </h3>
       <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
         <p>
-          <span className="font-medium">Zeitraum:</span> {report.start} — {report.end}{' '}
-          <span className="font-medium">({calculateHours(report.start, report.end)} h)</span>
+          <span className="font-medium">Betriebsstunden:</span> {report.startOperatingHours} h — {report.endOperatingHours} h{' '}
+          <span className="font-medium">({report.endOperatingHours - report.startOperatingHours} h Differenz)</span>
         </p>
         <p>
           <span className="font-medium">Treibstoff:</span> {report.fuel} L
@@ -104,16 +99,11 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete }) => (
   </div>
 );
 
-const FALLBACK_REPORTS: Report[] = [
-  { id: 1, vehicle: 'Toyota Corolla', start: '2025-12-08 08:00', end: '2025-12-08 12:00', fuel: 8.5 },
-  { id: 2, vehicle: 'VW Golf', start: '2025-12-07 09:30', end: '2025-12-07 11:00', fuel: 4.2 },
-  { id: 3, vehicle: 'Mercedes Sprinter', start: '2025-12-07 22:00', end: '2025-12-08 06:30', fuel: 15.8 },
-];
-
 const UebersichtEintraege: FC = () => {
-  const [reports, setReports] = useState<Report[]>(FALLBACK_REPORTS);
+  const [reports, setReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<'list' | 'calendar'>('list');
 
   const handleEdit = (report: Report) => {
     console.log('Edit:', report);
@@ -152,17 +142,17 @@ const UebersichtEintraege: FC = () => {
         const mapped: Report[] = usages.map((u) => ({
           id: u.id,
           vehicle: vehicleMap.get(String(u.vehicleId))?.name ?? String(u.vehicleId ?? 'Unbekannt'),
-          start: u.startTime ?? String(u.startTime ?? ''),
-          end: u.endTime ?? String(u.endTime ?? ''),
+          startOperatingHours: typeof u.startOperatingHours === 'number' ? u.startOperatingHours : Number(u.startOperatingHours ?? 0),
+          endOperatingHours: typeof u.endOperatingHours === 'number' ? u.endOperatingHours : Number(u.endOperatingHours ?? 0),
           fuel: typeof u.fuelLitersRefilled === 'number' ? u.fuelLitersRefilled : Number(u.fuelLitersRefilled ?? 0),
         }));
 
         setReports(mapped);
         setError(null);
       } catch (err) {
-        console.error('Fehler beim Laden der Einträge:', err);
-        setError('Fehler beim Laden der Einträge (Fallback verwendet)');
-        // keep fallback reports
+        if (err instanceof Error && err.name === 'AbortError') return;
+        console.error('Fehler beim Laden der Nutzungen:', err);
+        setError('Fehler beim Laden der Nutzungen');
       } finally {
         setIsLoading(false);
       }
@@ -177,11 +167,17 @@ const UebersichtEintraege: FC = () => {
     <section className="space-y-4">
       <div>
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-          Übersicht Einträge
+          Übersicht Nutzungen
         </h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-          {isLoading ? 'Lade Einträge...' : `${reports.length} Einträge gefunden`}
-        </p>
+        <div className="flex items-center gap-4 mt-1">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {isLoading ? 'Lade Nutzungen...' : `${reports.length} Nutzungen gefunden`}
+          </p>
+          <div className="ml-auto flex gap-2">
+            <button onClick={() => setView('list')} className={`px-3 py-1 rounded ${view === 'list' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}`}>Liste</button>
+            <button onClick={() => setView('calendar')} className={`px-3 py-1 rounded ${view === 'calendar' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}`}>Kalender</button>
+          </div>
+        </div>
         {error && reports.length === 0 && (
           <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 mt-3">
             <p className="text-sm text-red-900 dark:text-red-100">{error}</p>
@@ -191,7 +187,11 @@ const UebersichtEintraege: FC = () => {
 
       {isLoading ? (
         <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
-          <p className="text-zinc-600 dark:text-zinc-400">Lade Einträge…</p>
+          <p className="text-zinc-600 dark:text-zinc-400">Lade Nutzungen…</p>
+        </div>
+      ) : view === 'calendar' ? (
+        <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-8 text-center">
+          <p className="text-zinc-600 dark:text-zinc-400">Kalenderansicht ist mit Betriebsstunden nicht verfügbar</p>
         </div>
       ) : reports.length > 0 ? (
         <div className="grid gap-3">
@@ -206,7 +206,7 @@ const UebersichtEintraege: FC = () => {
         </div>
       ) : (
         <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-8 text-center">
-          <p className="text-zinc-600 dark:text-zinc-400">Keine Einträge vorhanden</p>
+          <p className="text-zinc-600 dark:text-zinc-400">Keine Nutzungen vorhanden</p>
         </div>
       )}
     </section>
