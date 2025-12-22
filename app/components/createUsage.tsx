@@ -13,6 +13,7 @@ interface FormState {
   startOperatingHours: string;
   endOperatingHours: string;
   fuel: string;
+  creationDate: string;
 }
 
 const FALLBACK_VEHICLES: Vehicle[] = [
@@ -29,11 +30,17 @@ const calculateHoursDifference = (start: string, end: string): number | null => 
 };
 
 const CreateUsage: FC = () => {
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
   const [formData, setFormData] = useState<FormState>({
     vehicleId: FALLBACK_VEHICLES[0].id,
     startOperatingHours: '',
     endOperatingHours: '',
     fuel: '',
+    creationDate: getTodayDate(),
   });
   const [vehicles, setVehicles] = useState<Vehicle[]>(FALLBACK_VEHICLES);
   const [vehiclesLoading, setVehiclesLoading] = useState(false);
@@ -95,6 +102,7 @@ const CreateUsage: FC = () => {
         startOperatingHours: parsedStart,
         endOperatingHours: parsedEnd,
         fuelLitersRefilled,
+        creationDate: formData.creationDate,
       };
 
       // Im Dev-Mode an das lokale Backend senden
@@ -116,7 +124,7 @@ const CreateUsage: FC = () => {
         console.log('Nicht-Dev-Modus: POST /usages übersprungen', payload);
       }
 
-      setFormData({ vehicleId: vehicles[0]?.id ?? '', startOperatingHours: '', endOperatingHours: '', fuel: '' });
+      setFormData({ vehicleId: vehicles[0]?.id ?? '', startOperatingHours: '', endOperatingHours: '', fuel: '', creationDate: getTodayDate() });
       setCalculatedHours(null);
       alert('Nutzung erfolgreich gespeichert');
     } catch (err) {
@@ -170,9 +178,6 @@ const CreateUsage: FC = () => {
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
           Nutzung erfassen
         </h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-          Nutzung die Nutzungsdaten für ein Fahrzeug
-        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
@@ -213,6 +218,21 @@ const CreateUsage: FC = () => {
                 ))
               )}
             </select>
+        </div>
+
+        {/* Erfassungsdatum */}
+        <div className="space-y-2">
+          <label htmlFor="creationDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Erfassungsdatum
+          </label>
+          <input
+            id="creationDate"
+            type="date"
+            value={formData.creationDate}
+            onChange={(e) => setFormData((prev) => ({ ...prev, creationDate: e.target.value }))}
+            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:invert"
+            required
+          />
         </div>
 
         {/* Start-Betriebsstunden */}

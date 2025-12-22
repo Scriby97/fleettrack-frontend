@@ -7,6 +7,7 @@ interface Vehicle {
   id: string;
   name: string;
   plate: string;
+  snowsatNumber?: string;
 }
 
 interface VehicleItemProps {
@@ -22,8 +23,11 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
       <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
         {vehicle.name}
       </h3>
-      <div className="text-sm text-zinc-600 dark:text-zinc-400">
-        Kennzeichen: <span className="font-medium">{vehicle.plate}</span>
+      <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <div>Kennzeichen: <span className="font-medium">{vehicle.plate}</span></div>
+        {vehicle.snowsatNumber && (
+          <div>SNOWsat-Nr: <span className="font-medium">{vehicle.snowsatNumber}</span></div>
+        )}
       </div>
       <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
         <div>
@@ -115,7 +119,8 @@ const FlottenUebersicht: FC = () => {
             const id = String(s.vehicleId ?? s.id ?? s.vehicleId ?? s.vehicle ?? s.vehicleId ?? '');
             const name = s.name ?? s.vehicleName ?? s.vehicle ?? `Fahrzeug ${id}`;
             const plate = s.plate ?? s.kennzeichen ?? s.registration ?? '';
-            vehiclesFromStats.push({ id, name, plate });
+            const snowsatNumber = s.snowsatNumber ?? s.SNOWsatNumber ?? s.snowsat ?? undefined;
+            vehiclesFromStats.push({ id, name, plate, snowsatNumber });
             map[id] = {
               hours: Number(s.totalWorkHours ?? s.totalHours ?? s.hours ?? 0),
               fuelLiters: Number(s.totalFuelLiters ?? s.fuelLiters ?? s.fuel ?? 0),
@@ -128,7 +133,8 @@ const FlottenUebersicht: FC = () => {
             const id = String(k);
             const name = obj.name ?? obj.vehicleName ?? `Fahrzeug ${id}`;
             const plate = obj.plate ?? obj.kennzeichen ?? '';
-            vehiclesFromStats.push({ id, name, plate });
+            const snowsatNumber = obj.snowsatNumber ?? obj.SNOWsatNumber ?? obj.snowsat ?? undefined;
+            vehiclesFromStats.push({ id, name, plate, snowsatNumber });
             map[id] = {
               hours: Number(obj.totalWorkHours ?? obj.totalHours ?? obj.hours ?? 0),
               fuelLiters: Number(obj.totalFuelLiters ?? obj.fuelLiters ?? obj.fuel ?? 0),

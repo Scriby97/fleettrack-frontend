@@ -9,6 +9,7 @@ interface Report {
   startOperatingHours: number;
   endOperatingHours: number;
   fuel: number;
+  creationDate?: string;
 }
 
 interface Usage {
@@ -17,6 +18,7 @@ interface Usage {
   startOperatingHours?: number;
   endOperatingHours?: number;
   fuelLitersRefilled?: number;
+  creationDate?: string;
 }
 
 interface Vehicle {
@@ -40,6 +42,11 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete }) => (
         {report.vehicle}
       </h3>
       <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+        {report.creationDate && (
+          <p>
+            <span className="font-medium">Erfassungsdatum:</span> {new Date(report.creationDate).toLocaleDateString('de-DE')}
+          </p>
+        )}
         <p>
           <span className="font-medium">Betriebsstunden:</span> {report.startOperatingHours} h — {report.endOperatingHours} h{' '}
           <span className="font-medium">({report.endOperatingHours - report.startOperatingHours} h Differenz)</span>
@@ -105,6 +112,15 @@ const UebersichtEintraege: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'list' | 'calendar'>('list');
 
+  const calendarEvents = reports
+    .filter((r) => r.creationDate)
+    .map((r) => ({
+      id: r.id,
+      title: `${r.vehicle}: ${r.endOperatingHours - r.startOperatingHours}h`,
+      start: r.creationDate!,
+      end: r.creationDate!,
+    }));
+
   const handleEdit = (report: Report) => {
     console.log('Edit:', report);
     // TODO: Modal oder Edit-View öffnen
@@ -145,6 +161,7 @@ const UebersichtEintraege: FC = () => {
           startOperatingHours: typeof u.startOperatingHours === 'number' ? u.startOperatingHours : Number(u.startOperatingHours ?? 0),
           endOperatingHours: typeof u.endOperatingHours === 'number' ? u.endOperatingHours : Number(u.endOperatingHours ?? 0),
           fuel: typeof u.fuelLitersRefilled === 'number' ? u.fuelLitersRefilled : Number(u.fuelLitersRefilled ?? 0),
+          creationDate: u.creationDate,
         }));
 
         setReports(mapped);
@@ -190,9 +207,7 @@ const UebersichtEintraege: FC = () => {
           <p className="text-zinc-600 dark:text-zinc-400">Lade Nutzungen…</p>
         </div>
       ) : view === 'calendar' ? (
-        <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-8 text-center">
-          <p className="text-zinc-600 dark:text-zinc-400">Kalenderansicht ist mit Betriebsstunden nicht verfügbar</p>
-        </div>
+        <CalendarView events={calendarEvents} />
       ) : reports.length > 0 ? (
         <div className="grid gap-3">
           {reports.map((report) => (

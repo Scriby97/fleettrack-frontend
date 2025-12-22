@@ -92,7 +92,7 @@ const CreateVehicle: FC = () => {
             type="text"
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
-            placeholder="z.B. Toyota Corolla"
+            placeholder="z.B. New Leitwolf LT t5"
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
             required
           />
@@ -108,7 +108,7 @@ const CreateVehicle: FC = () => {
             type="text"
             value={formData.plate}
             onChange={(e) => handleChange('plate', e.target.value)}
-            placeholder="z.B. ZH-123456"
+            placeholder="z.B. BE-123456"
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
             required
           />
