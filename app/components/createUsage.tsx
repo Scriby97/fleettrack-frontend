@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, type FC, type FormEvent } from 'react';
+import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 
 interface Vehicle {
   id: string;
@@ -105,11 +106,10 @@ const CreateUsage: FC = () => {
         creationDate: formData.creationDate,
       };
 
-      // Im Dev-Mode an das lokale Backend senden
-      if (process.env.NODE_ENV === 'development') {
-        const res = await fetch('http://localhost:3001/usages', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL
+      if (apiUrl) {
+        const res = await authenticatedFetch(`${apiUrl}/usages`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
 
@@ -121,7 +121,7 @@ const CreateUsage: FC = () => {
         const created = await res.json();
         console.log('Usage erstellt:', created);
       } else {
-        console.log('Nicht-Dev-Modus: POST /usages übersprungen', payload);
+        console.log('NEXT_PUBLIC_API_URL nicht konfiguriert, Daten nur lokal gespeichert');
       }
 
       setFormData({ vehicleId: vehicles[0]?.id ?? '', startOperatingHours: '', endOperatingHours: '', fuel: '', creationDate: getTodayDate() });
@@ -136,8 +136,11 @@ const CreateUsage: FC = () => {
   };
 
   useEffect(() => {
-    // Nur im Dev-Mode lokales Backend anfragen
-    if (process.env.NODE_ENV !== 'development') return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    if (!apiUrl) {
+      console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
+      return
+    }
 
     const controller = new AbortController();
     const fetchVehicles = async () => {
@@ -145,7 +148,7 @@ const CreateUsage: FC = () => {
       setVehiclesError(null);
 
       try {
-        const res = await fetch('http://localhost:3001/vehicles', { signal: controller.signal });
+        const res = await authenticatedFetch(`${apiUrl}/vehicles`, { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (Array.isArray(data)) {

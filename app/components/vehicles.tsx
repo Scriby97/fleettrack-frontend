@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, type FC } from 'react';
+import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 
 interface Vehicle {
   id: string;
@@ -96,8 +97,11 @@ const FlottenUebersicht: FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Nur im Dev-Mode Backend auf localhost:3001 anfragen
-    if (process.env.NODE_ENV !== 'development') return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    if (!apiUrl) {
+      console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
+      return
+    }
 
     const controller = new AbortController();
     const fetchStats = async () => {
@@ -105,7 +109,7 @@ const FlottenUebersicht: FC = () => {
       setError(null);
 
       try {
-        const res = await fetch('http://localhost:3001/vehicles/stats', { signal: controller.signal });
+        const res = await authenticatedFetch(`${apiUrl}/vehicles/stats`, { signal: controller.signal });
         if (!res.ok) throw new Error(`Vehicles stats HTTP ${res.status}`);
         const statsData = await res.json();
 

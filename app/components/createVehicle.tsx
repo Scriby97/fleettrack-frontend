@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type FC, type FormEvent } from 'react';
+import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 
 interface FormState {
   name: string;
@@ -29,11 +30,10 @@ const CreateVehicle: FC = () => {
         return;
       }
 
-      // Im Dev-Mode an das lokale Backend posten
-      if (process.env.NODE_ENV === 'development') {
-        const res = await fetch('http://localhost:3001/vehicles', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL
+      if (apiUrl) {
+        const res = await authenticatedFetch(`${apiUrl}/vehicles`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         });
 
@@ -45,7 +45,7 @@ const CreateVehicle: FC = () => {
         const created = await res.json();
         console.log('Fahrzeug erstellt:', created);
       } else {
-        console.log('Nicht-Dev-Modus: API-Aufruf übersprungen (Mock).');
+        console.log('NEXT_PUBLIC_API_URL nicht konfiguriert, Daten nur lokal gespeichert');
       }
 
       setFormData({ name: '', plate: '', snowsatNumber: '' });

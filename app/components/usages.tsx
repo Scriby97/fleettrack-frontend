@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type FC } from 'react';
 import CalendarView from './CalendarView';
+import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 
 interface Report {
   id: number;
@@ -132,8 +133,11 @@ const UebersichtEintraege: FC = () => {
   };
 
   useEffect(() => {
-    // Nur im Dev-Mode lokales Backend anfragen
-    if (process.env.NODE_ENV !== 'development') return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    if (!apiUrl) {
+      console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
+      return
+    }
 
     const controller = new AbortController();
     const fetchData = async () => {
@@ -142,8 +146,8 @@ const UebersichtEintraege: FC = () => {
 
       try {
         const [usagesRes, vehiclesRes] = await Promise.all([
-          fetch('http://localhost:3001/usages', { signal: controller.signal }),
-          fetch('http://localhost:3001/vehicles', { signal: controller.signal }),
+          authenticatedFetch(`${apiUrl}/usages`, { signal: controller.signal }),
+          authenticatedFetch(`${apiUrl}/vehicles`, { signal: controller.signal }),
         ]);
 
         if (!usagesRes.ok) throw new Error(`Usages HTTP ${usagesRes.status}`);
