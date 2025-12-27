@@ -37,22 +37,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Funktion zum Abrufen der User-Rolle vom Backend
   const fetchUserRole = useCallback(async () => {
     try {
+      console.log('[AUTH_PROVIDER] fetchUserRole gestartet');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL
       if (!apiUrl) {
         console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
         return null
       }
 
+      console.log('[AUTH_PROVIDER] Rufe /auth/me auf...');
       const response = await authenticatedFetch(`${apiUrl}/auth/me`)
+      console.log('[AUTH_PROVIDER] /auth/me Response Status:', response.status);
       if (!response.ok) {
         console.error('Fehler beim Abrufen der User-Rolle:', response.status)
         return null
       }
 
       const profile: UserProfile = await response.json()
+      console.log('[AUTH_PROVIDER] User-Profile erhalten:', profile.email, 'Role:', profile.role);
       return profile.role
     } catch (error) {
-      console.error('Fehler beim Abrufen der User-Rolle:', error)
+      console.error('[AUTH_PROVIDER] Fehler beim Abrufen der User-Rolle:', error)
       return null
     }
   }, [])
@@ -98,19 +102,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for changes on auth state (login, logout, etc.)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[AUTH_PROVIDER] onAuthStateChange Event:', event, 'User:', session?.user?.email);
       setUser(session?.user ?? null)
       
       if (session?.user) {
         // Hole Rolle vom Backend
         const roleFromBackend = await fetchUserRole()
         if (roleFromBackend) {
+          console.log('[AUTH_PROVIDER] Setze userRole auf:', roleFromBackend);
           setUserRole(roleFromBackend)
         } else {
-          // Fallback auf metadata
-          setUserRole(session.user.user_metadata?.role ?? null)
+          // Bei Fehler (z.B. Timeout): Behalte die alte Rolle, wenn vorhanden
+          console.log('[AUTH_PROVIDER] Konnte Rolle nicht vom Backend holen');
+          setUserRole(prev => {
+            const fallbackRole = session.user.user_metadata?.role ?? prev ?? null;
+            console.log('[AUTH_PROVIDER] Behalte/setze userRole:', fallbackRole, '(previous:', prev, ')');
+            return fallbackRole;
+          })
         }
       } else {
+        console.log('[AUTH_PROVIDER] Keine Session, setze userRole auf null');
         setUserRole(null)
       }
       

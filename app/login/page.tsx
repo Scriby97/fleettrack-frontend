@@ -11,7 +11,6 @@ const LoginPage: FC = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
-  const [isAdminRegistration, setIsAdminRegistration] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -24,8 +23,7 @@ const LoginPage: FC = () => {
 
     try {
       if (isSignUp) {
-        const role = isAdminRegistration ? 'admin' : 'user'
-        const { error } = await signUp(email, password, { fullName, role })
+        const { error } = await signUp(email, password, { fullName, role: 'user' })
         if (error) {
           setError(error.message)
         } else {
@@ -116,24 +114,6 @@ const LoginPage: FC = () => {
                 minLength={6}
               />
             </div>
-
-            {isSignUp && (
-              <div className="flex items-center">
-                <input
-                  id="isAdmin"
-                  type="checkbox"
-                  checked={isAdminRegistration}
-                  onChange={(e) => setIsAdminRegistration(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-zinc-800 focus:ring-2 dark:bg-zinc-700 dark:border-zinc-600"
-                />
-                <label
-                  htmlFor="isAdmin"
-                  className="ml-2 text-sm text-zinc-700 dark:text-zinc-300"
-                >
-                  Als Administrator registrieren
-                </label>
-              </div>
-            )}
 
             {error && (
               <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">

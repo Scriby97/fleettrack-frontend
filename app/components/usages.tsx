@@ -133,7 +133,9 @@ const UebersichtEintraege: FC = () => {
   };
 
   useEffect(() => {
+    console.log('[USAGES] useEffect gestartet');
     const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    console.log('[USAGES] API URL:', apiUrl);
     if (!apiUrl) {
       console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
       return
@@ -141,14 +143,17 @@ const UebersichtEintraege: FC = () => {
 
     const controller = new AbortController();
     const fetchData = async () => {
+      console.log('[USAGES] fetchData wird aufgerufen');
       setIsLoading(true);
       setError(null);
 
       try {
+        console.log('[USAGES] Versuche Requests zu senden...');
         const [usagesRes, vehiclesRes] = await Promise.all([
           authenticatedFetch(`${apiUrl}/usages`, { signal: controller.signal }),
           authenticatedFetch(`${apiUrl}/vehicles`, { signal: controller.signal }),
         ]);
+        console.log('[USAGES] Requests erfolgreich, Status:', usagesRes.status, vehiclesRes.status);
 
         if (!usagesRes.ok) throw new Error(`Usages HTTP ${usagesRes.status}`);
         if (!vehiclesRes.ok) throw new Error(`Vehicles HTTP ${vehiclesRes.status}`);
@@ -172,16 +177,21 @@ const UebersichtEintraege: FC = () => {
         setError(null);
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
-        console.error('Fehler beim Laden der Nutzungen:', err);
+        console.error('[USAGES] Fehler beim Laden der Nutzungen:', err);
+        console.error('[USAGES] Fehler Details:', err instanceof Error ? err.message : String(err));
         setError('Fehler beim Laden der Nutzungen');
       } finally {
         setIsLoading(false);
       }
     };
 
+    console.log('[USAGES] Rufe fetchData auf');
     fetchData();
 
-    return () => controller.abort();
+    return () => {
+      console.log('[USAGES] useEffect cleanup');
+      controller.abort();
+    };
   }, []);
 
   return (

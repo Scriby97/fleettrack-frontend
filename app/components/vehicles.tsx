@@ -97,7 +97,9 @@ const FlottenUebersicht: FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('[VEHICLES] useEffect gestartet');
     const apiUrl = process.env.NEXT_PUBLIC_API_URL
+    console.log('[VEHICLES] API URL:', apiUrl);
     if (!apiUrl) {
       console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
       return
@@ -105,11 +107,14 @@ const FlottenUebersicht: FC = () => {
 
     const controller = new AbortController();
     const fetchStats = async () => {
+      console.log('[VEHICLES] fetchStats wird aufgerufen');
       setIsLoading(true);
       setError(null);
 
       try {
+        console.log('[VEHICLES] Versuche Request zu senden...');
         const res = await authenticatedFetch(`${apiUrl}/vehicles/stats`, { signal: controller.signal });
+        console.log('[VEHICLES] Request erfolgreich, Status:', res.status);
         if (!res.ok) throw new Error(`Vehicles stats HTTP ${res.status}`);
         const statsData = await res.json();
 
@@ -152,7 +157,8 @@ const FlottenUebersicht: FC = () => {
         setStatsMap(map);
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
-        console.error('Fehler beim Laden der Fahrzeug-Stats:', err);
+        console.error('[VEHICLES] Fehler beim Laden der Fahrzeug-Stats:', err);
+        console.error('[VEHICLES] Fehler Details:', err instanceof Error ? err.message : String(err));
         setError('Fehler beim Laden der Fahrzeuge');
         // keep empty vehicles and statsMap
       } finally {
@@ -160,9 +166,13 @@ const FlottenUebersicht: FC = () => {
       }
     };
 
+    console.log('[VEHICLES] Rufe fetchStats auf');
     fetchStats();
 
-    return () => controller.abort();
+    return () => {
+      console.log('[VEHICLES] useEffect cleanup');
+      controller.abort();
+    };
   }, []);
 
   const handleEdit = (vehicle: Vehicle) => {
