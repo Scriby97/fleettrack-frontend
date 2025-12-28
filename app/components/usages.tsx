@@ -277,7 +277,7 @@ const UebersichtEintraege: FC = () => {
         vehicles.forEach((v) => vehicleMap.set(v.id, v));
 
         const mapped: Report[] = usages.map((u) => ({
-          id: u.id,
+          id: typeof u.id === 'number' ? u.id : Number(u.id),
           vehicleId: u.vehicleId,
           vehicle: vehicleMap.get(String(u.vehicleId))?.name ?? String(u.vehicleId ?? 'Unbekannt'),
           startOperatingHours: typeof u.startOperatingHours === 'number' ? u.startOperatingHours : Number(u.startOperatingHours ?? 0),
