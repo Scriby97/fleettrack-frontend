@@ -40,75 +40,78 @@ interface ReportItemProps {
 }
 
 const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin }) => (
-  <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 hover:shadow-md transition-shadow flex justify-between items-start">
-    <div className="flex-1">
-      <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-        {report.vehicle}
-      </h3>
-      <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+  <div className="bg-[var(--card-bg)] rounded-2xl p-5 hover:bg-[var(--hover)] transition-colors">
+    <div className="flex items-start gap-4">
+      <div className="w-12 h-12 rounded-xl bg-[var(--primary)] flex items-center justify-center flex-shrink-0">
+        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-[var(--foreground)] text-lg mb-1 truncate">
+          {report.vehicle}
+        </h3>
         {report.creationDate && (
-          <p>
-            <span className="font-medium">Erfassungsdatum:</span> {new Date(report.creationDate).toLocaleDateString('de-DE')}
+          <p className="text-sm text-[var(--secondary)] mb-4">
+            {new Date(report.creationDate).toLocaleDateString('de-DE', { 
+              day: '2-digit', 
+              month: 'short', 
+              year: 'numeric' 
+            })}
           </p>
         )}
-        <p>
-          <span className="font-medium">Betriebsstunden:</span> {report.startOperatingHours} h — {report.endOperatingHours} h{' '}
-          <span className="font-medium">({report.endOperatingHours - report.startOperatingHours} h Differenz)</span>
-        </p>
-        <p>
-          <span className="font-medium">Treibstoff:</span> {report.fuel} L
-        </p>
+        
+        <div className="flex gap-6 text-sm">
+          <div>
+            <span className="text-[var(--secondary)]">Stunden: </span>
+            <span className="font-semibold text-[var(--foreground)]">
+              {report.startOperatingHours}h → {report.endOperatingHours}h
+            </span>
+          </div>
+          <div>
+            <span className="text-[var(--secondary)]">Differenz: </span>
+            <span className="font-semibold text-[var(--foreground)]">
+              {report.endOperatingHours - report.startOperatingHours}h
+            </span>
+          </div>
+          <div>
+            <span className="text-[var(--secondary)]">Treibstoff: </span>
+            <span className="font-semibold text-[var(--foreground)]">
+              {report.fuel} L
+            </span>
+          </div>
+        </div>
       </div>
+
+      {isAdmin && (
+        <div className="flex gap-2 flex-shrink-0">
+          <button
+            onClick={() => onEdit(report)}
+            className="p-2.5 text-[var(--primary)] hover:bg-[var(--background)] rounded-xl transition-colors"
+            title="Bearbeiten"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => {
+              if (confirm('Möchten Sie diesen Eintrag wirklich löschen?')) {
+                onDelete(report.id);
+              }
+            }}
+            className="p-2.5 text-[var(--danger)] hover:bg-[var(--background)] rounded-xl transition-colors"
+            title="Löschen"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
-
-    {/* Action Buttons - nur für Admins sichtbar */}
-    {isAdmin && (
-      <div className="flex gap-2 ml-4">
-        <button
-          onClick={() => onEdit(report)}
-          className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
-          title="Bearbeiten"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-            />
-          </svg>
-        </button>
-
-        <button
-          onClick={() => {
-            if (confirm('Möchten Sie diesen Eintrag wirklich löschen?')) {
-              onDelete(report.id);
-            }
-          }}
-          className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
-          title="Löschen"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-        </button>
-      </div>
-    )}
   </div>
 );
 
@@ -309,38 +312,55 @@ const UebersichtEintraege: FC = () => {
   }, []);
 
   return (
-    <section className="space-y-4">
-      <div>
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-          Übersicht Nutzungen
-        </h1>
-        <div className="flex items-center gap-4 mt-1">
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {isLoading ? 'Lade Nutzungen...' : `${reports.length} Nutzungen gefunden`}
+    <section className="space-y-6">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 px-1">
+        <div>
+          <h1 className="text-3xl font-bold text-[var(--foreground)]">Übersicht Nutzungen</h1>
+          <p className="text-sm text-[var(--secondary)] mt-2">
+            {isLoading ? 'Lade Nutzungen...' : `${reports.length} ${reports.length === 1 ? 'Nutzung' : 'Nutzungen'} gefunden`}
           </p>
-          <div className="ml-auto flex gap-2">
-            <button onClick={() => setView('list')} className={`px-3 py-1 rounded ${view === 'list' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}`}>Liste</button>
-            <button onClick={() => setView('calendar')} className={`px-3 py-1 rounded ${view === 'calendar' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}`}>Kalender</button>
-          </div>
         </div>
-        {error && reports.length === 0 && (
-          <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 mt-3">
-            <p className="text-sm text-red-900 dark:text-red-100">{error}</p>
-          </div>
-        )}
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setView('list')} 
+            className={`px-5 py-3 rounded-xl text-base font-medium transition-all ${
+              view === 'list' 
+                ? 'bg-[var(--primary)] text-white shadow-lg' 
+                : 'bg-[var(--card-bg)] text-[var(--secondary)] hover:bg-[var(--hover)]'
+            }`}
+          >
+            Liste
+          </button>
+          <button 
+            onClick={() => setView('calendar')} 
+            className={`px-5 py-3 rounded-xl text-base font-medium transition-all ${
+              view === 'calendar' 
+                ? 'bg-[var(--primary)] text-white shadow-lg' 
+                : 'bg-[var(--card-bg)] text-[var(--secondary)] hover:bg-[var(--hover)]'
+            }`}
+          >
+            Kalender
+          </button>
+        </div>
       </div>
+      
+      {error && reports.length === 0 && (
+        <div className="rounded-xl bg-red-900/20 border border-red-800 p-4 mx-1">
+          <p className="text-sm text-red-400">{error}</p>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editingReport && isAdmin && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-zinc-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 border border-[var(--border)]">
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-xl font-bold text-[var(--foreground)]">
                 Nutzung bearbeiten
               </h2>
               <button
                 onClick={handleCancelEdit}
-                className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                className="text-[var(--secondary)] hover:text-[var(--danger)] transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -348,17 +368,16 @@ const UebersichtEintraege: FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-5">
-              {/* Fahrzeug */}
-              <div className="space-y-2">
-                <label htmlFor="edit-vehicle" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label htmlFor="edit-vehicle" className="block text-sm font-medium text-[var(--foreground)] mb-2">
                   Fahrzeug
                 </label>
                 <select
                   id="edit-vehicle"
                   value={editForm.vehicleId}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, vehicleId: e.target.value }))}
-                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                   required
                 >
                   {vehicles.map((vehicle) => (
@@ -369,9 +388,8 @@ const UebersichtEintraege: FC = () => {
                 </select>
               </div>
 
-              {/* Erfassungsdatum */}
-              <div className="space-y-2">
-                <label htmlFor="edit-creationDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <div>
+                <label htmlFor="edit-creationDate" className="block text-sm font-medium text-[var(--foreground)] mb-2">
                   Erfassungsdatum
                 </label>
                 <input
@@ -379,14 +397,13 @@ const UebersichtEintraege: FC = () => {
                   type="date"
                   value={editForm.creationDate}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, creationDate: e.target.value }))}
-                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:invert"
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                   required
                 />
               </div>
 
-              {/* Start-Betriebsstunden */}
-              <div className="space-y-2">
-                <label htmlFor="edit-startOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <div>
+                <label htmlFor="edit-startOperatingHours" className="block text-sm font-medium text-[var(--foreground)] mb-2">
                   Start-Betriebsstunden
                 </label>
                 <input
@@ -394,16 +411,15 @@ const UebersichtEintraege: FC = () => {
                   type="number"
                   value={editForm.startOperatingHours}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, startOperatingHours: e.target.value }))}
-                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                   min="0"
                   step="1"
                   required
                 />
               </div>
 
-              {/* End-Betriebsstunden */}
-              <div className="space-y-2">
-                <label htmlFor="edit-endOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <div>
+                <label htmlFor="edit-endOperatingHours" className="block text-sm font-medium text-[var(--foreground)] mb-2">
                   End-Betriebsstunden
                 </label>
                 <input
@@ -411,16 +427,15 @@ const UebersichtEintraege: FC = () => {
                   type="number"
                   value={editForm.endOperatingHours}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, endOperatingHours: e.target.value }))}
-                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                   min="0"
                   step="1"
                   required
                 />
               </div>
 
-              {/* Treibstoff */}
-              <div className="space-y-2">
-                <label htmlFor="edit-fuel" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <div>
+                <label htmlFor="edit-fuel" className="block text-sm font-medium text-[var(--foreground)] mb-2">
                   Treibstoff (L)
                 </label>
                 <input
@@ -428,33 +443,31 @@ const UebersichtEintraege: FC = () => {
                   type="number"
                   value={editForm.fuel}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, fuel: e.target.value }))}
-                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                   min="0"
                   step="0.1"
                 />
               </div>
 
-              {/* Error Message */}
               {error && (
-                <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3">
-                  <p className="text-sm text-red-900 dark:text-red-100">{error}</p>
+                <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4">
+                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
                 </div>
               )}
 
-              {/* Buttons */}
-              <div className="flex gap-3">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
+                  className="flex-1 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-medium py-3 rounded-lg disabled:opacity-50 transition-colors"
                 >
-                  {isSubmitting ? 'Wird gespeichert...' : 'Änderungen speichern'}
+                  { isSubmitting ? 'Änderungen werden gespeichert...' : 'Änderungen speichern'}
                 </button>
                 <button
                   type="button"
                   onClick={handleCancelEdit}
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
+                  className="px-6 py-3 rounded-lg border border-[var(--border)] hover:bg-[var(--hover)] transition-colors disabled:opacity-50 text-[var(--foreground)]"
                 >
                   Abbrechen
                 </button>
@@ -465,13 +478,16 @@ const UebersichtEintraege: FC = () => {
       )}
 
       {isLoading ? (
-        <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
-          <p className="text-zinc-600 dark:text-zinc-400">Lade Nutzungen…</p>
+        <div className="border border-dashed border-[var(--border)] rounded-lg p-8 text-center mx-1">
+          <div className="animate-spin w-8 h-8 border-4 border-[var(--primary)] border-t-transparent rounded-full mx-auto mb-3"></div>
+          <p className="text-sm text-[var(--secondary)]">Lade Nutzungen…</p>
         </div>
       ) : view === 'calendar' ? (
-        <CalendarView events={calendarEvents} />
+        <div className="px-1">
+          <CalendarView events={calendarEvents} />
+        </div>
       ) : reports.length > 0 ? (
-        <div className="grid gap-3">
+        <div className="space-y-3 px-1">
           {reports.map((report) => (
             <ReportItem
               key={report.id}
@@ -483,8 +499,8 @@ const UebersichtEintraege: FC = () => {
           ))}
         </div>
       ) : (
-        <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-8 text-center">
-          <p className="text-zinc-600 dark:text-zinc-400">Keine Nutzungen vorhanden</p>
+        <div className="border border-dashed border-[var(--border)] rounded-lg p-8 text-center mx-1">
+          <p className="text-[var(--secondary)]">Keine Nutzungen vorhanden</p>
         </div>
       )}
     </section>

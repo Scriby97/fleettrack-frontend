@@ -215,50 +215,46 @@ const CreateUsage: FC = () => {
 
   return (
     <section className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-          Nutzung erfassen
-        </h1>
+      <div className="px-1">
+        <h1 className="text-3xl font-bold text-[var(--foreground)]">Nutzung erfassen</h1>
+        <p className="text-sm text-[var(--secondary)] mt-2">Erfassen Sie eine neue Fahrzeugnutzung</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
-        {/* Fahrzeug */}
-          {/* Error Message */}
-          {error && (
-            <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
-              <p className="text-sm text-red-900 dark:text-red-100">{error}</p>
-            </div>
-          )}
+      <form onSubmit={handleSubmit} className="space-y-7 max-w-xl px-1">
+        {error && (
+          <div className="rounded-xl bg-red-900/20 border border-red-800 p-4">
+            <p className="text-sm text-red-400">{error}</p>
+          </div>
+        )}
 
-        <div className="space-y-2">
-          <label htmlFor="vehicle" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Fahrzeug
-            </label>
-            <select
-              id="vehicle"
-              value={formData.vehicleId}
-              onChange={(e) => handleVehicleChange(e.target.value)}
-              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
-            >
-              {vehiclesLoading ? (
-                <option value="" disabled>Lade Fahrzeuge...</option>
-              ) : vehiclesError ? (
-                <option value="" disabled>{vehiclesError}</option>
-              ) : vehicles.length === 0 ? (
-                <option value="" disabled>Keine Fahrzeuge verfügbar</option>
-              ) : (
-                vehicles.map((vehicle) => (
-                  <option key={vehicle.id} value={vehicle.id}>
-                    {vehicle.name} ({vehicle.plate})
-                  </option>
-                ))
-              )}
-            </select>
+        <div>
+          <label htmlFor="vehicle" className="block text-base font-medium text-[var(--foreground)] mb-3">
+            Fahrzeug
+          </label>
+          <select
+            id="vehicle"
+            value={formData.vehicleId}
+            onChange={(e) => handleVehicleChange(e.target.value)}
+            className="w-full px-5 py-4 bg-[var(--card-bg)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-base"
+          >
+            {vehiclesLoading ? (
+              <option value="" disabled>Lade Fahrzeuge...</option>
+            ) : vehiclesError ? (
+              <option value="" disabled>{vehiclesError}</option>
+            ) : vehicles.length === 0 ? (
+              <option value="" disabled>Keine Fahrzeuge verfügbar</option>
+            ) : (
+              vehicles.map((vehicle) => (
+                <option key={vehicle.id} value={vehicle.id}>
+                  {vehicle.name} ({vehicle.plate})
+                </option>
+              ))
+            )}
+          </select>
         </div>
 
-        {/* Erfassungsdatum */}
-        <div className="space-y-2">
-          <label htmlFor="creationDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <div>
+          <label htmlFor="creationDate" className="block text-base font-medium text-[var(--foreground)] mb-3">
             Erfassungsdatum
           </label>
           <input
@@ -266,80 +262,79 @@ const CreateUsage: FC = () => {
             type="date"
             value={formData.creationDate}
             onChange={(e) => setFormData((prev) => ({ ...prev, creationDate: e.target.value }))}
-            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:invert"
+            className="w-full px-5 py-4 bg-[var(--card-bg)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-base"
             required
           />
         </div>
 
-        {/* Start-Betriebsstunden */}
-        <div className="space-y-2">
-          <label htmlFor="startOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Start-Betriebsstunden
-            {loadingOperatingHours && <span className="ml-2 text-xs text-zinc-500">(wird geladen...)</span>}
-          </label>
-          <input
-            id="startOperatingHours"
-            type="number"
-            value={formData.startOperatingHours}
-            onChange={(e) => handleOperatingHoursChange('startOperatingHours', e.target.value)}
-            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
-            min="0"
-            step="1"
-            required
-            disabled={loadingOperatingHours}
-          />
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <label htmlFor="startOperatingHours" className="block text-base font-medium text-[var(--foreground)] mb-3">
+              Start (Stunden)
+            </label>
+            <input
+              id="startOperatingHours"
+              type="number"
+              value={formData.startOperatingHours}
+              onChange={(e) => handleOperatingHoursChange('startOperatingHours', e.target.value)}
+              className="w-full px-5 py-4 bg-[var(--card-bg)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-base"
+              min="0"
+              step="1"
+              required
+              disabled={loadingOperatingHours}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="endOperatingHours" className="block text-base font-medium text-[var(--foreground)] mb-3">
+              Ende (Stunden)
+            </label>
+            <input
+              id="endOperatingHours"
+              type="number"
+              value={formData.endOperatingHours}
+              onChange={(e) => handleOperatingHoursChange('endOperatingHours', e.target.value)}
+              className="w-full px-5 py-4 bg-[var(--card-bg)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-base"
+              min="0"
+              step="1"
+              required
+            />
+          </div>
         </div>
 
-        {/* End-Betriebsstunden */}
-        <div className="space-y-2">
-          <label htmlFor="endOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            End-Betriebsstunden
-          </label>
-          <input
-            id="endOperatingHours"
-            type="number"
-            value={formData.endOperatingHours}
-            onChange={(e) => handleOperatingHoursChange('endOperatingHours', e.target.value)}
-            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
-            min="0"
-            step="1"
-            required
-          />
-          {timeError && (
-            <p className="mt-2 text-sm text-red-700 dark:text-red-200">{timeError}</p>
-          )}
-        </div>
+        {timeError && (
+          <p className="text-sm text-red-400">{timeError}</p>
+        )}
 
-        {/* Dauer Anzeige */}
         {calculatedHours !== null && (
-          <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4">
-            <p className="text-sm text-blue-900 dark:text-blue-100">
-              Gesamtdauer: <span className="font-semibold">{calculatedHours} Stunden</span>
-            </p>
+          <div className="p-5 bg-[var(--card-bg)] border border-[var(--border)] rounded-2xl">
+            <div className="flex items-center justify-between">
+              <span className="text-base font-medium text-[var(--foreground)]">Gesamtdauer</span>
+              <span className="text-2xl font-bold text-[var(--primary)]">{calculatedHours} h</span>
+            </div>
           </div>
         )}
 
-        {/* Treibstoff */}
-        <div className="space-y-2">
-          <label htmlFor="fuel" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Treibstoff (L, optional)
+        <div>
+          <label htmlFor="fuel" className="block text-base font-medium text-[var(--foreground)] mb-3">
+            Treibstoff (Liter) <span className="text-[var(--secondary)] font-normal">optional</span>
           </label>
           <input
             id="fuel"
             type="number"
             value={formData.fuel}
             onChange={(e) => setFormData((prev) => ({ ...prev, fuel: e.target.value }))}
-            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+            className="w-full px-5 py-4 bg-[var(--card-bg)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-base"
             min="0"
             step="0.1"
+            placeholder="0.0"
           />
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={isSubmitting || !!timeError}
-          className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
+          className="w-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold py-4 rounded-2xl disabled:opacity-50 transition-all text-lg shadow-lg"
         >
           {isSubmitting ? 'Wird gespeichert...' : 'Nutzung speichern'}
         </button>

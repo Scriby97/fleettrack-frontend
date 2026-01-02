@@ -17,20 +17,20 @@ const UserMenu: FC = () => {
   if (!user) return null
 
   return (
-    <div className="space-y-2">
-      <div className="text-sm">
-        <div className="font-medium text-zinc-900 dark:text-zinc-50">
-          {user.user_metadata?.fullName || user.email}
+    <div className="flex items-center gap-3 md:flex-col md:items-stretch">
+      <div className="flex-1 md:flex-none text-sm">
+        <div className="font-medium text-[var(--foreground)] truncate">
+          {user.user_metadata?.fullName || user.email?.split('@')[0]}
         </div>
         {userRole && (
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            {isAdmin ? '👑 Administrator' : '👤 Benutzer'}
+          <div className="text-xs text-[var(--secondary)] mt-0.5 hidden md:block">
+            {isAdmin ? 'Admin' : 'Benutzer'}
           </div>
         )}
       </div>
       <button
         onClick={handleSignOut}
-        className="w-full px-4 py-2 text-sm bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-900 dark:text-zinc-100 rounded-lg transition-colors"
+        className="md:w-full px-4 py-2 text-sm hover:bg-[var(--hover)] text-[var(--foreground)] rounded-lg transition-colors"
       >
         Abmelden
       </button>

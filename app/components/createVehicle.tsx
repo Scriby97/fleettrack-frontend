@@ -65,26 +65,20 @@ const CreateVehicle: FC = () => {
 
   return (
     <section className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-          Fahrzeug erfassen
-        </h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-          Fügen Sie ein neues Fahrzeug zur Flotte hinzu
-        </p>
+      <div className="px-1">
+        <h1 className="text-3xl font-bold text-[var(--foreground)]">Fahrzeug erfassen</h1>
+        <p className="text-sm text-[var(--secondary)] mt-2">Fügen Sie ein neues Fahrzeug zur Flotte hinzu</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
-        {/* Error Message */}
+      <form onSubmit={handleSubmit} className="space-y-7 max-w-xl px-1">
         {error && (
-          <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
-            <p className="text-sm text-red-900 dark:text-red-100">{error}</p>
+          <div className="rounded-xl bg-red-900/20 border border-red-800 p-4">
+            <p className="text-sm text-red-400">{error}</p>
           </div>
         )}
 
-        {/* Bezeichnung */}
-        <div className="space-y-2">
-          <label htmlFor="name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <div>
+          <label htmlFor="name" className="block text-base font-medium text-[var(--foreground)] mb-3">
             Fahrzeugbezeichnung
           </label>
           <input
@@ -93,14 +87,13 @@ const CreateVehicle: FC = () => {
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
             placeholder="z.B. New Leitwolf LT t5"
-            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+            className="w-full px-5 py-4 bg-[var(--card-bg)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-base"
             required
           />
         </div>
 
-        {/* Kennzeichen */}
-        <div className="space-y-2">
-          <label htmlFor="plate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <div>
+          <label htmlFor="plate" className="block text-base font-medium text-[var(--foreground)] mb-3">
             Kennzeichen
           </label>
           <input
@@ -109,14 +102,13 @@ const CreateVehicle: FC = () => {
             value={formData.plate}
             onChange={(e) => handleChange('plate', e.target.value)}
             placeholder="z.B. BE-123456"
-            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+            className="w-full px-5 py-4 bg-[var(--card-bg)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-base"
             required
           />
         </div>
 
-        {/* SNOWsat-Nummer */}
-        <div className="space-y-2">
-          <label htmlFor="snowsatNumber" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <div>
+          <label htmlFor="snowsatNumber" className="block text-base font-medium text-[var(--foreground)] mb-3">
             SNOWsat-Nummer
           </label>
           <input
@@ -125,16 +117,15 @@ const CreateVehicle: FC = () => {
             value={formData.snowsatNumber}
             onChange={(e) => handleChange('snowsatNumber', e.target.value)}
             placeholder="z.B. GSD-PB-09"
-            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+            className="w-full px-5 py-4 bg-[var(--card-bg)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-base"
             required
           />
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
+          className="w-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold py-4 rounded-2xl disabled:opacity-50 transition-all text-lg shadow-lg"
         >
           {isSubmitting ? 'Wird hinzugefügt...' : 'Fahrzeug hinzufügen'}
         </button>

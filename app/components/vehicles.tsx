@@ -19,73 +19,66 @@ interface VehicleItemProps {
 }
 
 const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = null }) => (
-  <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 hover:shadow-md transition-shadow flex justify-between items-start">
-    <div className="flex-1">
-      <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-        {vehicle.name}
-      </h3>
-      <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-        <div>Kennzeichen: <span className="font-medium">{vehicle.plate}</span></div>
+  <div className="bg-[var(--card-bg)] rounded-2xl p-5 hover:bg-[var(--hover)] transition-colors">
+    <div className="flex items-start gap-4">
+      <div className="w-12 h-12 rounded-xl bg-[var(--primary)] flex items-center justify-center flex-shrink-0">
+        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-[var(--foreground)] text-lg mb-1 truncate">
+          {vehicle.name}
+        </h3>
+        <p className="text-sm text-[var(--secondary)] mb-1">{vehicle.plate}</p>
         {vehicle.snowsatNumber && (
-          <div>SNOWsat-Nr: <span className="font-medium">{vehicle.snowsatNumber}</span></div>
+          <p className="text-sm text-[var(--secondary)]">
+            SNOWsat: {vehicle.snowsatNumber}
+          </p>
         )}
-      </div>
-      <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-        <div>
-          Arbeitsstunden:{' '}
-          <span className="font-medium">
-            {typeof stats?.hours === 'number' ? stats.hours.toFixed(2) : '—'}
-          </span>
+        
+        <div className="flex gap-6 mt-4 text-sm">
+          <div>
+            <span className="text-[var(--secondary)]">Stunden: </span>
+            <span className="font-semibold text-[var(--foreground)]">
+              {typeof stats?.hours === 'number' ? stats.hours.toFixed(1) : '—'}
+            </span>
+          </div>
+          <div>
+            <span className="text-[var(--secondary)]">Getankt: </span>
+            <span className="font-semibold text-[var(--foreground)]">
+              {stats?.fuelLiters ?? '—'} L
+            </span>
+          </div>
         </div>
-        <div>Total getankt: <span className="font-medium">{stats?.fuelLiters ?? '—'} L</span></div>
       </div>
-    </div>
 
-    {/* Action Buttons */}
-    <div className="flex gap-2 ml-4">
-      <button
-        onClick={() => onEdit(vehicle)}
-        className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
-        title="Bearbeiten"
-      >
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      <div className="flex gap-2 flex-shrink-0">
+        <button
+          onClick={() => onEdit(vehicle)}
+          className="p-2.5 text-[var(--primary)] hover:bg-[var(--background)] rounded-xl transition-colors"
+          title="Bearbeiten"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-          />
-        </svg>
-      </button>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </button>
 
-      <button
-        onClick={() => {
-          if (confirm(`Möchten Sie "${vehicle.name}" wirklich löschen?`)) {
-            onDelete(vehicle.id);
-          }
-        }}
-        className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
-        title="Löschen"
-      >
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+        <button
+          onClick={() => {
+            if (confirm(`Möchten Sie "${vehicle.name}" wirklich löschen?`)) {
+              onDelete(vehicle.id);
+            }
+          }}
+          className="p-2.5 text-[var(--danger)] hover:bg-[var(--background)] rounded-xl transition-colors"
+          title="Löschen"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-          />
-        </svg>
-      </button>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 );
@@ -186,29 +179,28 @@ const FlottenUebersicht: FC = () => {
 
   return (
     <section className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-          Flottenübersicht
-        </h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-          {vehicles.length} Fahrzeuge in der Flotte
+      <div className="px-1">
+        <h1 className="text-3xl font-bold text-[var(--foreground)]">Flottenübersicht</h1>
+        <p className="text-sm text-[var(--secondary)] mt-2">
+          {vehicles.length} {vehicles.length === 1 ? 'Fahrzeug' : 'Fahrzeuge'} in der Flotte
         </p>
       </div>
 
       {isLoading && (
-        <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
-          <p className="text-zinc-600 dark:text-zinc-400">Lade Fahrzeuge...</p>
+        <div className="border border-dashed border-[var(--border)] rounded-lg p-8 text-center mx-1">
+          <div className="animate-spin w-8 h-8 border-4 border-[var(--primary)] border-t-transparent rounded-full mx-auto mb-3"></div>
+          <p className="text-sm text-[var(--secondary)]">Lade Fahrzeuge...</p>
         </div>
       )}
 
       {error && (
-        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
-          <p className="text-sm text-red-900 dark:text-red-100">{error}</p>
+        <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 mx-1">
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
       )}
 
       {vehicles.length > 0 ? (
-        <div className="grid gap-3">
+        <div className="space-y-3 px-1">
           {vehicles.map((vehicle) => (
             <VehicleItem
               key={vehicle.id}
@@ -219,10 +211,13 @@ const FlottenUebersicht: FC = () => {
             />
           ))}
         </div>
-      ) : (
-        <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-8 text-center">
-          <p className="text-zinc-600 dark:text-zinc-400">
+      ) : !isLoading && (
+        <div className="border border-dashed border-[var(--border)] rounded-lg p-8 text-center mx-1">
+          <p className="text-[var(--secondary)] mb-2">
             Keine Fahrzeuge vorhanden
+          </p>
+          <p className="text-sm text-[var(--secondary)]">
+            Fügen Sie Ihr erstes Fahrzeug hinzu
           </p>
         </div>
       )}

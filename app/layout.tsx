@@ -16,6 +16,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "FleetTrack - Flottenverwaltung",
   description: "Verwalte deine Fahrzeugflotte mit FleetTrack",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+  themeColor: "#0066cc",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "FleetTrack"
+  }
 };
 
 export default function RootLayout({
