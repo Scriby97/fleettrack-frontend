@@ -1,22 +1,31 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { User, AuthError } from '@supabase/supabase-js'
+import { User as SupabaseUser, AuthError } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch'
+import type { User, Organization } from '@/lib/types/user'
 
 interface UserProfile {
   id: string
   email: string
   role: string
+  organizationId: string
+  organization: Organization
+  firstName?: string
+  lastName?: string
   name?: string
 }
 
 interface AuthContextType {
-  user: User | null
+  supabaseUser: SupabaseUser | null
+  userProfile: UserProfile | null
   loading: boolean
   isAdmin: boolean
+  isSuperAdmin: boolean
   userRole: string | null
+  organizationId: string | null
+  organization: Organization | null
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signUp: (email: string, password: string, metadata?: { fullName?: string, role?: string }) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
@@ -26,15 +35,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [userRole, setUserRole] = useState<string | null>(null)
   const supabase = createClient()
 
-  // Berechne isAdmin basierend auf der Benutzerrolle
-  const isAdmin = userRole === 'admin'
+  // Compute derived values
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin'
+  const isSuperAdmin = userRole === 'super_admin'
+  const organizationId = userProfile?.organizationId ?? null
+  const organization = userProfile?.organization ?? null
 
-  // Funktion zum Abrufen der User-Rolle vom Backend
+  // Function to fetch user profile from backend
   const fetchUserRole = useCallback(async () => {
     try {
       console.log('[AUTH_PROVIDER] fetchUserRole gestartet');
@@ -53,7 +66,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const profile: UserProfile = await response.json()
-      console.log('[AUTH_PROVIDER] User-Profile erhalten:', profile.email, 'Role:', profile.role);
+      console.log('[AUTH_PROVIDER] User-Profile erhalten:', profile.email, 'Role:', profile.role, 'Org:', profile.organization?.name);
+      
+      // Update full profile in state
+      setUserProfile(profile)
+      
       return profile.role
     } catch (error) {
       console.error('[AUTH_PROVIDER] Fehler beim Abrufen der User-Rolle:', error)
@@ -61,10 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Funktion zum Aktualisieren der User-Rolle
+  // Function to refresh user role
   const refreshUserRole = useCallback(async () => {
-    if (!user) {
+    if (!supabaseUser) {
       setUserRole(null)
+      setUserProfile(null)
       return
     }
 
@@ -72,24 +90,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (roleFromBackend) {
       setUserRole(roleFromBackend)
     } else {
-      // Fallback auf metadata wenn Backend nicht verfügbar
-      setUserRole(user.user_metadata?.role ?? null)
+      // Fallback to metadata if backend not available
+      setUserRole(supabaseUser.user_metadata?.role ?? null)
     }
-  }, [user, fetchUserRole])
+  }, [supabaseUser, fetchUserRole])
 
   useEffect(() => {
     // Check active sessions and sets the user
     const initAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
+      setSupabaseUser(session?.user ?? null)
       
       if (session?.user) {
-        // Hole Rolle vom Backend
+        // Get role from backend
         const roleFromBackend = await fetchUserRole()
         if (roleFromBackend) {
           setUserRole(roleFromBackend)
         } else {
-          // Fallback auf metadata
+          // Fallback to metadata
           setUserRole(session.user.user_metadata?.role ?? null)
         }
       }
@@ -104,16 +122,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[AUTH_PROVIDER] onAuthStateChange Event:', event, 'User:', session?.user?.email);
-      setUser(session?.user ?? null)
+      setSupabaseUser(session?.user ?? null)
       
       if (session?.user) {
-        // Hole Rolle vom Backend
+        // Get role from backend
         const roleFromBackend = await fetchUserRole()
         if (roleFromBackend) {
           console.log('[AUTH_PROVIDER] Setze userRole auf:', roleFromBackend);
           setUserRole(roleFromBackend)
         } else {
-          // Bei Fehler (z.B. Timeout): Behalte die alte Rolle, wenn vorhanden
+          // On error: keep old role if available
           console.log('[AUTH_PROVIDER] Konnte Rolle nicht vom Backend holen');
           setUserRole(prev => {
             const fallbackRole = session.user.user_metadata?.role ?? prev ?? null;
@@ -124,6 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         console.log('[AUTH_PROVIDER] Keine Session, setze userRole auf null');
         setUserRole(null)
+        setUserProfile(null)
       }
       
       setLoading(false)
@@ -156,10 +175,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const value = {
-    user,
+    supabaseUser,
+    userProfile,
     loading,
     isAdmin,
+    isSuperAdmin,
     userRole,
+    organizationId,
+    organization,
     signIn,
     signUp,
     signOut,
