@@ -2,6 +2,10 @@ export interface Organization {
   id: string
   name: string
   subdomain?: string
+  contactEmail?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 export interface User {
@@ -35,3 +39,24 @@ export interface InviteEntity {
 }
 
 export type InviteStatus = 'used' | 'pending' | 'expired'
+
+// Organization Management Types
+export interface CreateOrganizationRequest {
+  name: string
+  adminEmail: string
+  adminFirstName?: string
+  adminLastName?: string
+  adminRole?: 'admin' | 'super_admin'
+  subdomain?: string
+  contactEmail?: string
+}
+
+export interface CreateOrganizationResponse {
+  organization: Organization
+  invite: {
+    token: string
+    link: string
+    email: string
+    expiresAt: string
+  }
+}

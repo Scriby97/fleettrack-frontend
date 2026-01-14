@@ -2,6 +2,9 @@
 
 import { useState, useCallback, useEffect, type FC, type FormEvent } from 'react';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
+import { useAuth } from '@/lib/auth/AuthProvider';
+import { getAllOrganizations } from '@/lib/api/organizations';
+import type { Organization } from '@/lib/types/user';
 
 interface Vehicle {
   id: string;
@@ -26,6 +29,8 @@ const calculateHoursDifference = (start: string, end: string): number | null => 
 };
 
 const CreateUsage: FC = () => {
+  const { isSuperAdmin, organizationId } = useAuth();
+  
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
@@ -46,6 +51,8 @@ const CreateUsage: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [loadingOperatingHours, setLoadingOperatingHours] = useState(false);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
 
   const updateCalculatedHours = useCallback(() => {
     const hours = calculateHoursDifference(formData.startOperatingHours, formData.endOperatingHours);
@@ -58,7 +65,12 @@ const CreateUsage: FC = () => {
 
     setLoadingOperatingHours(true);
     try {
-      const res = await authenticatedFetch(`${apiUrl}/vehicles/${vehicleId}/last-operating-hours`);
+      const headers: HeadersInit = {};
+      if (isSuperAdmin && selectedOrgId) {
+        headers['X-Organization-Id'] = selectedOrgId;
+      }
+      
+      const res = await authenticatedFetch(`${apiUrl}/vehicles/${vehicleId}/last-operating-hours`, { headers });
       if (!res.ok) {
         console.warn('Konnte letzte Betriebsstunden nicht laden');
         return;
@@ -72,7 +84,7 @@ const CreateUsage: FC = () => {
     } finally {
       setLoadingOperatingHours(false);
     }
-  }, []);
+  }, [isSuperAdmin, selectedOrgId]);
 
   const handleVehicleChange = useCallback((vehicleId: string) => {
     setFormData((prev) => ({ ...prev, vehicleId }));
@@ -131,9 +143,15 @@ const CreateUsage: FC = () => {
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL
       if (apiUrl) {
+        const headers: HeadersInit = {};
+        if (isSuperAdmin && selectedOrgId) {
+          headers['X-Organization-Id'] = selectedOrgId;
+        }
+        
         const res = await authenticatedFetch(`${apiUrl}/usages`, {
           method: 'POST',
           body: JSON.stringify(payload),
+          headers,
         });
 
         if (!res.ok) {
@@ -158,6 +176,24 @@ const CreateUsage: FC = () => {
     }
   };
 
+  // Load organizations for super admin
+  useEffect(() => {
+    if (isSuperAdmin) {
+      getAllOrganizations()
+        .then(orgs => {
+          setOrganizations(orgs);
+          // Set first org as default if none selected
+          if (!selectedOrgId && orgs.length > 0) {
+            setSelectedOrgId(orgs[0].id);
+          }
+        })
+        .catch(err => console.error('Failed to load organizations:', err));
+    } else if (organizationId && !selectedOrgId) {
+      // Regular admin/user - use their organization
+      setSelectedOrgId(organizationId);
+    }
+  }, [isSuperAdmin, organizationId, selectedOrgId]);
+
   useEffect(() => {
     console.log('[CREATE_USAGE] useEffect gestartet');
     const apiUrl = process.env.NEXT_PUBLIC_API_URL
@@ -165,6 +201,12 @@ const CreateUsage: FC = () => {
     if (!apiUrl) {
       console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
       return
+    }
+
+    // Wait for organization to be selected
+    if (!selectedOrgId) {
+      console.log('[CREATE_USAGE] Waiting for organization selection...');
+      return;
     }
 
     const controller = new AbortController();
@@ -175,7 +217,12 @@ const CreateUsage: FC = () => {
 
       try {
         console.log('[CREATE_USAGE] Versuche Request zu senden...');
-        const res = await authenticatedFetch(`${apiUrl}/vehicles`, { signal: controller.signal });
+        const headers: HeadersInit = {};
+        if (isSuperAdmin && selectedOrgId) {
+          headers['X-Organization-Id'] = selectedOrgId;
+        }
+        
+        const res = await authenticatedFetch(`${apiUrl}/vehicles`, { signal: controller.signal, headers });
         console.log('[CREATE_USAGE] Request erfolgreich, Status:', res.status);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
@@ -211,7 +258,7 @@ const CreateUsage: FC = () => {
       console.log('[CREATE_USAGE] useEffect cleanup');
       controller.abort();
     };
-  }, [fetchVehicleEndOperatingHours]);
+  }, [fetchVehicleEndOperatingHours, selectedOrgId, isSuperAdmin]);
 
   return (
     <section className="space-y-6">
@@ -219,6 +266,24 @@ const CreateUsage: FC = () => {
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
           Nutzung erfassen
         </h1>
+        {isSuperAdmin && organizations.length > 0 && (
+          <div className="flex items-center gap-2 mt-2">
+            <label className="text-sm text-zinc-600 dark:text-zinc-400">
+              Organization:
+            </label>
+            <select
+              value={selectedOrgId || ''}
+              onChange={(e) => setSelectedOrgId(e.target.value)}
+              className="px-3 py-1 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-purple-500"
+            >
+              {organizations.map(org => (
+                <option key={org.id} value={org.id}>
+                  {org.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
