@@ -21,6 +21,8 @@ interface AuthContextType {
   supabaseUser: SupabaseUser | null
   userProfile: UserProfile | null
   loading: boolean
+  backendLoading: boolean
+  backendRetryCount: number
   isAdmin: boolean
   isSuperAdmin: boolean
   userRole: string | null
@@ -38,6 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [backendLoading, setBackendLoading] = useState(false)
+  const [backendRetryCount, setBackendRetryCount] = useState(0)
   const [userRole, setUserRole] = useState<string | null>(null)
   const supabase = createClient()
 
@@ -58,8 +62,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       console.log('[AUTH_PROVIDER] Rufe /auth/me auf...');
-      const response = await authenticatedFetch(`${apiUrl}/auth/me`)
+      setBackendLoading(true)
+      setBackendRetryCount(0)
+      
+      const response = await authenticatedFetch(`${apiUrl}/auth/me`, {
+        retries: 12, // 12 Versuche à 5 Sekunden = 60 Sekunden max
+        retryDelay: 5000,
+        onRetry: (attempt, maxRetries) => {
+          console.log(`[AUTH_PROVIDER] Backend Retry ${attempt}/${maxRetries}`);
+          setBackendRetryCount(attempt)
+        }
+      })
+      
       console.log('[AUTH_PROVIDER] /auth/me Response Status:', response.status);
+      setBackendLoading(false)
+      setBackendRetryCount(0)
+      
       if (!response.ok) {
         console.error('Fehler beim Abrufen der User-Rolle:', response.status)
         return null
@@ -74,6 +92,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return profile.role
     } catch (error) {
       console.error('[AUTH_PROVIDER] Fehler beim Abrufen der User-Rolle:', error)
+      setBackendLoading(false)
+      setBackendRetryCount(0)
       return null
     }
   }, [])
@@ -178,6 +198,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabaseUser,
     userProfile,
     loading,
+    backendLoading,
+    backendRetryCount,
     isAdmin,
     isSuperAdmin,
     userRole,
