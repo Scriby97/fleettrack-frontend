@@ -8,7 +8,7 @@ import { getAllOrganizations } from '@/lib/api/organizations';
 import type { Organization } from '@/lib/types/user';
 
 interface Report {
-  id: number;
+  id: number | string;
   vehicleId?: string;
   vehicle: string;
   startOperatingHours: number;
@@ -37,7 +37,7 @@ interface Vehicle {
 interface ReportItemProps {
   report: Report;
   onEdit: (report: Report) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: number | string) => void;
   isAdmin: boolean;
 }
 
@@ -162,7 +162,7 @@ const UebersichtEintraege: FC = () => {
   };
 
   const handleEventClick = (eventId: string | number) => {
-    const report = reports.find(r => r.id === eventId);
+    const report = reports.find(r => String(r.id) === String(eventId));
     if (report) {
       handleEdit(report);
     }
@@ -239,7 +239,7 @@ const UebersichtEintraege: FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: number | string) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!apiUrl) {
       setReports((prev) => prev.filter((report) => report.id !== id));
@@ -325,7 +325,7 @@ const UebersichtEintraege: FC = () => {
         vehicles.forEach((v) => vehicleMap.set(v.id, v));
 
         const mapped: Report[] = usages.map((u) => ({
-          id: typeof u.id === 'number' ? u.id : Number(u.id),
+          id: u.id,
           vehicleId: u.vehicleId,
           vehicle: vehicleMap.get(String(u.vehicleId))?.name ?? String(u.vehicleId ?? 'Unbekannt'),
           startOperatingHours: typeof u.startOperatingHours === 'number' ? u.startOperatingHours : Number(u.startOperatingHours ?? 0),
@@ -399,12 +399,12 @@ const UebersichtEintraege: FC = () => {
       </div>
 
       {/* Edit Modal */}
-      {editingReport && isAdmin && (
+      {editingReport && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-zinc-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                Nutzung bearbeiten
+                Nutzung {isAdmin ? 'bearbeiten' : 'anzeigen'}
               </h2>
               <button
                 onClick={handleCancelEdit}
@@ -428,6 +428,7 @@ const UebersichtEintraege: FC = () => {
                   onChange={(e) => setEditForm((prev) => ({ ...prev, vehicleId: e.target.value }))}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                   required
+                  disabled={!isAdmin}
                 >
                   {vehicles.map((vehicle) => (
                     <option key={vehicle.id} value={vehicle.id}>
@@ -449,6 +450,7 @@ const UebersichtEintraege: FC = () => {
                   onChange={(e) => setEditForm((prev) => ({ ...prev, creationDate: e.target.value }))}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:invert"
                   required
+                  disabled={!isAdmin}
                 />
               </div>
 
@@ -466,6 +468,7 @@ const UebersichtEintraege: FC = () => {
                   min="0"
                   step="1"
                   required
+                  disabled={!isAdmin}
                 />
               </div>
 
@@ -483,6 +486,7 @@ const UebersichtEintraege: FC = () => {
                   min="0"
                   step="1"
                   required
+                  disabled={!isAdmin}
                 />
               </div>
 
@@ -499,6 +503,7 @@ const UebersichtEintraege: FC = () => {
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                   min="0"
                   step="0.1"
+                  disabled={!isAdmin}
                 />
               </div>
 
@@ -511,20 +516,22 @@ const UebersichtEintraege: FC = () => {
 
               {/* Buttons */}
               <div className="flex gap-3">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
-                >
-                  {isSubmitting ? 'Wird gespeichert...' : 'Änderungen speichern'}
-                </button>
+                {isAdmin && (
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
+                  >
+                    {isSubmitting ? 'Wird gespeichert...' : 'Änderungen speichern'}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleCancelEdit}
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
+                  className={`${isAdmin ? '' : 'flex-1'} px-6 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50`}
                 >
-                  Abbrechen
+                  {isAdmin ? 'Abbrechen' : 'Schließen'}
                 </button>
               </div>
             </form>
