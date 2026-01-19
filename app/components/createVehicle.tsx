@@ -92,33 +92,31 @@ const CreateVehicle: FC = () => {
 
   return (
     <section className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+      <div className="space-y-3">
+        <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
           Fahrzeug erfassen
         </h1>
-        <div className="flex items-center gap-4 mt-1">
-          {isSuperAdmin && organizations.length > 0 && (
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-zinc-600 dark:text-zinc-400">
-                Organization:
-              </label>
-              <select
-                value={selectedOrgId || ''}
-                onChange={(e) => setSelectedOrgId(e.target.value)}
-                className="px-3 py-1 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-purple-500"
-              >
-                {organizations.map(org => (
-                  <option key={org.id} value={org.id}>
-                    {org.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Fügen Sie ein neues Fahrzeug zur Flotte hinzu
-          </p>
-        </div>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Fügen Sie ein neues Fahrzeug zur Flotte hinzu
+        </p>
+        {isSuperAdmin && organizations.length > 0 && (
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
+              Organization:
+            </label>
+            <select
+              value={selectedOrgId || ''}
+              onChange={(e) => setSelectedOrgId(e.target.value)}
+              className="flex-1 sm:flex-initial px-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-purple-500"
+            >
+              {organizations.map(org => (
+                <option key={org.id} value={org.id}>
+                  {org.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
