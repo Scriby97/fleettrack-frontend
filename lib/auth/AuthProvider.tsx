@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { User as SupabaseUser, AuthError } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch'
+import { checkBackendHealth } from '@/lib/api/healthCheck'
 import type { User, Organization } from '@/lib/types/user'
 
 interface UserProfile {
@@ -61,19 +62,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return null
       }
 
-      console.log('[AUTH_PROVIDER] Rufe /auth/me auf...');
+      console.log('[AUTH_PROVIDER] Prüfe Backend-Verfügbarkeit via Health-Check...');
       setBackendLoading(true)
       setBackendRetryCount(0)
       
-      const response = await authenticatedFetch(`${apiUrl}/auth/me`, {
-        retries: 8, // 8 Versuche mit exponentiellem Backoff
-        retryDelay: 2000, // Start mit 2 Sekunden
+      // First, check if backend is available using lightweight health check
+      const healthResult = await checkBackendHealth({
+        retries: 8,
+        retryDelay: 2000,
         useExponentialBackoff: true,
-        skipLoadingIndicator: true, // Wird bereits vom BackendLoadingOverlay abgedeckt
         onRetry: (attempt: number, maxRetries: number) => {
-          console.log(`[AUTH_PROVIDER] Backend Retry ${attempt}/${maxRetries}`);
+          console.log(`[AUTH_PROVIDER] Backend Health-Check Retry ${attempt}/${maxRetries}`);
           setBackendRetryCount(attempt)
         }
+      });
+      
+      if (!healthResult.available) {
+        console.error('[AUTH_PROVIDER] Backend nicht verfügbar nach Health-Check');
+        setBackendLoading(false)
+        setBackendRetryCount(0)
+        return null
+      }
+      
+      console.log('[AUTH_PROVIDER] Backend verfügbar, rufe /auth/me auf...');
+      
+      // Backend is available, now fetch actual user data
+      const response = await authenticatedFetch(`${apiUrl}/auth/me`, {
+        retries: 2, // Nur 2 Retries da Backend bereits verfügbar ist
+        retryDelay: 1000,
+        skipLoadingIndicator: true,
       })
       
       console.log('[AUTH_PROVIDER] /auth/me Response Status:', response.status);
