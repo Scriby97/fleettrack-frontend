@@ -20,9 +20,9 @@ export default function Home() {
     <div className="flex min-h-screen bg-zinc-50 dark:bg-black font-sans">
       {/* Left menu - Hidden on mobile */}
       <aside className="hidden md:flex md:w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0b0b0b] px-6 py-8 flex-col">
-        <div className="flex items-center gap-3 mb-8">
-          <Image src="/next.svg" alt="logo" width={36} height={24} className="dark:invert" />
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
+        <div className="flex items-center mb-8">
+          <Image src="/fleettrack-logo.svg" alt="FleetTrack Logo" width={120} height={120} className="dark:invert" />
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 -ml-3">FleetTrack</h2>
         </div>
 
         <nav className="flex flex-col gap-2">
@@ -88,9 +88,9 @@ export default function Home() {
 
       {/* Mobile header */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-[#0b0b0b] border-b border-zinc-200 dark:border-zinc-800 px-5 py-4 flex items-center justify-between z-50">
-        <div className="flex items-center gap-3">
-          <Image src="/next.svg" alt="logo" width={28} height={18} className="dark:invert" />
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
+        <div className="flex items-center">
+          <Image src="/fleettrack-logo.svg" alt="FleetTrack Logo" width={72} height={72} className="dark:invert" />
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 -ml-2">FleetTrack</h2>
         </div>
         <button 
           onClick={() => setMobileMenuOpen(true)}
@@ -116,9 +116,9 @@ export default function Home() {
               </svg>
             </button>
 
-            <div className="flex items-center gap-3 mb-8 mt-8">
-              <Image src="/next.svg" alt="logo" width={36} height={24} className="dark:invert" />
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
+            <div className="flex items-center mb-8 mt-8">
+              <Image src="/fleettrack-logo.svg" alt="FleetTrack Logo" width={120} height={120} className="dark:invert" />
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 -ml-3">FleetTrack</h2>
             </div>
 
             <nav className="flex flex-col gap-2">

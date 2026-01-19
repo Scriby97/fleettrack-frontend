@@ -144,13 +144,28 @@ const UebersichtEintraege: FC = () => {
 
   const handleEdit = (report: Report) => {
     setEditingReport(report);
+    
+    // Konvertiere das creationDate in das Format YYYY-MM-DD für das Date Input
+    let formattedDate = '';
+    if (report.creationDate) {
+      const date = new Date(report.creationDate);
+      formattedDate = date.toISOString().split('T')[0];
+    }
+    
     setEditForm({
       vehicleId: report.vehicleId || '',
       startOperatingHours: String(report.startOperatingHours),
       endOperatingHours: String(report.endOperatingHours),
       fuel: String(report.fuel),
-      creationDate: report.creationDate || '',
+      creationDate: formattedDate,
     });
+  };
+
+  const handleEventClick = (eventId: string | number) => {
+    const report = reports.find(r => r.id === eventId);
+    if (report) {
+      handleEdit(report);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -522,7 +537,7 @@ const UebersichtEintraege: FC = () => {
           <p className="text-zinc-600 dark:text-zinc-400">Lade Nutzungen…</p>
         </div>
       ) : view === 'calendar' ? (
-        <CalendarView events={calendarEvents} />
+        <CalendarView events={calendarEvents} onEventClick={handleEventClick} />
       ) : reports.length > 0 ? (
         <div className="grid gap-3">
           {reports.map((report) => (

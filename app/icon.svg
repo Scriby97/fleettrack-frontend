@@ -1,0 +1,33 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- FleetTrack Favicon - Zentrum mit radialen Verbindungen (wie Hauptlogo) -->
+  
+  <g transform="translate(16, 16)">
+    <!-- Radiale Linien - Hauptrichtungen (vertikal normal, horizontal länger) -->
+    <line x1="0" y1="0" x2="0" y2="-11" stroke="black" stroke-width="1.5" opacity="0.6"/>
+    <line x1="0" y1="0" x2="14" y2="0" stroke="black" stroke-width="1.5" opacity="0.6"/>
+    <line x1="0" y1="0" x2="0" y2="11" stroke="black" stroke-width="1.5" opacity="0.6"/>
+    <line x1="0" y1="0" x2="-14" y2="0" stroke="black" stroke-width="1.5" opacity="0.6"/>
+    
+    <!-- Radiale Linien - Diagonalen (kurz) -->
+    <line x1="0" y1="0" x2="4.5" y2="-4.5" stroke="black" stroke-width="1.5" opacity="0.6"/>
+    <line x1="0" y1="0" x2="4.5" y2="4.5" stroke="black" stroke-width="1.5" opacity="0.6"/>
+    <line x1="0" y1="0" x2="-4.5" y2="4.5" stroke="black" stroke-width="1.5" opacity="0.6"/>
+    <line x1="0" y1="0" x2="-4.5" y2="-4.5" stroke="black" stroke-width="1.5" opacity="0.6"/>
+    
+    <!-- Äußere Punkte - Hauptrichtungen -->
+    <circle cx="0" cy="-11" r="2.5" fill="black"/>
+    <circle cx="14" cy="0" r="2.5" fill="black"/>
+    <circle cx="0" cy="11" r="2.5" fill="black"/>
+    <circle cx="-14" cy="0" r="2.5" fill="black"/>
+    
+    <!-- Äußere Punkte - Diagonalen -->
+    <circle cx="4.5" cy="-4.5" r="2.5" fill="black"/>
+    <circle cx="4.5" cy="4.5" r="2.5" fill="black"/>
+    <circle cx="-4.5" cy="4.5" r="2.5" fill="black"/>
+    <circle cx="-4.5" cy="-4.5" r="2.5" fill="black"/>
+    
+    <!-- Zentraler Hub -->
+    <circle cx="0" cy="0" r="4" fill="black"/>
+    <circle cx="0" cy="0" r="5.5" stroke="black" stroke-width="1.5" opacity="0.3" fill="none"/>
+  </g>
+</svg>

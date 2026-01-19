@@ -11,6 +11,7 @@ interface Event {
 
 interface Props {
   events: Event[];
+  onEventClick?: (eventId: string | number) => void;
 }
 
 function startOfMonth(date: Date) {
@@ -35,7 +36,7 @@ function sameDay(a: Date | null, b: Date | null) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-export default function CalendarView({ events }: Props) {
+export default function CalendarView({ events, onEventClick }: Props) {
   const [mode, setMode] = useState<'month' | 'week'>('month');
   const [cursor, setCursor] = useState<Date>(new Date());
 
@@ -114,7 +115,13 @@ export default function CalendarView({ events }: Props) {
                 <div className="text-xs font-semibold">{d.getDate()}</div>
                 <div className="mt-1 space-y-1">
                   {evs.slice(0,3).map((ev) => (
-                    <div key={ev.id} className="text-xs bg-blue-50 dark:bg-blue-900/30 rounded px-1 py-0.5 truncate">{ev.title}</div>
+                    <div 
+                      key={ev.id} 
+                      className="text-xs bg-blue-50 dark:bg-blue-900/30 rounded px-1 py-0.5 truncate cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                      onClick={() => onEventClick?.(ev.id)}
+                    >
+                      {ev.title}
+                    </div>
                   ))}
                   {evs.length > 3 && <div className="text-xs text-zinc-500">+{evs.length - 3} mehr</div>}
                 </div>
@@ -130,7 +137,13 @@ export default function CalendarView({ events }: Props) {
                 <div className="text-xs font-semibold">{formatDayHeader(d)}</div>
                 <div className="mt-2 space-y-1">
                   {(eventsByDay.get(d.toDateString()) ?? []).map((ev) => (
-                    <div key={ev.id} className="text-sm bg-blue-50 dark:bg-blue-900/30 rounded px-1 py-0.5">{ev.title} <span className="text-xs text-zinc-500">{new Date(ev.start).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span></div>
+                    <div 
+                      key={ev.id} 
+                      className="text-sm bg-blue-50 dark:bg-blue-900/30 rounded px-1 py-0.5 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                      onClick={() => onEventClick?.(ev.id)}
+                    >
+                      {ev.title} <span className="text-xs text-zinc-500">{new Date(ev.start).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                    </div>
                   ))}
                 </div>
               </div>

@@ -1,0 +1,33 @@
+<svg width="120" height="50" viewBox="0 0 120 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- FleetTrack Logo - Zentrum mit radialen Verbindungen (abwechselnd lang/kurz) -->
+  
+  <g transform="translate(60, 25)">
+    <!-- Radiale Linien - Hauptrichtungen (lang) -->
+    <line x1="0" y1="0" x2="0" y2="-22" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+    <line x1="0" y1="0" x2="28" y2="0" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+    <line x1="0" y1="0" x2="0" y2="22" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+    <line x1="0" y1="0" x2="-28" y2="0" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+    
+    <!-- Radiale Linien - Diagonalen (kurz) -->
+    <line x1="0" y1="0" x2="9" y2="-9" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+    <line x1="0" y1="0" x2="9" y2="9" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+    <line x1="0" y1="0" x2="-9" y2="9" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+    <line x1="0" y1="0" x2="-9" y2="-9" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+    
+    <!-- Äußere Tracking-Punkte - Hauptrichtungen (lang) -->
+    <circle cx="0" cy="-22" r="3" fill="currentColor"/>
+    <circle cx="28" cy="0" r="3" fill="currentColor"/>
+    <circle cx="0" cy="22" r="3" fill="currentColor"/>
+    <circle cx="-28" cy="0" r="3" fill="currentColor"/>
+    
+    <!-- Äußere Tracking-Punkte - Diagonalen (kurz) -->
+    <circle cx="9" cy="-9" r="3" fill="currentColor"/>
+    <circle cx="9" cy="9" r="3" fill="currentColor"/>
+    <circle cx="-9" cy="9" r="3" fill="currentColor"/>
+    <circle cx="-9" cy="-9" r="3" fill="currentColor"/>
+    
+    <!-- Zentraler Hub -->
+    <circle cx="0" cy="0" r="5" fill="currentColor"/>
+    <circle cx="0" cy="0" r="7" stroke="currentColor" stroke-width="1.5" opacity="0.3" fill="none"/>
+  </g>
+</svg>
