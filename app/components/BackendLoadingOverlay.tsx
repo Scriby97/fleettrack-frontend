@@ -11,7 +11,7 @@ interface BackendLoadingOverlayProps {
 export function BackendLoadingOverlay({ 
   isLoading, 
   retryCount = 0,
-  maxRetries = 12 // 12 Versuche bei 5 Sekunden = 60 Sekunden max
+  maxRetries = 8 // 8 Versuche mit exponentiellem Backoff (~30-40 Sekunden)
 }: BackendLoadingOverlayProps) {
   const [dots, setDots] = useState('')
 
@@ -45,7 +45,7 @@ export function BackendLoadingOverlay({
 
           {/* Beschreibung */}
           <p className="text-gray-600 mb-4">
-            Das Backend läuft auf einem kostenlosen Server und muss erst hochfahren. Dies kann bis zu 60 Sekunden dauern.
+            Das Backend läuft auf einem kostenlosen Server und muss erst hochfahren. Dies kann bis zu 40 Sekunden dauern.
           </p>
 
           {/* Fortschrittsbalken */}

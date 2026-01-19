@@ -11,7 +11,7 @@ export function BackendLoadingWrapper({ children }: { children: React.ReactNode 
       <BackendLoadingOverlay 
         isLoading={backendLoading} 
         retryCount={backendRetryCount}
-        maxRetries={12}
+        maxRetries={8}
       />
       {children}
     </>

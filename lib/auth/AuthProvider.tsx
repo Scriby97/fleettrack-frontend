@@ -66,8 +66,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setBackendRetryCount(0)
       
       const response = await authenticatedFetch(`${apiUrl}/auth/me`, {
-        retries: 12, // 12 Versuche à 5 Sekunden = 60 Sekunden max
-        retryDelay: 5000,
+        retries: 8, // 8 Versuche mit exponentiellem Backoff
+        retryDelay: 2000, // Start mit 2 Sekunden
+        useExponentialBackoff: true,
         skipLoadingIndicator: true, // Wird bereits vom BackendLoadingOverlay abgedeckt
         onRetry: (attempt: number, maxRetries: number) => {
           console.log(`[AUTH_PROVIDER] Backend Retry ${attempt}/${maxRetries}`);
