@@ -33,29 +33,29 @@ export default function Header() {
     : userProfile?.name
 
   return (
-    <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0b0b0b] px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="text-xl font-bold text-zinc-900 dark:text-zinc-50 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+    <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0b0b0b] px-3 sm:px-6 py-3 sm:py-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-3 sm:gap-6 min-w-0 flex-shrink">
+          <Link href="/" className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-50 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors whitespace-nowrap">
             FleetTrack
           </Link>
           
           {organization && (
-            <div className="flex items-center gap-2 text-sm">
+            <div className="hidden md:flex items-center gap-2 text-sm min-w-0">
               <span className="text-zinc-400 dark:text-zinc-600">|</span>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-zinc-500 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center gap-2 min-w-0">
+                <svg className="w-4 h-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
-                <span className="font-medium text-zinc-900 dark:text-zinc-50">{organization.name}</span>
+                <span className="font-medium text-zinc-900 dark:text-zinc-50 truncate">{organization.name}</span>
               </div>
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
           {displayName && (
-            <div className="hidden sm:flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-2">
               <span className="text-sm text-zinc-600 dark:text-zinc-400">{displayName}</span>
               {userRole && getRoleBadge()}
             </div>
@@ -64,18 +64,20 @@ export default function Header() {
           {isSuperAdmin && (
             <Link
               href="/admin/organizations"
-              className="text-sm px-3 py-1.5 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+              className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors whitespace-nowrap"
             >
-              Organizations
+              <span className="hidden sm:inline">Organizations</span>
+              <span className="sm:hidden">Orgs</span>
             </Link>
           )}
           
           {isAdmin && (
             <Link
               href="/admin/users"
-              className="text-sm px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap"
             >
-              User Management
+              <span className="hidden sm:inline">User Management</span>
+              <span className="sm:hidden">Users</span>
             </Link>
           )}
         </div>
