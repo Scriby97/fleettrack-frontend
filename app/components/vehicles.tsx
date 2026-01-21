@@ -291,8 +291,34 @@ const FlottenUebersicht: FC = () => {
     }
   };
 
-  const handleDelete = (id: string) => {
-    setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== id));
+  const handleDelete = async (id: string) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) {
+      setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== id));
+      return;
+    }
+
+    try {
+      const headers: HeadersInit = {};
+      if (isSuperAdmin && selectedOrgId) {
+        headers['X-Organization-Id'] = selectedOrgId;
+      }
+
+      const res = await authenticatedFetch(`${apiUrl}/vehicles/${id}`, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (!res.ok) {
+        throw new Error(`Fehler beim Löschen: ${res.status}`);
+      }
+
+      setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== id));
+      alert('Fahrzeug erfolgreich gelöscht');
+    } catch (err) {
+      console.error('Fehler beim Löschen des Fahrzeugs:', err);
+      alert('Fehler beim Löschen des Fahrzeugs');
+    }
   };
 
   return (
