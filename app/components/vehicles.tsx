@@ -1,7 +1,7 @@
 // ...existing code...
 'use client';
 
-import { useState, useEffect, type FC } from 'react';
+import { useState, useEffect, type FC, type FormEvent } from 'react';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { getAllOrganizations } from '@/lib/api/organizations';
@@ -101,6 +101,13 @@ const FlottenUebersicht: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    plate: '',
+    snowsatNumber: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load organizations for super admin
   useEffect(() => {
@@ -208,8 +215,80 @@ const FlottenUebersicht: FC = () => {
   }, [selectedOrgId, isSuperAdmin]);
 
   const handleEdit = (vehicle: Vehicle) => {
-    console.log('Edit:', vehicle);
-    alert(`Bearbeite: ${vehicle.name}`);
+    setEditingVehicle(vehicle);
+    setEditForm({
+      name: vehicle.name,
+      plate: vehicle.plate,
+      snowsatNumber: vehicle.snowsatNumber || '',
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingVehicle(null);
+    setEditForm({
+      name: '',
+      plate: '',
+      snowsatNumber: '',
+    });
+  };
+
+  const handleSaveEdit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!editingVehicle) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) throw new Error('API URL nicht konfiguriert');
+
+      const payload = {
+        name: editForm.name,
+        plate: editForm.plate,
+        snowsatNumber: editForm.snowsatNumber || undefined,
+      };
+
+      const headers: HeadersInit = {};
+      if (isSuperAdmin && selectedOrgId) {
+        headers['X-Organization-Id'] = selectedOrgId;
+      }
+
+      const res = await authenticatedFetch(`${apiUrl}/vehicles/${editingVehicle.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+        headers,
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`API error ${res.status}: ${text}`);
+      }
+
+      const updatedVehicle = await res.json();
+
+      // Aktualisiere die Liste
+      setVehicles((prev) =>
+        prev.map((v) =>
+          v.id === editingVehicle.id
+            ? {
+                id: updatedVehicle.id,
+                name: updatedVehicle.name,
+                plate: updatedVehicle.plate,
+                snowsatNumber: updatedVehicle.snowsatNumber,
+              }
+            : v
+        )
+      );
+
+      handleCancelEdit();
+      alert('Fahrzeug erfolgreich aktualisiert');
+    } catch (err) {
+      console.error('Fehler beim Aktualisieren des Fahrzeugs:', err);
+      setError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -246,6 +325,99 @@ const FlottenUebersicht: FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editingVehicle && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-zinc-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+                Fahrzeug bearbeiten
+              </h2>
+              <button
+                onClick={handleCancelEdit}
+                className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-5">
+              {/* Fahrzeugname */}
+              <div className="space-y-2">
+                <label htmlFor="edit-name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Fahrzeugname
+                </label>
+                <input
+                  id="edit-name"
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              {/* Kennzeichen */}
+              <div className="space-y-2">
+                <label htmlFor="edit-plate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Kennzeichen
+                </label>
+                <input
+                  id="edit-plate"
+                  type="text"
+                  value={editForm.plate}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, plate: e.target.value }))}
+                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              {/* SNOWsat-Nummer */}
+              <div className="space-y-2">
+                <label htmlFor="edit-snowsatNumber" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  SNOWsat-Nummer (optional)
+                </label>
+                <input
+                  id="edit-snowsatNumber"
+                  type="text"
+                  value={editForm.snowsatNumber}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, snowsatNumber: e.target.value }))}
+                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3">
+                  <p className="text-sm text-red-900 dark:text-red-100">{error}</p>
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
+                >
+                  {isSubmitting ? 'Wird gespeichert...' : 'Änderungen speichern'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  disabled={isSubmitting}
+                  className="px-6 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {isLoading && (
         <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
