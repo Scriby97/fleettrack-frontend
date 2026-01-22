@@ -75,15 +75,21 @@ const CreateUsage: FC = () => {
       
       const res = await authenticatedFetch(`${apiUrl}/vehicles/${vehicleId}/last-operating-hours`, { headers });
       if (!res.ok) {
-        console.warn('Konnte letzte Betriebsstunden nicht laden');
+        console.warn('Konnte letzte Betriebsstunden nicht laden, setze auf 0');
+        setFormData((prev) => ({ ...prev, startOperatingHours: '0' }));
         return;
       }
       const data = await res.json();
       if (data.endOperatingHours !== undefined && data.endOperatingHours !== null) {
         setFormData((prev) => ({ ...prev, startOperatingHours: String(data.endOperatingHours) }));
+      } else {
+        // Keine vorherige Nutzung vorhanden, setze auf 0
+        setFormData((prev) => ({ ...prev, startOperatingHours: '0' }));
       }
     } catch (err) {
       console.error('Fehler beim Laden der letzten Betriebsstunden:', err);
+      // Bei Fehler auf 0 setzen
+      setFormData((prev) => ({ ...prev, startOperatingHours: '0' }));
     } finally {
       setLoadingOperatingHours(false);
     }
