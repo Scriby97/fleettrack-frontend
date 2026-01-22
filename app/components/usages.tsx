@@ -5,6 +5,7 @@ import CalendarView from './CalendarView';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { getAllOrganizations } from '@/lib/api/organizations';
+import { getUsagesWithVehicles, type UsageWithVehicle } from '@/lib/api/usages';
 import type { Organization } from '@/lib/types/user';
 
 interface Report {
@@ -14,15 +15,6 @@ interface Report {
   startOperatingHours: number;
   endOperatingHours: number;
   fuel: number;
-  creationDate?: string;
-}
-
-interface Usage {
-  id: number | string;
-  vehicleId?: string;
-  startOperatingHours?: number;
-  endOperatingHours?: number;
-  fuelLitersRefilled?: number;
   creationDate?: string;
 }
 
@@ -303,31 +295,28 @@ const UebersichtEintraege: FC = () => {
       setError(null);
 
       try {
-        console.log('[USAGES] Versuche Requests zu senden...');
-        const headers: HeadersInit = {};
-        if (isSuperAdmin && selectedOrgId) {
-          headers['X-Organization-Id'] = selectedOrgId;
-        }
+        console.log('[USAGES] Versuche Request zu senden...');
         
-        const [usagesRes, vehiclesRes] = await Promise.all([
-          authenticatedFetch(`${apiUrl}/usages`, { signal: controller.signal, headers }),
-          authenticatedFetch(`${apiUrl}/vehicles`, { signal: controller.signal, headers }),
-        ]);
-        console.log('[USAGES] Requests erfolgreich, Status:', usagesRes.status, vehiclesRes.status);
+        // Single optimized request to fetch usages with vehicle data
+        const usagesWithVehicles = await getUsagesWithVehicles(
+          isSuperAdmin ? selectedOrgId || undefined : undefined
+        );
+        
+        console.log('[USAGES] Request erfolgreich, Anzahl:', usagesWithVehicles.length);
 
-        if (!usagesRes.ok) throw new Error(`Usages HTTP ${usagesRes.status}`);
-        if (!vehiclesRes.ok) throw new Error(`Vehicles HTTP ${vehiclesRes.status}`);
-
-        const usages: Usage[] = await usagesRes.json();
-        const vehicles: Vehicle[] = await vehiclesRes.json();
-
+        // Extract unique vehicles from the response
         const vehicleMap = new Map<string, Vehicle>();
-        vehicles.forEach((v) => vehicleMap.set(v.id, v));
+        usagesWithVehicles.forEach((u) => {
+          if (u.vehicle && u.vehicleId) {
+            vehicleMap.set(u.vehicleId, u.vehicle);
+          }
+        });
 
-        const mapped: Report[] = usages.map((u) => ({
+        // Map to Report format
+        const mapped: Report[] = usagesWithVehicles.map((u) => ({
           id: u.id,
           vehicleId: u.vehicleId,
-          vehicle: vehicleMap.get(String(u.vehicleId))?.name ?? String(u.vehicleId ?? 'Unbekannt'),
+          vehicle: u.vehicle?.name ?? String(u.vehicleId ?? 'Unbekannt'),
           startOperatingHours: typeof u.startOperatingHours === 'number' ? u.startOperatingHours : Number(u.startOperatingHours ?? 0),
           endOperatingHours: typeof u.endOperatingHours === 'number' ? u.endOperatingHours : Number(u.endOperatingHours ?? 0),
           fuel: typeof u.fuelLitersRefilled === 'number' ? u.fuelLitersRefilled : Number(u.fuelLitersRefilled ?? 0),
@@ -335,7 +324,7 @@ const UebersichtEintraege: FC = () => {
         }));
 
         setReports(mapped);
-        setVehicles(vehicles);
+        setVehicles(Array.from(vehicleMap.values()));
         setError(null);
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;

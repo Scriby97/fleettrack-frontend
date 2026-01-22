@@ -12,6 +12,7 @@ interface Vehicle {
   name: string;
   plate: string;
   snowsatNumber?: string;
+  isRetired?: boolean;
 }
 
 interface VehicleItemProps {
@@ -26,6 +27,9 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
     <div className="flex-1">
       <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
         {vehicle.name}
+        {vehicle.isRetired && (
+          <span className="ml-2 text-sm font-normal text-red-600 dark:text-red-400">(Stillgelegt)</span>
+        )}
       </h3>
       <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
         <div>Kennzeichen: <span className="font-medium">{vehicle.plate}</span></div>
@@ -168,7 +172,8 @@ const FlottenUebersicht: FC = () => {
             const name = s.name ?? s.vehicleName ?? s.vehicle ?? `Fahrzeug ${id}`;
             const plate = s.plate ?? s.kennzeichen ?? s.registration ?? '';
             const snowsatNumber = s.snowsatNumber ?? s.SNOWsatNumber ?? s.snowsat ?? undefined;
-            vehiclesFromStats.push({ id, name, plate, snowsatNumber });
+            const isRetired = Boolean(s.isRetired);
+            vehiclesFromStats.push({ id, name, plate, snowsatNumber, isRetired });
             map[id] = {
               hours: Number(s.totalWorkHours ?? s.totalHours ?? s.hours ?? 0),
               fuelLiters: Number(s.totalFuelLiters ?? s.fuelLiters ?? s.fuel ?? 0),
@@ -182,7 +187,8 @@ const FlottenUebersicht: FC = () => {
             const name = obj.name ?? obj.vehicleName ?? `Fahrzeug ${id}`;
             const plate = obj.plate ?? obj.kennzeichen ?? '';
             const snowsatNumber = obj.snowsatNumber ?? obj.SNOWsatNumber ?? obj.snowsat ?? undefined;
-            vehiclesFromStats.push({ id, name, plate, snowsatNumber });
+            const isRetired = Boolean(obj.isRetired);
+            vehiclesFromStats.push({ id, name, plate, snowsatNumber, isRetired });
             map[id] = {
               hours: Number(obj.totalWorkHours ?? obj.totalHours ?? obj.hours ?? 0),
               fuelLiters: Number(obj.totalFuelLiters ?? obj.fuelLiters ?? obj.fuel ?? 0),
