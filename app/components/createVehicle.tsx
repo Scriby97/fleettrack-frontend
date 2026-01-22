@@ -5,6 +5,8 @@ import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { getAllOrganizations } from '@/lib/api/organizations';
 import type { Organization } from '@/lib/types/user';
+import { useToast } from '@/lib/hooks/useToast';
+import { ToastContainer } from './Toast';
 
 interface FormState {
   name: string;
@@ -14,6 +16,7 @@ interface FormState {
 
 const CreateVehicle: FC = () => {
   const { isSuperAdmin, organizationId } = useAuth();
+  const { toasts, showToast, removeToast } = useToast();
   const [formData, setFormData] = useState<FormState>({
     name: '',
     plate: '',
@@ -76,10 +79,11 @@ const CreateVehicle: FC = () => {
       }
 
       setFormData({ name: '', plate: '', snowsatNumber: '' });
-      alert('Fahrzeug erfolgreich erfasst');
+      showToast('Fahrzeug erfolgreich erfasst', 'success');
     } catch (err) {
       console.error('Fehler beim Erstellen des Fahrzeugs:', err);
       setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten');
+      showToast('Fehler beim Erstellen des Fahrzeugs', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -184,6 +188,7 @@ const CreateVehicle: FC = () => {
           {isSubmitting ? 'Wird hinzugefügt...' : 'Fahrzeug hinzufügen'}
         </button>
       </form>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </section>
   );
 };

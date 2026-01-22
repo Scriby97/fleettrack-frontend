@@ -7,6 +7,8 @@ import { useAuth } from '@/lib/auth/AuthProvider';
 import { getAllOrganizations } from '@/lib/api/organizations';
 import { getUsagesWithVehicles, type UsageWithVehicle } from '@/lib/api/usages';
 import type { Organization } from '@/lib/types/user';
+import { useToast } from '@/lib/hooks/useToast';
+import { ToastContainer } from './Toast';
 
 interface Report {
   id: number | string;
@@ -108,6 +110,7 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin }) 
 
 const UebersichtEintraege: FC = () => {
   const { isAdmin, isSuperAdmin, organizationId } = useAuth();
+  const { toasts, showToast, removeToast } = useToast();
   const [reports, setReports] = useState<Report[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -222,10 +225,11 @@ const UebersichtEintraege: FC = () => {
       );
 
       handleCancelEdit();
-      alert('Nutzung erfolgreich aktualisiert');
+      showToast('Nutzung erfolgreich aktualisiert', 'success');
     } catch (err) {
       console.error('Fehler beim Aktualisieren der Nutzung:', err);
       setError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren');
+      showToast('Fehler beim Aktualisieren der Nutzung', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -248,10 +252,10 @@ const UebersichtEintraege: FC = () => {
       }
 
       setReports((prev) => prev.filter((report) => report.id !== id));
-      alert('Nutzung erfolgreich gelöscht');
+      showToast('Nutzung erfolgreich gelöscht', 'success');
     } catch (err) {
       console.error('Fehler beim Löschen der Nutzung:', err);
-      alert('Fehler beim Löschen der Nutzung');
+      showToast('Fehler beim Löschen der Nutzung', 'error');
     }
   };
 
@@ -551,6 +555,7 @@ const UebersichtEintraege: FC = () => {
           <p className="text-zinc-600 dark:text-zinc-400">Keine Nutzungen vorhanden</p>
         </div>
       )}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </section>
   );
 };

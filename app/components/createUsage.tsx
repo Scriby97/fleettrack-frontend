@@ -5,6 +5,8 @@ import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { getAllOrganizations } from '@/lib/api/organizations';
 import type { Organization } from '@/lib/types/user';
+import { useToast } from '@/lib/hooks/useToast';
+import { ToastContainer } from './Toast';
 
 interface Vehicle {
   id: string;
@@ -30,6 +32,7 @@ const calculateHoursDifference = (start: string, end: string): number | null => 
 
 const CreateUsage: FC = () => {
   const { isSuperAdmin, organizationId } = useAuth();
+  const { toasts, showToast, removeToast } = useToast();
   
   const getTodayDate = () => {
     const today = new Date();
@@ -167,10 +170,11 @@ const CreateUsage: FC = () => {
 
       setFormData({ vehicleId: vehicles[0]?.id ?? '', startOperatingHours: '', endOperatingHours: '', fuel: '', creationDate: getTodayDate() });
       setCalculatedHours(null);
-      alert('Nutzung erfolgreich gespeichert');
+      showToast('Nutzung erfolgreich gespeichert', 'success');
     } catch (err) {
       console.error('Fehler beim Speichern der Nutzung:', err);
       setError(err instanceof Error ? err.message : 'Fehler beim Speichern des Eintrags');
+      showToast('Fehler beim Speichern der Nutzung', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -409,6 +413,7 @@ const CreateUsage: FC = () => {
           {isSubmitting ? 'Wird gespeichert...' : 'Nutzung speichern'}
         </button>
       </form>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </section>
   );
 };

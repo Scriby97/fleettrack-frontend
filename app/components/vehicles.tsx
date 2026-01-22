@@ -6,6 +6,8 @@ import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { getAllOrganizations } from '@/lib/api/organizations';
 import type { Organization } from '@/lib/types/user';
+import { useToast } from '@/lib/hooks/useToast';
+import { ToastContainer } from './Toast';
 
 interface Vehicle {
   id: string;
@@ -28,7 +30,7 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
       <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
         {vehicle.name}
         {vehicle.isRetired && (
-          <span className="ml-2 text-sm font-normal text-red-600 dark:text-red-400">(Stillgelegt)</span>
+          <span className="ml-2 text-sm font-normal text-red-600 dark:text-red-400">(Ausrangiert)</span>
         )}
       </h3>
       <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
@@ -99,6 +101,7 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
 
 const FlottenUebersicht: FC = () => {
   const { isSuperAdmin, organizationId } = useAuth();
+  const { toasts, showToast, removeToast } = useToast();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [statsMap, setStatsMap] = useState<Record<string, { hours: number; fuelLiters: number }>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -288,10 +291,11 @@ const FlottenUebersicht: FC = () => {
       );
 
       handleCancelEdit();
-      alert('Fahrzeug erfolgreich aktualisiert');
+      showToast('Fahrzeug erfolgreich aktualisiert', 'success');
     } catch (err) {
       console.error('Fehler beim Aktualisieren des Fahrzeugs:', err);
       setError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren');
+      showToast('Fehler beim Aktualisieren des Fahrzeugs', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -320,10 +324,10 @@ const FlottenUebersicht: FC = () => {
       }
 
       setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== id));
-      alert('Fahrzeug erfolgreich gelöscht');
+      showToast('Fahrzeug erfolgreich gelöscht', 'success');
     } catch (err) {
       console.error('Fehler beim Löschen des Fahrzeugs:', err);
-      alert('Fehler beim Löschen des Fahrzeugs');
+      showToast('Fehler beim Löschen des Fahrzeugs', 'error');
     }
   };
 
@@ -482,6 +486,7 @@ const FlottenUebersicht: FC = () => {
           </p>
         </div>
       )}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </section>
   );
 };
