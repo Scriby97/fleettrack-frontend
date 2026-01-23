@@ -28,7 +28,6 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "FleetTrack - Flottenverwaltung",
   description: "Verwalte deine Fahrzeugflotte mit FleetTrack",
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

@@ -30,10 +30,13 @@ export async function GET() {
     dir: 'ltr',
   };
 
-  return NextResponse.json(manifest, {
+  return new NextResponse(JSON.stringify(manifest), {
+    status: 200,
     headers: {
-      'Content-Type': 'application/manifest+json',
-      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=0, must-revalidate',
     },
   });
 }
+
+export const dynamic = 'force-static';
