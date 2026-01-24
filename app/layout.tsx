@@ -5,7 +5,6 @@ import { AuthProvider } from "@/lib/auth/AuthProvider";
 import { BackendLoadingWrapper } from "./components/BackendLoadingWrapper";
 import { ApiLoadingProvider } from "@/lib/api/ApiLoadingContext";
 import { ApiLoadingOverlay } from "./components/TopLoadingBar";
-import { ServiceWorkerRegistration } from "./components/ServiceWorkerRegistration";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,13 +53,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de">
-      <head>
-        <link rel="manifest" href="/site.webmanifest" />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ServiceWorkerRegistration />
         <ApiLoadingProvider>
           <ApiLoadingOverlay />
           <AuthProvider>
