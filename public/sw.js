@@ -1,8 +1,8 @@
 // FleetTrack Service Worker
 // Conservative caching strategy for Render Free Tier compatibility
 
-const CACHE_NAME = 'fleettrack-v3';
-const STATIC_CACHE_NAME = 'fleettrack-static-v3';
+const CACHE_NAME = 'fleettrack-v4';
+const STATIC_CACHE_NAME = 'fleettrack-static-v4';
 
 // Assets to cache on install
 const STATIC_ASSETS = [
