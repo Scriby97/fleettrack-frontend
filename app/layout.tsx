@@ -5,6 +5,7 @@ import { AuthProvider } from "@/lib/auth/AuthProvider";
 import { BackendLoadingWrapper } from "./components/BackendLoadingWrapper";
 import { ApiLoadingProvider } from "@/lib/api/ApiLoadingContext";
 import { ApiLoadingOverlay } from "./components/TopLoadingBar";
+import { UnregisterServiceWorker } from "./components/UnregisterServiceWorker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +28,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "FleetTrack - Flottenverwaltung",
   description: "Verwalte deine Fahrzeugflotte mit FleetTrack",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -56,6 +58,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <UnregisterServiceWorker />
         <ApiLoadingProvider>
           <ApiLoadingOverlay />
           <AuthProvider>
