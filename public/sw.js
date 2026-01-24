@@ -1,12 +1,13 @@
 // FleetTrack Service Worker
 // Conservative caching strategy for Render Free Tier compatibility
 
-const CACHE_NAME = 'fleettrack-v5';
-const STATIC_CACHE_NAME = 'fleettrack-static-v5';
+const CACHE_NAME = 'fleettrack-v6';
+const STATIC_CACHE_NAME = 'fleettrack-static-v6';
 
 // Assets to cache on install
 const STATIC_ASSETS = [
   '/',
+  '/site.webmanifest',
   '/offline.html',
   '/icon-192x192.png',
   '/icon-512x512.png',
