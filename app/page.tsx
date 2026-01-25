@@ -82,7 +82,8 @@ export default function Home() {
         </nav>
 
         {/* User Menu at bottom */}
-        <div className="mt-auto pt-4 border-t border-zinc-200 dark:border-zinc-800">
+        <div className="mt-auto pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
+          <InstallPrompt />
           <UserMenu />
         </div>
       </aside>
