@@ -379,12 +379,10 @@ const FlottenUebersicht: FC = () => {
             </div>
             <svg 
               className="w-16 h-16 text-blue-400 dark:text-blue-600" 
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
+              fill="currentColor"
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h6v13H3V3zm0 0h6m-6 0V3m6 13h3.5a2 2 0 002-2V9.5m0 0l2.5-2.5M18 7l-2.5 2.5M18 7v7a2 2 0 01-2 2m0 0H9m9 4.5h-.01M3 21h6" />
+              <path d="M3 2h10v13H3V2zm2 2v3h6V4H5zm14 5.5l-2-2v9a2 2 0 01-2 2h-1v4h-2v-4H3v4H1V2h14v8h.5a1.5 1.5 0 011.5 1.5v5a.5.5 0 00.5.5.5.5 0 00.5-.5V11l2-2 1.5 1.5-1 1v4a2.5 2.5 0 01-2.5 2.5 2.5 2.5 0 01-2.5-2.5V11.5a.5.5 0 00-.5-.5H15v5h-2v-5H3z"/>
             </svg>
           </div>
         </div>
