@@ -10,9 +10,18 @@ interface BeforeInstallPromptEvent extends Event {
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
+  const [debugInfo, setDebugInfo] = useState('');
 
   useEffect(() => {
+    // Debug: Check initial state
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    setDebugInfo(`Standalone: ${isStandalone}, iOS: ${isIOS}`);
+    console.log('[INSTALL_PROMPT] Debug Info:', { isStandalone, isIOS, userAgent: navigator.userAgent });
+
     const handler = (e: Event) => {
+      console.log('[INSTALL_PROMPT] beforeinstallprompt event fired!');
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
@@ -21,19 +30,33 @@ export function InstallPrompt() {
     window.addEventListener('beforeinstallprompt', handler);
 
     // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    if (isStandalone) {
+      console.log('[INSTALL_PROMPT] App is already installed (standalone mode)');
       setIsInstallable(false);
+    } else {
+      console.log('[INSTALL_PROMPT] App is not installed, waiting for beforeinstallprompt...');
+      // Show button temporarily for iOS (no beforeinstallprompt on iOS)
+      if (isIOS) {
+        console.log('[INSTALL_PROMPT] iOS detected - showing manual install hint');
+        setIsInstallable(true);
+      }
     }
 
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      console.log('[INSTALL_PROMPT] No deferred prompt - might be iOS');
+      alert('iOS: Tippe auf das Teilen-Symbol und wähle "Zum Home-Bildschirm"');
+      return;
+    }
 
+    console.log('[INSTALL_PROMPT] Showing install prompt');
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     
+    console.log('[INSTALL_PROMPT] User choice:', outcome);
     if (outcome === 'accepted') {
       setIsInstallable(false);
     }
@@ -41,7 +64,12 @@ export function InstallPrompt() {
     setDeferredPrompt(null);
   };
 
-  if (!isInstallable) return null;
+  if (!isInstallable) {
+    console.log('[INSTALL_PROMPT] Button hidden -', debugInfo);
+    return null;
+  }
+
+  console.log('[INSTALL_PROMPT] Button visible -', debugInfo);
 
   return (
     <button
