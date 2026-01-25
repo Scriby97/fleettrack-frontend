@@ -4,11 +4,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/manifest.json',
+        source: '/manifest.webmanifest',
         headers: [
           {
             key: 'Content-Type',
-            value: 'application/json',
+            value: 'application/manifest+json',
           },
         ],
       },
