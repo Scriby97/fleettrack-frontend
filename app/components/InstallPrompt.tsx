@@ -35,11 +35,9 @@ export function InstallPrompt() {
       setIsInstallable(false);
     } else {
       console.log('[INSTALL_PROMPT] App is not installed, waiting for beforeinstallprompt...');
-      // Show button temporarily for iOS (no beforeinstallprompt on iOS)
-      if (isIOS) {
-        console.log('[INSTALL_PROMPT] iOS detected - showing manual install hint');
-        setIsInstallable(true);
-      }
+      // TEMPORARY: Show button always for testing
+      console.log('[INSTALL_PROMPT] Showing button for testing (remove in production)');
+      setIsInstallable(true);
     }
 
     return () => window.removeEventListener('beforeinstallprompt', handler);
