@@ -1,5 +1,4 @@
-export async function GET() {
-  const manifestJson = `{
+﻿{
   "name": "FleetTrack",
   "short_name": "FleetTrack",
   "start_url": "/",
@@ -18,13 +17,4 @@ export async function GET() {
       "type": "image/png"
     }
   ]
-}`;
-
-  return new Response(manifestJson, {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache',
-    },
-  });
 }
