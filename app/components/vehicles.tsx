@@ -331,6 +331,9 @@ const FlottenUebersicht: FC = () => {
     }
   };
 
+  // Berechne Gesamttreibstoff über alle Fahrzeuge
+  const totalFuel = Object.values(statsMap).reduce((sum, stats) => sum + stats.fuelLiters, 0);
+
   return (
     <section className="space-y-6">
       <div>
@@ -361,6 +364,29 @@ const FlottenUebersicht: FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Gesamttreibstoff Anzeige */}
+      {vehicles.length > 0 && (
+        <div className="rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                Gesamt getankter Treibstoff
+              </p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                {totalFuel.toFixed(2)} L
+              </p>
+            </div>
+            <svg 
+              className="w-12 h-12 text-blue-400 dark:text-blue-600" 
+              fill="currentColor" 
+              viewBox="0 0 20 20"
+            >
+              <path d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" />
+            </svg>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editingVehicle && (
