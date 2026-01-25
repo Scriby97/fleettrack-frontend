@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/lib/auth/AuthProvider'
 import Link from 'next/link'
+import { InstallPrompt } from './InstallPrompt'
 
 export default function Header() {
   const { organization, userProfile, userRole, isSuperAdmin, isAdmin } = useAuth()
@@ -54,6 +55,8 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+          <InstallPrompt />
+          
           {displayName && (
             <div className="hidden lg:flex items-center gap-2">
               <span className="text-sm text-zinc-600 dark:text-zinc-400">{displayName}</span>
