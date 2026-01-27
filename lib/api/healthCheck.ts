@@ -10,21 +10,49 @@ interface HealthCheckOptions {
   retryDelay?: number;
   useExponentialBackoff?: boolean;
   onRetry?: (attempt: number, maxRetries: number) => void;
+  bypassCache?: boolean; // Force a new check, ignoring cache
 }
 
 interface HealthCheckResult {
   available: boolean;
   retryCount: number;
   error?: string;
+  cached?: boolean; // Indicates if result was from cache
 }
+
+// Cache for health check results
+let healthCheckCache: {
+  result: HealthCheckResult | null;
+  timestamp: number;
+} = {
+  result: null,
+  timestamp: 0,
+};
+
+const CACHE_DURATION_MS = 30000; // 30 seconds
 
 /**
  * Check if backend is available using /health endpoint
  * Falls back to /auth/me if /health doesn't exist (backwards compatibility)
+ * Results are cached for 30 seconds to avoid unnecessary checks
  */
 export async function checkBackendHealth(
   options: HealthCheckOptions = {}
 ): Promise<HealthCheckResult> {
+  const { bypassCache = false } = options;
+  
+  // Check if we have a valid cached result
+  const now = Date.now();
+  const cacheAge = now - healthCheckCache.timestamp;
+  
+  if (!bypassCache && healthCheckCache.result && cacheAge < CACHE_DURATION_MS) {
+    console.log(`[HEALTH_CHECK] Using cached result (${Math.round(cacheAge / 1000)}s old)`);
+    return {
+      ...healthCheckCache.result,
+      cached: true,
+    };
+  }
+  
   const startTime = performance.now();
   
   const {
@@ -74,10 +102,19 @@ export async function checkBackendHealth(
         if (response.ok) {
           const duration = Math.round(performance.now() - startTime);
           console.log(`[HEALTH_CHECK] Backend available via ${endpoint} (${duration}ms)`);
-          return {
+          
+          const result: HealthCheckResult = {
             available: true,
             retryCount,
           };
+          
+          // Update cache
+          healthCheckCache = {
+            result,
+            timestamp: Date.now(),
+          };
+          
+          return result;
         }
       } catch (error) {
         // Continue to next endpoint
@@ -108,11 +145,19 @@ export async function checkBackendHealth(
   const duration = Math.round(performance.now() - startTime);
   console.log(`[HEALTH_CHECK] Backend not available after ${duration}ms`);
   
-  return {
+  const result: HealthCheckResult = {
     available: false,
     retryCount,
     error: lastError || 'Backend not available',
   };
+  
+  // Update cache (even for failures, to avoid hammering unavailable backend)
+  healthCheckCache = {
+    result,
+    timestamp: Date.now(),
+  };
+  
+  return result;
 }
 
 /**
