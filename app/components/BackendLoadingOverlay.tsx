@@ -14,21 +14,45 @@ export function BackendLoadingOverlay({
   maxRetries = 8 // 8 Versuche mit exponentiellem Backoff (~30-40 Sekunden)
 }: BackendLoadingOverlayProps) {
   const [dots, setDots] = useState('')
+  const [showFullMessage, setShowFullMessage] = useState(false)
 
   useEffect(() => {
-    if (!isLoading) return
+    if (!isLoading) {
+      setShowFullMessage(false)
+      return
+    }
+
+    // Show full "Server starting" message only after 3 seconds
+    const timer = setTimeout(() => {
+      setShowFullMessage(true)
+    }, 3000)
 
     const interval = setInterval(() => {
       setDots(prev => prev.length >= 3 ? '' : prev + '.')
     }, 500)
 
-    return () => clearInterval(interval)
+    return () => {
+      clearTimeout(timer)
+      clearInterval(interval)
+    }
   }, [isLoading])
 
   if (!isLoading) return null
 
   const progress = maxRetries > 0 ? Math.min((retryCount / maxRetries) * 100, 100) : 0
 
+  // Show minimal spinner for first 3 seconds
+  if (!showFullMessage) {
+    return (
+      <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="inline-block">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show full message after 3 seconds (if still loading)
   return (
     <div className="fixed inset-0 bg-gray-900/95 backdrop-blur-sm z-50 flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4">
