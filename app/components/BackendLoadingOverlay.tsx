@@ -22,10 +22,10 @@ export function BackendLoadingOverlay({
       return
     }
 
-    // Show full "Server starting" message only after 5 seconds
+    // Show full "Server starting" message only after 6 seconds
     const timer = setTimeout(() => {
       setShowFullMessage(true)
-    }, 5000)
+    }, 6000)
 
     const interval = setInterval(() => {
       setDots(prev => prev.length >= 3 ? '' : prev + '.')
@@ -41,7 +41,7 @@ export function BackendLoadingOverlay({
 
   const progress = maxRetries > 0 ? Math.min((retryCount / maxRetries) * 100, 100) : 0
 
-  // Show minimal spinner for first 5 seconds
+  // Show minimal spinner for first 6 seconds
   if (!showFullMessage) {
     return (
       <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -52,7 +52,7 @@ export function BackendLoadingOverlay({
     )
   }
 
-  // Show full message after 5 seconds (if still loading)
+  // Show full message after 6 seconds (if still loading)
   return (
     <div className="fixed inset-0 bg-gray-900/95 backdrop-blur-sm z-50 flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4">
