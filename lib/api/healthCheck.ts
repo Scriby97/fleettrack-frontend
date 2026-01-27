@@ -25,6 +25,8 @@ interface HealthCheckResult {
 export async function checkBackendHealth(
   options: HealthCheckOptions = {}
 ): Promise<HealthCheckResult> {
+  const startTime = performance.now();
+  
   const {
     retries = 8,
     retryDelay = 2000,
@@ -70,7 +72,8 @@ export async function checkBackendHealth(
         clearTimeout(timeoutId);
 
         if (response.ok) {
-          console.log(`[HEALTH_CHECK] Backend available via ${endpoint}`);
+          const duration = Math.round(performance.now() - startTime);
+          console.log(`[HEALTH_CHECK] Backend available via ${endpoint} (${duration}ms)`);
           return {
             available: true,
             retryCount,
@@ -102,6 +105,9 @@ export async function checkBackendHealth(
     await new Promise((resolve) => setTimeout(resolve, delay));
   }
 
+  const duration = Math.round(performance.now() - startTime);
+  console.log(`[HEALTH_CHECK] Backend not available after ${duration}ms`);
+  
   return {
     available: false,
     retryCount,

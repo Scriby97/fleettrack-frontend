@@ -62,6 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return null
       }
 
+      const healthCheckStart = performance.now();
       console.log('[AUTH_PROVIDER] Prüfe Backend-Verfügbarkeit via Health-Check...');
       setBackendLoading(true)
       setBackendRetryCount(0)
@@ -77,14 +78,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
       
+      const healthCheckDuration = Math.round(performance.now() - healthCheckStart);
+      
       if (!healthResult.available) {
-        console.error('[AUTH_PROVIDER] Backend nicht verfügbar nach Health-Check');
+        console.error(`[AUTH_PROVIDER] Backend nicht verfügbar nach Health-Check (${healthCheckDuration}ms)`);
         setBackendLoading(false)
         setBackendRetryCount(0)
         return null
       }
       
-      console.log('[AUTH_PROVIDER] Backend verfügbar, rufe /auth/me auf...');
+      console.log(`[AUTH_PROVIDER] Backend verfügbar nach ${healthCheckDuration}ms, rufe /auth/me auf...`);
       
       // Backend is available, now fetch actual user data
       const response = await authenticatedFetch(`${apiUrl}/auth/me`, {
