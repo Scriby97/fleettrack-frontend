@@ -167,10 +167,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabaseUser, fetchUserRole])
 
   useEffect(() => {
-    let isInitialLoad = true
+    let initAuthCompleted = false
     
     // Check active sessions and sets the user
     const initAuth = async () => {
+      console.log('[AUTH_PROVIDER] initAuth gestartet');
       const { data: { session } } = await supabase.auth.getSession()
       setSupabaseUser(session?.user ?? null)
       
@@ -187,8 +188,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await new Promise(resolve => setTimeout(resolve, 0))
       }
       
+      console.log('[AUTH_PROVIDER] initAuth abgeschlossen, setze loading=false');
       setLoading(false)
-      isInitialLoad = false
+      initAuthCompleted = true
     }
 
     initAuth()
@@ -197,11 +199,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[AUTH_PROVIDER] onAuthStateChange Event:', event, 'User:', session?.user?.email);
+      console.log('[AUTH_PROVIDER] onAuthStateChange Event:', event, 'User:', session?.user?.email, 'initAuthCompleted:', initAuthCompleted);
       
-      // Skip if this is during initial load (initAuth is handling it)
-      if (isInitialLoad) {
-        console.log('[AUTH_PROVIDER] onAuthStateChange während Initial Load, überspringe...');
+      // Skip ALL events during initial load - initAuth handles it
+      if (!initAuthCompleted) {
+        console.log('[AUTH_PROVIDER] initAuth noch nicht fertig, überspringe Event:', event);
         return
       }
       
