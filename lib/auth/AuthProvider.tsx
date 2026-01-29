@@ -89,10 +89,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log(`[AUTH_PROVIDER] Backend verfügbar nach ${healthCheckDuration}ms, rufe /auth/me auf...`);
       
-      // Backend is available, hide loading overlay immediately
-      setBackendLoading(false)
-      setBackendRetryCount(0)
-      
       // Backend is available, now fetch actual user data
       const response = await authenticatedFetch(`${apiUrl}/auth/me`, {
         retries: 2, // Nur 2 Retries da Backend bereits verfügbar ist
@@ -104,6 +100,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (!response.ok) {
         console.error('Fehler beim Abrufen der User-Rolle:', response.status)
+        setBackendLoading(false)
+        setBackendRetryCount(0)
         return null
       }
 
@@ -112,6 +110,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Update full profile in state
       setUserProfile(profile)
+      
+      // Hide loading overlay after profile is loaded
+      setBackendLoading(false)
+      setBackendRetryCount(0)
       
       return profile.role
     } catch (error) {
