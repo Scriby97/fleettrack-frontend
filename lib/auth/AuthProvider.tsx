@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { User as SupabaseUser, AuthError } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch'
@@ -45,6 +45,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [backendRetryCount, setBackendRetryCount] = useState(0)
   const [userRole, setUserRole] = useState<string | null>(null)
   const supabase = createClient()
+  
+  // Prevent multiple simultaneous fetchUserRole calls
+  const fetchingRef = useRef(false)
 
   // Compute derived values
   const isAdmin = userRole === 'admin' || userRole === 'super_admin'
@@ -54,6 +57,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Function to fetch user profile from backend
   const fetchUserRole = useCallback(async () => {
+    // Prevent concurrent calls
+    if (fetchingRef.current) {
+      console.log('[AUTH_PROVIDER] fetchUserRole bereits aktiv, überspringe...');
+      return null
+    }
+    
+    fetchingRef.current = true
+    
     // Set loading at the very beginning, before any async operations
     setBackendLoading(true)
     setBackendRetryCount(0)
@@ -64,6 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!apiUrl) {
         console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
         setBackendLoading(false)
+        fetchingRef.current = false
         return null
       }
 
@@ -87,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error(`[AUTH_PROVIDER] Backend nicht verfügbar nach Health-Check (${healthCheckDuration}ms)`);
         setBackendLoading(false)
         setBackendRetryCount(0)
+        fetchingRef.current = false
         return null
       }
       
@@ -105,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Fehler beim Abrufen der User-Rolle:', response.status)
         setBackendLoading(false)
         setBackendRetryCount(0)
+        fetchingRef.current = false
         return null
       }
 
@@ -117,12 +131,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Hide loading overlay after profile is loaded
       setBackendLoading(false)
       setBackendRetryCount(0)
+      fetchingRef.current = false
       
       return profile.role
     } catch (error) {
       console.error('[AUTH_PROVIDER] Fehler beim Abrufen der User-Rolle:', error)
       setBackendLoading(false)
       setBackendRetryCount(0)
+      fetchingRef.current = false
       return null
     }
   }, [])
