@@ -154,6 +154,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Fallback to metadata
           setUserRole(session.user.user_metadata?.role ?? null)
         }
+        // Wait a tick to ensure userProfile state has been updated
+        await new Promise(resolve => setTimeout(resolve, 0))
       }
       
       setLoading(false)
@@ -183,6 +185,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return fallbackRole;
           })
         }
+        // Wait a tick to ensure userProfile state has been updated
+        await new Promise(resolve => setTimeout(resolve, 0))
       } else {
         console.log('[AUTH_PROVIDER] Keine Session, setze userRole auf null');
         setUserRole(null)
