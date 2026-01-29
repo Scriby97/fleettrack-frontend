@@ -167,6 +167,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabaseUser, fetchUserRole])
 
   useEffect(() => {
+    let isInitialLoad = true
+    
     // Check active sessions and sets the user
     const initAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -186,6 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       setLoading(false)
+      isInitialLoad = false
     }
 
     initAuth()
@@ -195,6 +198,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[AUTH_PROVIDER] onAuthStateChange Event:', event, 'User:', session?.user?.email);
+      
+      // Skip if this is during initial load (initAuth is handling it)
+      if (isInitialLoad) {
+        console.log('[AUTH_PROVIDER] onAuthStateChange während Initial Load, überspringe...');
+        return
+      }
+      
       setSupabaseUser(session?.user ?? null)
       
       if (session?.user) {
