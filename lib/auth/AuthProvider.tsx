@@ -46,8 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<string | null>(null)
   const supabase = createClient()
   
-  // Prevent multiple simultaneous fetchUserRole calls
-  const fetchingRef = useRef(false)
+  // Track number of active fetchUserRole calls
+  const fetchingCountRef = useRef(0)
 
   // Compute derived values
   const isAdmin = userRole === 'admin' || userRole === 'super_admin'
@@ -57,28 +57,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Function to fetch user profile from backend
   const fetchUserRole = useCallback(async () => {
-    console.log('[AUTH_PROVIDER] fetchUserRole aufgerufen, fetchingRef.current:', fetchingRef.current);
+    console.log('[AUTH_PROVIDER] fetchUserRole aufgerufen, fetchingCountRef.current:', fetchingCountRef.current);
     
-    // Prevent concurrent calls
-    if (fetchingRef.current) {
-      console.log('[AUTH_PROVIDER] fetchUserRole bereits aktiv, überspringe...');
+    // Increment counter
+    fetchingCountRef.current++
+    
+    // Set loading on first call
+    if (fetchingCountRef.current === 1) {
+      console.log('[AUTH_PROVIDER] Erster fetch, setze backendLoading=true');
+      setBackendLoading(true)
+      setBackendRetryCount(0)
+    } else {
+      console.log('[AUTH_PROVIDER] Zusätzlicher fetch (wird übersprungen), Count:', fetchingCountRef.current);
+      fetchingCountRef.current--
       return null
     }
-    
-    console.log('[AUTH_PROVIDER] fetchUserRole startet jetzt, setze Lock');
-    fetchingRef.current = true
-    
-    // Set loading at the very beginning, before any async operations
-    setBackendLoading(true)
-    setBackendRetryCount(0)
     
     try {
       console.log('[AUTH_PROVIDER] fetchUserRole try-block gestartet');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL
       if (!apiUrl) {
         console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
-        setBackendLoading(false)
-        fetchingRef.current = false
+        fetchingCountRef.current--
+        if (fetchingCountRef.current === 0) {
+          setBackendLoading(false)
+        }
         return null
       }
 
@@ -103,9 +106,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (!healthResult.available) {
         console.error(`[AUTH_PROVIDER] Backend nicht verfügbar nach Health-Check (${healthCheckDuration}ms)`);
-        setBackendLoading(false)
-        setBackendRetryCount(0)
-        fetchingRef.current = false
+        fetchingCountRef.current--
+        if (fetchingCountRef.current === 0) {
+          setBackendLoading(false)
+          setBackendRetryCount(0)
+        }
         return null
       }
       
@@ -122,9 +127,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (!response.ok) {
         console.error('Fehler beim Abrufen der User-Rolle:', response.status)
-        setBackendLoading(false)
-        setBackendRetryCount(0)
-        fetchingRef.current = false
+        fetchingCountRef.current--
+        if (fetchingCountRef.current === 0) {
+          setBackendLoading(false)
+          setBackendRetryCount(0)
+        }
         return null
       }
 
@@ -135,16 +142,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserProfile(profile)
       
       // Hide loading overlay after profile is loaded
-      setBackendLoading(false)
-      setBackendRetryCount(0)
-      fetchingRef.current = false
+      fetchingCountRef.current--
+      if (fetchingCountRef.current === 0) {
+        setBackendLoading(false)
+        setBackendRetryCount(0)
+      }
       
       return profile.role
     } catch (error) {
       console.error('[AUTH_PROVIDER] Fehler beim Abrufen der User-Rolle:', error)
-      setBackendLoading(false)
-      setBackendRetryCount(0)
-      fetchingRef.current = false
+      fetchingCountRef.current--
+      if (fetchingCountRef.current === 0) {
+        setBackendLoading(false)
+        setBackendRetryCount(0)
+      }
       return null
     }
   }, [])
