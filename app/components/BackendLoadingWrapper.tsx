@@ -4,16 +4,20 @@ import { useAuth } from '@/lib/auth/AuthProvider'
 import { BackendLoadingOverlay } from './BackendLoadingOverlay'
 
 export function BackendLoadingWrapper({ children }: { children: React.ReactNode }) {
-  const { backendLoading, backendRetryCount } = useAuth()
+  const { loading, backendLoading, backendRetryCount } = useAuth()
+
+  // Show loading overlay if auth is still initializing OR backend is being checked
+  const isLoading = loading || backendLoading
 
   return (
     <>
       <BackendLoadingOverlay 
-        isLoading={backendLoading} 
+        isLoading={isLoading} 
         retryCount={backendRetryCount}
         maxRetries={8}
       />
-      {children}
+      {/* Only render children when fully loaded */}
+      {!loading && children}
     </>
   )
 }
