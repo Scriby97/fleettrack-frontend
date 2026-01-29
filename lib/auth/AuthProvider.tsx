@@ -143,7 +143,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Hide loading overlay after profile is loaded
       fetchingCountRef.current--
+      console.log('[AUTH_PROVIDER] Profile geladen, decrementiere Counter, neuer Wert:', fetchingCountRef.current);
       if (fetchingCountRef.current === 0) {
+        console.log('[AUTH_PROVIDER] Counter ist 0, setze backendLoading=false');
         setBackendLoading(false)
         setBackendRetryCount(0)
       }
