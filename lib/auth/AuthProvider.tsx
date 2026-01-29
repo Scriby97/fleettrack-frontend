@@ -57,12 +57,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Function to fetch user profile from backend
   const fetchUserRole = useCallback(async () => {
+    console.log('[AUTH_PROVIDER] fetchUserRole aufgerufen, fetchingRef.current:', fetchingRef.current);
+    
     // Prevent concurrent calls
     if (fetchingRef.current) {
       console.log('[AUTH_PROVIDER] fetchUserRole bereits aktiv, überspringe...');
       return null
     }
     
+    console.log('[AUTH_PROVIDER] fetchUserRole startet jetzt, setze Lock');
     fetchingRef.current = true
     
     // Set loading at the very beginning, before any async operations
@@ -70,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setBackendRetryCount(0)
     
     try {
-      console.log('[AUTH_PROVIDER] fetchUserRole gestartet');
+      console.log('[AUTH_PROVIDER] fetchUserRole try-block gestartet');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL
       if (!apiUrl) {
         console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
