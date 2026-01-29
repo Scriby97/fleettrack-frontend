@@ -54,18 +54,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Function to fetch user profile from backend
   const fetchUserRole = useCallback(async () => {
+    // Set loading at the very beginning, before any async operations
+    setBackendLoading(true)
+    setBackendRetryCount(0)
+    
     try {
       console.log('[AUTH_PROVIDER] fetchUserRole gestartet');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL
       if (!apiUrl) {
         console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
+        setBackendLoading(false)
         return null
       }
 
       const healthCheckStart = performance.now();
       console.log('[AUTH_PROVIDER] Prüfe Backend-Verfügbarkeit via Health-Check...');
-      setBackendLoading(true)
-      setBackendRetryCount(0)
       
       // First, check if backend is available using lightweight health check
       const healthResult = await checkBackendHealth({
@@ -87,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return null
       }
       
-      console.log(`[AUTH_PROVIDER] Backend verfügbar nach ${healthCheckDuration}ms, rufe /auth/me auf...`);
+      console.log(`[AUTH_PROVIDER] Backend verfügbar nach ${healthCheckDuration}ms (cached: ${healthResult.cached || false}), rufe /auth/me auf...`);
       
       // Backend is available, now fetch actual user data
       const response = await authenticatedFetch(`${apiUrl}/auth/me`, {
