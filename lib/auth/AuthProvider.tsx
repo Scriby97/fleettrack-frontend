@@ -62,16 +62,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Increment counter
     fetchingCountRef.current++
     
-    // Set loading on first call
-    if (fetchingCountRef.current === 1) {
-      console.log('[AUTH_PROVIDER] Erster fetch, setze backendLoading=true');
-      setBackendLoading(true)
-      setBackendRetryCount(0)
-    } else {
+    // Check if this is a concurrent call
+    if (fetchingCountRef.current > 1) {
       console.log('[AUTH_PROVIDER] Zusätzlicher fetch (wird übersprungen), Count:', fetchingCountRef.current);
       fetchingCountRef.current--
       return null
     }
+    
+    console.log('[AUTH_PROVIDER] Erster fetch gestartet');
+    setBackendRetryCount(0)
     
     try {
       console.log('[AUTH_PROVIDER] fetchUserRole try-block gestartet');
@@ -112,6 +111,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setBackendRetryCount(0)
         }
         return null
+      }
+      
+      // Nur Backend-Loading-Screen anzeigen wenn Health-Check nicht aus Cache kam
+      // (d.h. Backend musste wirklich hochgefahren werden)
+      if (!healthResult.cached && fetchingCountRef.current === 1) {
+        console.log('[AUTH_PROVIDER] Backend wurde hochgefahren, setze backendLoading=true');
+        setBackendLoading(true)
       }
       
       console.log(`[AUTH_PROVIDER] Backend verfügbar nach ${healthCheckDuration}ms (cached: ${healthResult.cached}), rufe /auth/me auf...`);
@@ -223,19 +229,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSupabaseUser(session?.user ?? null)
       
       if (session?.user) {
+        // Setze loading=true während wir auf die Rolle warten
+        setLoading(true)
+        
         // Get role from backend
         const roleFromBackend = await fetchUserRole()
         if (roleFromBackend) {
           console.log('[AUTH_PROVIDER] Setze userRole auf:', roleFromBackend);
           setUserRole(roleFromBackend)
+          setLoading(false)
         } else {
-          // On error: keep old role if available
-          console.log('[AUTH_PROVIDER] Konnte Rolle nicht vom Backend holen');
-          setUserRole(prev => {
-            const fallbackRole = session.user.user_metadata?.role ?? prev ?? null;
-            console.log('[AUTH_PROVIDER] Behalte/setze userRole:', fallbackRole, '(previous:', prev, ')');
-            return fallbackRole;
-          })
+          // Bei Fehler: Retry nach kurzer Pause
+          console.log('[AUTH_PROVIDER] Konnte Rolle nicht vom Backend holen, retry in 2s...');
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          
+          const retryRole = await fetchUserRole()
+          if (retryRole) {
+            console.log('[AUTH_PROVIDER] Retry erfolgreich, setze userRole auf:', retryRole);
+            setUserRole(retryRole)
+          } else {
+            // Nach Retry immer noch Fehler: verwende Fallback
+            const fallbackRole = session.user.user_metadata?.role ?? null;
+            console.log('[AUTH_PROVIDER] Retry fehlgeschlagen, verwende Fallback-Rolle:', fallbackRole);
+            setUserRole(fallbackRole)
+          }
+          setLoading(false)
         }
         // Wait a tick to ensure userProfile state has been updated
         await new Promise(resolve => setTimeout(resolve, 0))
@@ -243,9 +261,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('[AUTH_PROVIDER] Keine Session, setze userRole auf null');
         setUserRole(null)
         setUserProfile(null)
+        setLoading(false)
       }
-      
-      setLoading(false)
     })
 
     return () => subscription.unsubscribe()

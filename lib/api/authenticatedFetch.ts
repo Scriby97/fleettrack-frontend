@@ -44,7 +44,7 @@ export async function authenticatedFetch(
     const getSessionWithTimeout = Promise.race([
       supabase.auth.getSession(),
       new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Session timeout - bitte Seite neu laden')), 5000)
+        setTimeout(() => reject(new Error('Session timeout - bitte Seite neu laden')), 10000)
       )
     ]);
     
