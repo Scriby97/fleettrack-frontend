@@ -239,21 +239,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUserRole(roleFromBackend)
           setLoading(false)
         } else {
-          // Bei Fehler: Retry nach kurzer Pause
-          console.log('[AUTH_PROVIDER] Konnte Rolle nicht vom Backend holen, retry in 2s...');
-          await new Promise(resolve => setTimeout(resolve, 2000))
-          
-          const retryRole = await fetchUserRole()
-          if (retryRole) {
-            console.log('[AUTH_PROVIDER] Retry erfolgreich, setze userRole auf:', retryRole);
-            setUserRole(retryRole)
-          } else {
-            // Nach Retry immer noch Fehler: verwende Fallback
-            const fallbackRole = session.user.user_metadata?.role ?? null;
-            console.log('[AUTH_PROVIDER] Retry fehlgeschlagen, verwende Fallback-Rolle:', fallbackRole);
-            setUserRole(fallbackRole)
-          }
-          setLoading(false)
+          // Bei Fehler: Sofort Seite neu laden für sauberen Zustand
+          console.log('[AUTH_PROVIDER] Konnte Rolle nicht vom Backend holen, lade Seite neu...');
+          window.location.reload()
         }
         // Wait a tick to ensure userProfile state has been updated
         await new Promise(resolve => setTimeout(resolve, 0))
