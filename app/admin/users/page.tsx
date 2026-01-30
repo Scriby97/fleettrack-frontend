@@ -164,14 +164,14 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 p-8">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Navigation */}
-        <div className="mb-6">
-          <nav className="flex gap-2">
+        <div className="mb-4 sm:mb-6">
+          <nav className="flex flex-wrap gap-2">
             <button
               onClick={() => router.push('/')}
-              className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+              className="px-3 sm:px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
             >
               ← Dashboard
             </button>
@@ -180,34 +180,34 @@ export default function UsersPage() {
               <>
                 <button
                   onClick={() => router.push('/admin/organizations')}
-                  className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                  className="px-3 sm:px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
                 >
                   Organizations
                 </button>
                 <span className="text-zinc-300 dark:text-zinc-600">|</span>
               </>
             )}
-            <span className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400">
+            <span className="px-3 sm:px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400">
               User Management
             </span>
           </nav>
         </div>
 
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
             User Management
           </h1>
-          <p className="text-zinc-600 dark:text-zinc-400">
+          <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400">
             Manage invitations for {organization?.name}
           </p>
         </div>
 
         {/* Actions */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <button
             onClick={() => setShowInviteModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -232,8 +232,8 @@ export default function UsersPage() {
           </div>
         )}
 
-        {/* Invites Table */}
-        <div className="bg-white dark:bg-zinc-800 rounded-lg shadow overflow-hidden">
+        {/* Invites List - Desktop Table View */}
+        <div className="hidden md:block bg-white dark:bg-zinc-800 rounded-lg shadow overflow-hidden">
           <table className="w-full">
             <thead className="bg-zinc-100 dark:bg-zinc-700">
               <tr>
@@ -311,6 +311,85 @@ export default function UsersPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Invites List - Mobile Card View */}
+        <div className="md:hidden space-y-4">
+          {invites.length === 0 ? (
+            <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-6 text-center text-zinc-500 dark:text-zinc-400">
+              No invites yet. Click "Invite User" to get started.
+            </div>
+          ) : (
+            invites.map(invite => (
+              <div key={invite.id} className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4 space-y-3">
+                {/* Email & Status Row */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                      Email
+                    </div>
+                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100 break-words">
+                      {invite.email}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    {getStatusBadge(invite)}
+                  </div>
+                </div>
+
+                {/* Role */}
+                <div>
+                  <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                    Rolle
+                  </div>
+                  <div className="text-sm text-zinc-900 dark:text-zinc-100 capitalize">
+                    {invite.role}
+                  </div>
+                </div>
+
+                {/* Date */}
+                <div>
+                  {getInviteStatus(invite) === 'used' && invite.usedAt ? (
+                    <>
+                      <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                        Verwendet am
+                      </div>
+                      <div className="text-sm text-zinc-900 dark:text-zinc-100">
+                        {new Date(invite.usedAt).toLocaleString('de-DE')}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                        Läuft ab am
+                      </div>
+                      <div className="text-sm text-zinc-900 dark:text-zinc-100">
+                        {new Date(invite.expiresAt).toLocaleString('de-DE')}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                  {getInviteStatus(invite) === 'pending' && (
+                    <button
+                      onClick={() => handleCopyLink(invite.token, invite.id)}
+                      className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      {copiedId === invite.id ? '✓ Kopiert!' : 'Link kopieren'}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDeleteInvite(invite.id)}
+                    className={`${getInviteStatus(invite) === 'pending' ? 'flex-shrink-0' : 'flex-1'} px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors`}
+                  >
+                    Löschen
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
