@@ -1,11 +1,9 @@
-// ...existing code...
 'use client';
 
 import { useState, useEffect, type FC, type FormEvent } from 'react';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { useAuth } from '@/lib/auth/AuthProvider';
-import { getAllOrganizations } from '@/lib/api/organizations';
-import type { Organization } from '@/lib/types/user';
+import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { ToastContainer } from './Toast';
 
@@ -100,14 +98,13 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
 );
 
 const FlottenUebersicht: FC = () => {
-  const { isSuperAdmin, organizationId } = useAuth();
+  const { isSuperAdmin } = useAuth();
+  const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
   const { toasts, showToast, removeToast } = useToast();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [statsMap, setStatsMap] = useState<Record<string, { hours: number; fuelLiters: number }>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [editForm, setEditForm] = useState({
     name: '',
@@ -116,22 +113,7 @@ const FlottenUebersicht: FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load organizations for super admin
-  useEffect(() => {
-    if (isSuperAdmin) {
-      getAllOrganizations()
-        .then(orgs => {
-          setOrganizations(orgs);
-          if (!selectedOrgId && orgs.length > 0) {
-            setSelectedOrgId(orgs[0].id);
-          }
-        })
-        .catch(err => console.error('Failed to load organizations:', err));
-    } else if (organizationId && !selectedOrgId) {
-      setSelectedOrgId(organizationId);
-    }
-  }, [isSuperAdmin, organizationId, selectedOrgId]);
-
+  // Fetch vehicle stats when organization is selected
   useEffect(() => {
     console.log('[VEHICLES] useEffect gestartet');
     const apiUrl = process.env.NEXT_PUBLIC_API_URL

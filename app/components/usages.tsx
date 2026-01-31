@@ -4,9 +4,8 @@ import { useState, useEffect, type FC, type FormEvent } from 'react';
 import CalendarView from './CalendarView';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { useAuth } from '@/lib/auth/AuthProvider';
-import { getAllOrganizations } from '@/lib/api/organizations';
+import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { getUsagesWithVehicles, type UsageWithVehicle } from '@/lib/api/usages';
-import type { Organization } from '@/lib/types/user';
 import { useToast } from '@/lib/hooks/useToast';
 import { ToastContainer } from './Toast';
 
@@ -109,7 +108,8 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin }) 
 );
 
 const UebersichtEintraege: FC = () => {
-  const { isAdmin, isSuperAdmin, organizationId } = useAuth();
+  const { isAdmin, isSuperAdmin } = useAuth();
+  const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
   const { toasts, showToast, removeToast } = useToast();
   const [reports, setReports] = useState<Report[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -117,8 +117,6 @@ const UebersichtEintraege: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [editingReport, setEditingReport] = useState<Report | null>(null);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     vehicleId: '',
     startOperatingHours: '',
@@ -259,24 +257,7 @@ const UebersichtEintraege: FC = () => {
     }
   };
 
-  // Load organizations for super admin
-  useEffect(() => {
-    if (isSuperAdmin) {
-      getAllOrganizations()
-        .then(orgs => {
-          setOrganizations(orgs);
-          // Set first org as default if none selected
-          if (!selectedOrgId && orgs.length > 0) {
-            setSelectedOrgId(orgs[0].id);
-          }
-        })
-        .catch(err => console.error('Failed to load organizations:', err));
-    } else if (organizationId && !selectedOrgId) {
-      // Regular admin/user - use their organization
-      setSelectedOrgId(organizationId);
-    }
-  }, [isSuperAdmin, organizationId, selectedOrgId]);
-
+  // Fetch usages data when organization is selected
   useEffect(() => {
     console.log('[USAGES] useEffect gestartet');
     const apiUrl = process.env.NEXT_PUBLIC_API_URL

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
+import { OrganizationProvider } from "@/lib/contexts/OrganizationContext";
 import { BackendLoadingWrapper } from "./components/BackendLoadingWrapper";
 import { ApiLoadingProvider } from "@/lib/api/ApiLoadingContext";
 import { ApiLoadingOverlay } from "./components/TopLoadingBar";
@@ -62,9 +63,11 @@ export default function RootLayout({
         <ApiLoadingProvider>
           <ApiLoadingOverlay />
           <AuthProvider>
-            <BackendLoadingWrapper>
-              {children}
-            </BackendLoadingWrapper>
+            <OrganizationProvider>
+              <BackendLoadingWrapper>
+                {children}
+              </BackendLoadingWrapper>
+            </OrganizationProvider>
           </AuthProvider>
         </ApiLoadingProvider>
       </body>
