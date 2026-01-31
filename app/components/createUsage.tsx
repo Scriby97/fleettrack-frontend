@@ -11,6 +11,7 @@ interface Vehicle {
   id: string;
   name: string;
   plate: string;
+  snowsatNumber?: string;
 }
 
 interface FormState {
@@ -305,7 +306,7 @@ const CreateUsage: FC = () => {
               ) : (
                 vehicles.map((vehicle) => (
                   <option key={vehicle.id} value={vehicle.id}>
-                    {vehicle.name} ({vehicle.plate})
+                    {vehicle.snowsatNumber ? `${vehicle.snowsatNumber} - ${vehicle.name}` : vehicle.name}
                   </option>
                 ))
               )}
