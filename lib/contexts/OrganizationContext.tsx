@@ -21,18 +21,24 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   // Load organizations only once on mount or when auth status changes
   useEffect(() => {
-    if (isSuperAdmin) {
+    console.log('[ORG_CONTEXT] useEffect triggered', { isSuperAdmin, organizationId, hasLoaded });
+    
+    if (isSuperAdmin && !hasLoaded) {
+      console.log('[ORG_CONTEXT] Loading organizations...');
       setIsLoading(true);
       setError(null);
       
       getAllOrganizations()
         .then(orgs => {
+          console.log('[ORG_CONTEXT] Organizations loaded:', orgs.length);
           setOrganizations(orgs);
+          setHasLoaded(true);
           // Set first org as default if none selected
-          if (orgs.length > 0 && !selectedOrgId) {
+          if (orgs.length > 0) {
             setSelectedOrgId(orgs[0].id);
           }
         })
@@ -41,13 +47,12 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
           setError(err.message);
         })
         .finally(() => setIsLoading(false));
-    } else if (organizationId) {
+    } else if (!isSuperAdmin && organizationId && !selectedOrgId) {
       // Regular admin/user - use their organization
+      console.log('[ORG_CONTEXT] Setting org for regular user:', organizationId);
       setSelectedOrgId(organizationId);
     }
-    // Only run when isSuperAdmin or organizationId changes, NOT when selectedOrgId changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSuperAdmin, organizationId]);
+  }, [isSuperAdmin, organizationId, hasLoaded, selectedOrgId]);
 
   return (
     <OrganizationContext.Provider value={{
