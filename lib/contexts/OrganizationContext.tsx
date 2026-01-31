@@ -25,7 +25,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
   // Load organizations only once on mount or when auth status changes
   useEffect(() => {
-    console.log('[ORG_CONTEXT] useEffect triggered', { isSuperAdmin, organizationId, hasLoaded });
+    console.log('[ORG_CONTEXT] useEffect triggered', { isSuperAdmin, organizationId, hasLoaded, selectedOrgId });
     
     if (isSuperAdmin && !hasLoaded) {
       console.log('[ORG_CONTEXT] Loading organizations...');
@@ -52,7 +52,8 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       console.log('[ORG_CONTEXT] Setting org for regular user:', organizationId);
       setSelectedOrgId(organizationId);
     }
-  }, [isSuperAdmin, organizationId, hasLoaded, selectedOrgId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSuperAdmin, organizationId]);
 
   return (
     <OrganizationContext.Provider value={{
