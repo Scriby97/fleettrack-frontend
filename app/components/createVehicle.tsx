@@ -3,8 +3,7 @@
 import { useState, useEffect, type FC, type FormEvent } from 'react';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { useAuth } from '@/lib/auth/AuthProvider';
-import { getAllOrganizations } from '@/lib/api/organizations';
-import type { Organization } from '@/lib/types/user';
+import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { ToastContainer } from './Toast';
 
@@ -15,7 +14,8 @@ interface FormState {
 }
 
 const CreateVehicle: FC = () => {
-  const { isSuperAdmin, organizationId } = useAuth();
+  const { isSuperAdmin } = useAuth();
+  const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
   const { toasts, showToast, removeToast } = useToast();
   const [formData, setFormData] = useState<FormState>({
     name: '',
@@ -24,23 +24,6 @@ const CreateVehicle: FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isSuperAdmin) {
-      getAllOrganizations()
-        .then(orgs => {
-          setOrganizations(orgs);
-          if (!selectedOrgId && orgs.length > 0) {
-            setSelectedOrgId(orgs[0].id);
-          }
-        })
-        .catch(err => console.error('Failed to load organizations:', err));
-    } else if (organizationId && !selectedOrgId) {
-      setSelectedOrgId(organizationId);
-    }
-  }, [isSuperAdmin, organizationId, selectedOrgId]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
