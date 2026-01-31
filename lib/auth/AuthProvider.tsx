@@ -71,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     console.log('[AUTH_PROVIDER] Erster fetch gestartet');
     setBackendRetryCount(0)
+    setBackendLoading(true) // Set immediately when starting health check
     
     try {
       console.log('[AUTH_PROVIDER] fetchUserRole try-block gestartet');
@@ -111,13 +112,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setBackendRetryCount(0)
         }
         return null
-      }
-      
-      // Nur Backend-Loading-Screen anzeigen wenn Health-Check nicht aus Cache kam
-      // (d.h. Backend musste wirklich hochgefahren werden)
-      if (!healthResult.cached && fetchingCountRef.current === 1) {
-        console.log('[AUTH_PROVIDER] Backend wurde hochgefahren, setze backendLoading=true');
-        setBackendLoading(true)
       }
       
       console.log(`[AUTH_PROVIDER] Backend verfügbar nach ${healthCheckDuration}ms (cached: ${healthResult.cached}), rufe /auth/me auf...`);
