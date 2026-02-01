@@ -23,8 +23,8 @@ interface FormState {
 }
 
 const calculateHoursDifference = (start: string, end: string): number | null => {
-  const startHours = parseInt(start, 10);
-  const endHours = parseInt(end, 10);
+  const startHours = parseFloat(start);
+  const endHours = parseFloat(end);
   if (Number.isNaN(startHours) || Number.isNaN(endHours)) return null;
   if (endHours <= startHours) return null;
   return endHours - startHours;
@@ -111,8 +111,8 @@ const CreateUsage: FC = () => {
     setCalculatedHours(hours);
 
     // Inline validation: ensure end > start
-    const parsedStart = parseInt(newValues.startOperatingHours, 10);
-    const parsedEnd = parseInt(newValues.endOperatingHours, 10);
+    const parsedStart = parseFloat(newValues.startOperatingHours);
+    const parsedEnd = parseFloat(newValues.endOperatingHours);
     if (!Number.isNaN(parsedStart) && !Number.isNaN(parsedEnd)) {
       if (parsedEnd <= parsedStart) {
         setTimeError('End-Betriebsstunden müssen größer als Start-Betriebsstunden sein');
@@ -133,12 +133,12 @@ const CreateUsage: FC = () => {
       if (!formData.vehicleId) throw new Error('Bitte ein Fahrzeug auswählen');
       if (!formData.startOperatingHours || !formData.endOperatingHours) throw new Error('Start- und End-Betriebsstunden sind erforderlich');
 
-      const parsedStart = parseInt(formData.startOperatingHours, 10);
-      const parsedEnd = parseInt(formData.endOperatingHours, 10);
+      const parsedStart = parseFloat(formData.startOperatingHours);
+      const parsedEnd = parseFloat(formData.endOperatingHours);
       if (Number.isNaN(parsedStart) || Number.isNaN(parsedEnd)) throw new Error('Ungültiges Zahlenformat');
       if (parsedEnd <= parsedStart) throw new Error('End-Betriebsstunden müssen größer als Start-Betriebsstunden sein');
 
-      const parsedFuel = formData.fuel.trim() === '' ? NaN : parseInt(formData.fuel, 10);
+      const parsedFuel = formData.fuel.trim() === '' ? NaN : parseFloat(formData.fuel);
       const fuelLitersRefilled = Number.isNaN(parsedFuel) ? 0 : parsedFuel;
 
       const payload = {
@@ -341,7 +341,7 @@ const CreateUsage: FC = () => {
             onChange={(e) => handleOperatingHoursChange('startOperatingHours', e.target.value)}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
             min="0"
-            step="1"
+            step="0.1"
             required
             disabled={loadingOperatingHours}
           />
@@ -359,7 +359,7 @@ const CreateUsage: FC = () => {
             onChange={(e) => handleOperatingHoursChange('endOperatingHours', e.target.value)}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
             min="0"
-            step="1"
+            step="0.1"
             required
           />
           {timeError && (
@@ -371,7 +371,7 @@ const CreateUsage: FC = () => {
         {calculatedHours !== null && (
           <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4">
             <p className="text-sm text-blue-900 dark:text-blue-100">
-              Gesamtdauer: <span className="font-semibold">{calculatedHours} Stunden</span>
+              Gesamtdauer: <span className="font-semibold">{calculatedHours.toFixed(1)} Stunden</span>
             </p>
           </div>
         )}

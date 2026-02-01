@@ -47,8 +47,8 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin }) 
           </p>
         )}
         <p>
-          <span className="font-medium">Betriebsstunden:</span> {report.startOperatingHours} h — {report.endOperatingHours} h{' '}
-          <span className="font-medium">({report.endOperatingHours - report.startOperatingHours} h Differenz)</span>
+          <span className="font-medium">Betriebsstunden:</span> {report.startOperatingHours.toFixed(1)} h — {report.endOperatingHours.toFixed(1)} h{' '}
+          <span className="font-medium">({(report.endOperatingHours - report.startOperatingHours).toFixed(1)} h Differenz)</span>
         </p>
         <p>
           <span className="font-medium">Treibstoff:</span> {report.fuel} L
@@ -185,8 +185,8 @@ const UebersichtEintraege: FC = () => {
 
       const payload = {
         vehicleId: editForm.vehicleId,
-        startOperatingHours: parseInt(editForm.startOperatingHours, 10),
-        endOperatingHours: parseInt(editForm.endOperatingHours, 10),
+        startOperatingHours: parseFloat(editForm.startOperatingHours),
+        endOperatingHours: parseFloat(editForm.endOperatingHours),
         fuelLitersRefilled: parseFloat(editForm.fuel) || 0,
         creationDate: editForm.creationDate,
       };
@@ -447,7 +447,7 @@ const UebersichtEintraege: FC = () => {
                   onChange={(e) => setEditForm((prev) => ({ ...prev, startOperatingHours: e.target.value }))}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                   min="0"
-                  step="1"
+                  step="0.1"
                   required
                   disabled={!isAdmin}
                 />
@@ -465,7 +465,7 @@ const UebersichtEintraege: FC = () => {
                   onChange={(e) => setEditForm((prev) => ({ ...prev, endOperatingHours: e.target.value }))}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                   min="0"
-                  step="1"
+                  step="0.1"
                   required
                   disabled={!isAdmin}
                 />
