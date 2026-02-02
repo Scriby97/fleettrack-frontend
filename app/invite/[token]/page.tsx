@@ -22,6 +22,8 @@ export default function InvitePage() {
     firstName: '',
     lastName: '',
   })
+  
+  const [isUnauthorized, setIsUnauthorized] = useState(false)
 
   useEffect(() => {
     const fetchInvite = async () => {
@@ -67,7 +69,12 @@ export default function InvitePage() {
       // Redirect to login page after successful registration
       router.push('/login?message=Account successfully created! Please login.')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to accept invite')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to accept invite'
+      setError(errorMessage)
+      // Check if the error is an UnauthorizedException
+      if (errorMessage.toLowerCase().includes('unauthorized') || errorMessage.toLowerCase().includes('not authenticated')) {
+        setIsUnauthorized(true)
+      }
       setSubmitting(false)
     }
   }
@@ -223,11 +230,12 @@ export default function InvitePage() {
             )}
 
             <button
-              type="submit"
+              type={isUnauthorized ? 'button' : 'submit'}
               disabled={submitting}
+              onClick={isUnauthorized ? () => router.push('/login') : undefined}
               className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Creating Account...' : 'Accept Invite & Create Account'}
+              {isUnauthorized ? 'Zum Login' : (submitting ? 'Creating Account...' : 'Accept Invite & Create Account')}
             </button>
           </form>
         </div>
