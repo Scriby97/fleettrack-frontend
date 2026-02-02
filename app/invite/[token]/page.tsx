@@ -171,7 +171,6 @@ export default function InvitePage() {
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                   className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
-                  placeholder="John"
                 />
               </div>
 
@@ -186,7 +185,6 @@ export default function InvitePage() {
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                   className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
-                  placeholder="Doe"
                 />
               </div>
             </div>
@@ -239,13 +237,6 @@ export default function InvitePage() {
             </button>
           </form>
         </div>
-
-        <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-          Already have an account?{' '}
-          <a href="/login" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium">
-            Sign in
-          </a>
-        </p>
       </div>
     </div>
   )
