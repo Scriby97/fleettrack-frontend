@@ -10,8 +10,8 @@ export async function getInviteByToken(token: string): Promise<InviteInfo> {
   const response = await fetch(`${API_URL}/invites/${token}`)
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Invalid or expired invite' }))
-    throw new Error(error.message || 'Failed to fetch invite')
+    const error = await response.json().catch(() => ({ message: 'Ungültige oder abgelaufene Einladung' }))
+    throw new Error(error.message || 'Fehler beim Laden der Einladung')
   }
   
   return response.json()
@@ -40,8 +40,8 @@ export async function acceptInvite(data: {
   })
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Failed to accept invite' }))
-    throw new Error(error.message || 'Failed to accept invite')
+    const error = await response.json().catch(() => ({ message: 'Fehler beim Annehmen der Einladung' }))
+    throw new Error(error.message || 'Fehler beim Annehmen der Einladung')
   }
   
   return response.json()
@@ -60,8 +60,8 @@ export async function createInvite(
   })
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Failed to create invite' }))
-    throw new Error(error.message || 'Failed to create invite')
+    const error = await response.json().catch(() => ({ message: 'Fehler beim Erstellen der Einladung' }))
+    throw new Error(error.message || 'Fehler beim Erstellen der Einladung')
   }
   
   return response.json()
@@ -75,8 +75,8 @@ export async function getOrganizationInvites(): Promise<InviteEntity[]> {
   const response = await authenticatedFetch(`${API_URL}/organizations/invites`)
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Failed to fetch invites' }))
-    throw new Error(error.message || 'Failed to fetch invites')
+    const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Einladungen' }))
+    throw new Error(error.message || 'Fehler beim Laden der Einladungen')
   }
   
   return response.json()
@@ -91,7 +91,7 @@ export async function deleteInvite(inviteId: string): Promise<void> {
   })
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Failed to delete invite' }))
-    throw new Error(error.message || 'Failed to delete invite')
+    const error = await response.json().catch(() => ({ message: 'Fehler beim Löschen der Einladung' }))
+    throw new Error(error.message || 'Fehler beim Löschen der Einladung')
   }
 }

@@ -28,7 +28,7 @@ function InviteAcceptContent() {
 
   useEffect(() => {
     if (!token) {
-      setError('Missing invite token')
+      setError('Fehlender Einladungs-Token')
       setLoading(false)
       return
     }
@@ -39,7 +39,7 @@ function InviteAcceptContent() {
         setInvite(data)
         setFormData(prev => ({ ...prev, email: data.email }))
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Invalid or expired invite link')
+        setError(err instanceof Error ? err.message : 'Ungültiger oder abgelaufener Einladungs-Link')
       } finally {
         setLoading(false)
       }
@@ -53,17 +53,17 @@ function InviteAcceptContent() {
     setError(null)
     
     if (!token) {
-      setError('Missing invite token')
+      setError('Fehlender Einladungs-Token')
       return
     }
     
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
+      setError('Passwörter stimmen nicht überein')
       return
     }
     
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long')
+      setError('Passwort muss mindestens 6 Zeichen lang sein')
       return
     }
     
@@ -88,7 +88,7 @@ function InviteAcceptContent() {
         
         if (sessionError) {
           console.error('Failed to set session:', sessionError)
-          throw new Error('Failed to login after registration')
+          throw new Error('Fehler beim Anmelden nach Registrierung')
         }
       }
       
@@ -96,10 +96,10 @@ function InviteAcceptContent() {
       router.push('/')
       router.refresh()
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to accept invite'
+      const errorMessage = err instanceof Error ? err.message : 'Fehler beim Annehmen der Einladung'
       setError(errorMessage)
       // Check if the error is an UnauthorizedException
-      if (errorMessage.toLowerCase().includes('unauthorized') || errorMessage.toLowerCase().includes('not authenticated')) {
+      if (errorMessage.toLowerCase().includes('unauthorized') || errorMessage.toLowerCase().includes('not authenticated') || errorMessage.toLowerCase().includes('nicht autorisiert') || errorMessage.toLowerCase().includes('nicht angemeldet')) {
         setIsUnauthorized(true)
       }
       setSubmitting(false)

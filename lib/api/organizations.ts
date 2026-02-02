@@ -15,8 +15,8 @@ export async function createOrganization(
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Failed to create organization' }))
-    throw new Error(error.message || 'Failed to create organization')
+    const error = await response.json().catch(() => ({ message: 'Fehler beim Erstellen der Organisation' }))
+    throw new Error(error.message || 'Fehler beim Erstellen der Organisation')
   }
 
   return response.json()
@@ -29,8 +29,8 @@ export async function getAllOrganizations(): Promise<Organization[]> {
   const response = await authenticatedFetch(`${API_URL}/organizations`)
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Failed to fetch organizations' }))
-    throw new Error(error.message || 'Failed to fetch organizations')
+    const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Organisationen' }))
+    throw new Error(error.message || 'Fehler beim Laden der Organisationen')
   }
 
   return response.json()
