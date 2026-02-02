@@ -135,10 +135,10 @@ export default function InvitePage() {
               </svg>
               <div>
                 <p className="text-sm text-blue-900 dark:text-blue-100">
-                  <strong>Email:</strong> {invite?.email}
+                  <strong>E-Mail:</strong> {invite?.email}
                 </p>
                 <p className="text-sm text-blue-900 dark:text-blue-100 mt-1">
-                  <strong>Expires:</strong> {invite && new Date(invite.expiresAt).toLocaleDateString()}
+                  <strong>Läuft ab:</strong> {invite && new Date(invite.expiresAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -147,7 +147,7 @@ export default function InvitePage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Email
+                E-Mail
               </label>
               <input
                 id="email"
@@ -162,7 +162,7 @@ export default function InvitePage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  First Name
+                  Vorname
                 </label>
                 <input
                   id="firstName"
@@ -176,7 +176,7 @@ export default function InvitePage() {
 
               <div>
                 <label htmlFor="lastName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Last Name
+                  Nachname
                 </label>
                 <input
                   id="lastName"
@@ -191,7 +191,7 @@ export default function InvitePage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Password
+                Passwort
               </label>
               <input
                 id="password"
@@ -200,14 +200,13 @@ export default function InvitePage() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
-                placeholder="••••••••"
                 minLength={6}
               />
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Confirm Password
+                Passwort bestätigen
               </label>
               <input
                 id="confirmPassword"
@@ -216,7 +215,6 @@ export default function InvitePage() {
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
-                placeholder="••••••••"
                 minLength={6}
               />
             </div>
