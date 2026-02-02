@@ -258,7 +258,7 @@ function InviteAcceptContent() {
               onClick={isUnauthorized ? () => router.push('/login') : undefined}
               className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isUnauthorized ? 'Zum Login' : (submitting ? 'Creating Account...' : 'Accept Invite & Create Account')}
+              {isUnauthorized ? 'Zum Login' : (submitting ? 'Konto wird erstellt...' : 'Einladung annehmen & Konto erstellen')}
             </button>
           </form>
         </div>
