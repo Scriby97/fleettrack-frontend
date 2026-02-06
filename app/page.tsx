@@ -20,13 +20,13 @@ export default function Home() {
   return (
     <div className="flex min-h-screen bg-zinc-50 dark:bg-black font-sans">
       {/* Left menu - Hidden on mobile */}
-      <aside className="hidden md:flex md:w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0b0b0b] px-6 py-8 flex-col">
-        <div className="flex items-center mb-8">
+      <aside className="hidden md:flex md:w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0b0b0b] px-6 py-8 flex-col h-screen sticky top-0">
+        <div className="flex items-center mb-8 flex-shrink-0">
           <Image src="/fleettrack-logo.svg" alt="FleetTrack Logo" width={120} height={120} className="dark:invert" />
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 -ml-3">FleetTrack</h2>
         </div>
 
-        <nav className="flex flex-col gap-2">
+        <nav className="flex flex-col gap-2 flex-1 overflow-y-auto">
           <button
             onClick={() => setActive("nutzung")}
             className={
@@ -82,7 +82,7 @@ export default function Home() {
         </nav>
 
         {/* User Menu at bottom */}
-        <div className="mt-auto pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
+        <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3 flex-shrink-0">
           <InstallPrompt />
           <UserMenu />
         </div>
