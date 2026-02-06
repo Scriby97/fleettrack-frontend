@@ -11,6 +11,10 @@ interface FormState {
   name: string;
   plate: string;
   snowsatNumber: string;
+  location: string;
+  vehicleType: string;
+  fuelType: string;
+  notes: string;
 }
 
 const CreateVehicle: FC = () => {
@@ -21,6 +25,10 @@ const CreateVehicle: FC = () => {
     name: '',
     plate: '',
     snowsatNumber: '',
+    location: '',
+    vehicleType: '',
+    fuelType: '',
+    notes: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +69,7 @@ const CreateVehicle: FC = () => {
         console.log('NEXT_PUBLIC_API_URL nicht konfiguriert, Daten nur lokal gespeichert');
       }
 
-      setFormData({ name: '', plate: '', snowsatNumber: '' });
+      setFormData({ name: '', plate: '', snowsatNumber: '', location: '', vehicleType: '', fuelType: '', notes: '' });
       showToast('Fahrzeug erfolgreich erfasst', 'success');
     } catch (err) {
       console.error('Fehler beim Erstellen des Fahrzeugs:', err);
@@ -124,7 +132,7 @@ const CreateVehicle: FC = () => {
             type="text"
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
-            placeholder="z.B. New Leitwolf LT t5"
+            placeholder="z.B. Prinoth Leitwolf W"
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
             required
           />
@@ -140,7 +148,7 @@ const CreateVehicle: FC = () => {
             type="text"
             value={formData.plate}
             onChange={(e) => handleChange('plate', e.target.value)}
-            placeholder="z.B. BE-123456"
+            placeholder="z.B. BE 123456"
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
             required
           />
@@ -156,9 +164,74 @@ const CreateVehicle: FC = () => {
             type="text"
             value={formData.snowsatNumber}
             onChange={(e) => handleChange('snowsatNumber', e.target.value)}
-            placeholder="z.B. GSD-PB-09"
+            placeholder="z.B. SLG_01"
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
             required
+          />
+        </div>
+
+        {/* Ort */}
+        <div className="space-y-2">
+          <label htmlFor="location" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Ort
+          </label>
+          <input
+            id="location"
+            type="text"
+            value={formData.location}
+            onChange={(e) => handleChange('location', e.target.value)}
+            placeholder="z.B. SLG"
+            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+          />
+        </div>
+
+        {/* Typ */}
+        <div className="space-y-2">
+          <label htmlFor="vehicleType" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Typ
+          </label>
+          <select
+            id="vehicleType"
+            value={formData.vehicleType}
+            onChange={(e) => handleChange('vehicleType', e.target.value)}
+            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+          >
+            <option value="">Bitte wählen</option>
+            <option value="Pistenfahrzeug">Pistenfahrzeug</option>
+            <option value="Skidoo">Skidoo</option>
+            <option value="Quad">Quad</option>
+          </select>
+        </div>
+
+        {/* Treibstoff */}
+        <div className="space-y-2">
+          <label htmlFor="fuelType" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Treibstoff
+          </label>
+          <select
+            id="fuelType"
+            value={formData.fuelType}
+            onChange={(e) => handleChange('fuelType', e.target.value)}
+            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+          >
+            <option value="">Bitte wählen</option>
+            <option value="Diesel">Diesel</option>
+            <option value="Benzin">Benzin</option>
+          </select>
+        </div>
+
+        {/* Bemerkung */}
+        <div className="space-y-2">
+          <label htmlFor="notes" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Bemerkung
+          </label>
+          <textarea
+            id="notes"
+            value={formData.notes}
+            onChange={(e) => handleChange('notes', e.target.value)}
+            placeholder="Optionale Bemerkungen zum Fahrzeug"
+            rows={3}
+            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
           />
         </div>
 

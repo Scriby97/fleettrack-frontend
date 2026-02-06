@@ -13,6 +13,10 @@ interface Vehicle {
   plate: string;
   snowsatNumber?: string;
   isRetired?: boolean;
+  location?: string;
+  vehicleType?: string;
+  fuelType?: string;
+  notes?: string;
 }
 
 interface VehicleItemProps {
@@ -35,6 +39,18 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
         <div>Kennzeichen: <span className="font-medium">{vehicle.plate}</span></div>
         {vehicle.snowsatNumber && (
           <div>SNOWsat-Nr: <span className="font-medium">{vehicle.snowsatNumber}</span></div>
+        )}
+        {vehicle.location && (
+          <div>Ort: <span className="font-medium">{vehicle.location}</span></div>
+        )}
+        {vehicle.vehicleType && (
+          <div>Typ: <span className="font-medium">{vehicle.vehicleType}</span></div>
+        )}
+        {vehicle.fuelType && (
+          <div>Treibstoff: <span className="font-medium">{vehicle.fuelType}</span></div>
+        )}
+        {vehicle.notes && (
+          <div>Bemerkung: <span className="font-medium">{vehicle.notes}</span></div>
         )}
       </div>
       <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
@@ -110,6 +126,10 @@ const FlottenUebersicht: FC = () => {
     name: '',
     plate: '',
     snowsatNumber: '',
+    location: '',
+    vehicleType: '',
+    fuelType: '',
+    notes: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -158,7 +178,11 @@ const FlottenUebersicht: FC = () => {
             const plate = s.plate ?? s.kennzeichen ?? s.registration ?? '';
             const snowsatNumber = s.snowsatNumber ?? s.SNOWsatNumber ?? s.snowsat ?? undefined;
             const isRetired = Boolean(s.isRetired);
-            vehiclesFromStats.push({ id, name, plate, snowsatNumber, isRetired });
+            const location = s.location ?? s.ort ?? undefined;
+            const vehicleType = s.vehicleType ?? s.type ?? s.typ ?? undefined;
+            const fuelType = s.fuelType ?? s.fuel ?? s.treibstoff ?? undefined;
+            const notes = s.notes ?? s.bemerkung ?? s.remarks ?? undefined;
+            vehiclesFromStats.push({ id, name, plate, snowsatNumber, isRetired, location, vehicleType, fuelType, notes });
             map[id] = {
               hours: Number(s.totalWorkHours ?? s.totalHours ?? s.hours ?? 0),
               fuelLiters: Number(s.totalFuelLiters ?? s.fuelLiters ?? s.fuel ?? 0),
@@ -173,7 +197,11 @@ const FlottenUebersicht: FC = () => {
             const plate = obj.plate ?? obj.kennzeichen ?? '';
             const snowsatNumber = obj.snowsatNumber ?? obj.SNOWsatNumber ?? obj.snowsat ?? undefined;
             const isRetired = Boolean(obj.isRetired);
-            vehiclesFromStats.push({ id, name, plate, snowsatNumber, isRetired });
+            const location = obj.location ?? obj.ort ?? undefined;
+            const vehicleType = obj.vehicleType ?? obj.type ?? obj.typ ?? undefined;
+            const fuelType = obj.fuelType ?? obj.fuel ?? obj.treibstoff ?? undefined;
+            const notes = obj.notes ?? obj.bemerkung ?? obj.remarks ?? undefined;
+            vehiclesFromStats.push({ id, name, plate, snowsatNumber, isRetired, location, vehicleType, fuelType, notes });
             map[id] = {
               hours: Number(obj.totalWorkHours ?? obj.totalHours ?? obj.hours ?? 0),
               fuelLiters: Number(obj.totalFuelLiters ?? obj.fuelLiters ?? obj.fuel ?? 0),
@@ -211,6 +239,10 @@ const FlottenUebersicht: FC = () => {
       name: vehicle.name,
       plate: vehicle.plate,
       snowsatNumber: vehicle.snowsatNumber || '',
+      location: vehicle.location || '',
+      vehicleType: vehicle.vehicleType || '',
+      fuelType: vehicle.fuelType || '',
+      notes: vehicle.notes || '',
     });
   };
 
@@ -220,6 +252,10 @@ const FlottenUebersicht: FC = () => {
       name: '',
       plate: '',
       snowsatNumber: '',
+      location: '',
+      vehicleType: '',
+      fuelType: '',
+      notes: '',
     });
   };
 
@@ -238,6 +274,10 @@ const FlottenUebersicht: FC = () => {
         name: editForm.name,
         plate: editForm.plate,
         snowsatNumber: editForm.snowsatNumber || undefined,
+        location: editForm.location || undefined,
+        vehicleType: editForm.vehicleType || undefined,
+        fuelType: editForm.fuelType || undefined,
+        notes: editForm.notes || undefined,
       };
 
       const headers: HeadersInit = {};
@@ -267,6 +307,10 @@ const FlottenUebersicht: FC = () => {
                 name: updatedVehicle.name,
                 plate: updatedVehicle.plate,
                 snowsatNumber: updatedVehicle.snowsatNumber,
+                location: updatedVehicle.location,
+                vehicleType: updatedVehicle.vehicleType,
+                fuelType: updatedVehicle.fuelType,
+                notes: updatedVehicle.notes,
               }
             : v
         )
@@ -429,6 +473,71 @@ const FlottenUebersicht: FC = () => {
                   type="text"
                   value={editForm.snowsatNumber}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, snowsatNumber: e.target.value }))}
+                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Ort */}
+              <div className="space-y-2">
+                <label htmlFor="edit-location" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Ort
+                </label>
+                <input
+                  id="edit-location"
+                  type="text"
+                  value={editForm.location}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, location: e.target.value }))}
+                  placeholder="z.B. SLG"
+                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Typ */}
+              <div className="space-y-2">
+                <label htmlFor="edit-vehicleType" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Typ
+                </label>
+                <select
+                  id="edit-vehicleType"
+                  value={editForm.vehicleType}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, vehicleType: e.target.value }))}
+                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="">Bitte wählen</option>
+                  <option value="Pistenfahrzeug">Pistenfahrzeug</option>
+                  <option value="Skidoo">Skidoo</option>
+                  <option value="Quad">Quad</option>
+                </select>
+              </div>
+
+              {/* Treibstoff */}
+              <div className="space-y-2">
+                <label htmlFor="edit-fuelType" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Treibstoff
+                </label>
+                <select
+                  id="edit-fuelType"
+                  value={editForm.fuelType}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, fuelType: e.target.value }))}
+                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="">Bitte wählen</option>
+                  <option value="Diesel">Diesel</option>
+                  <option value="Benzin">Benzin</option>
+                </select>
+              </div>
+
+              {/* Bemerkung */}
+              <div className="space-y-2">
+                <label htmlFor="edit-notes" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Bemerkung
+                </label>
+                <textarea
+                  id="edit-notes"
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Optionale Bemerkungen zum Fahrzeug"
+                  rows={3}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
