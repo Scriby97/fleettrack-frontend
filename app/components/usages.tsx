@@ -16,7 +16,7 @@ interface Report {
   startOperatingHours: number;
   endOperatingHours: number;
   fuel: number;
-  creationDate?: string;
+  usageDate?: string;
 }
 
 interface Vehicle {
@@ -41,9 +41,9 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin }) 
         {report.vehicle}
       </h3>
       <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-        {report.creationDate && (
+        {report.usageDate && (
           <p>
-            <span className="font-medium">Erfassungsdatum:</span> {new Date(report.creationDate).toLocaleDateString('de-DE')}
+            <span className="font-medium">Erfassungsdatum:</span> {new Date(report.usageDate).toLocaleDateString('de-DE')}
           </p>
         )}
         <p>
@@ -122,26 +122,26 @@ const UebersichtEintraege: FC = () => {
     startOperatingHours: '',
     endOperatingHours: '',
     fuel: '',
-    creationDate: '',
+    usageDate: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const calendarEvents = reports
-    .filter((r) => r.creationDate)
+    .filter((r) => r.usageDate)
     .map((r) => ({
       id: r.id,
       title: `${r.vehicle}: ${r.endOperatingHours - r.startOperatingHours}h`,
-      start: r.creationDate!,
-      end: r.creationDate!,
+      start: r.usageDate!,
+      end: r.usageDate!,
     }));
 
   const handleEdit = (report: Report) => {
     setEditingReport(report);
     
-    // Konvertiere das creationDate in das Format YYYY-MM-DD für das Date Input
+    // Konvertiere das usageDate in das Format YYYY-MM-DD für das Date Input
     let formattedDate = '';
-    if (report.creationDate) {
-      const date = new Date(report.creationDate);
+    if (report.usageDate) {
+      const date = new Date(report.usageDate);
       formattedDate = date.toISOString().split('T')[0];
     }
     
@@ -150,7 +150,7 @@ const UebersichtEintraege: FC = () => {
       startOperatingHours: String(report.startOperatingHours),
       endOperatingHours: String(report.endOperatingHours),
       fuel: String(report.fuel),
-      creationDate: formattedDate,
+      usageDate: formattedDate,
     });
   };
 
@@ -168,7 +168,7 @@ const UebersichtEintraege: FC = () => {
       startOperatingHours: '',
       endOperatingHours: '',
       fuel: '',
-      creationDate: '',
+      usageDate: '',
     });
   };
 
@@ -188,7 +188,7 @@ const UebersichtEintraege: FC = () => {
         startOperatingHours: parseFloat(editForm.startOperatingHours),
         endOperatingHours: parseFloat(editForm.endOperatingHours),
         fuelLitersRefilled: parseFloat(editForm.fuel) || 0,
-        creationDate: editForm.creationDate,
+        usageDate: editForm.usageDate,
       };
 
       const res = await authenticatedFetch(`${apiUrl}/usages/${editingReport.id}`, {
@@ -216,7 +216,7 @@ const UebersichtEintraege: FC = () => {
                 startOperatingHours: updatedUsage.startOperatingHours,
                 endOperatingHours: updatedUsage.endOperatingHours,
                 fuel: updatedUsage.fuelLitersRefilled,
-                creationDate: updatedUsage.creationDate,
+                usageDate: updatedUsage.usageDate,
               }
             : r
         )
@@ -305,14 +305,14 @@ const UebersichtEintraege: FC = () => {
           startOperatingHours: typeof u.startOperatingHours === 'number' ? u.startOperatingHours : Number(u.startOperatingHours ?? 0),
           endOperatingHours: typeof u.endOperatingHours === 'number' ? u.endOperatingHours : Number(u.endOperatingHours ?? 0),
           fuel: typeof u.fuelLitersRefilled === 'number' ? u.fuelLitersRefilled : Number(u.fuelLitersRefilled ?? 0),
-          creationDate: u.creationDate,
+          usageDate: u.usageDate,
         }));
 
         // Sortiere nach Erstellungsdatum, neueste zuerst
         const sorted = mapped.sort((a, b) => {
-          if (!a.creationDate) return 1;
-          if (!b.creationDate) return -1;
-          return new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime();
+          if (!a.usageDate) return 1;
+          if (!b.usageDate) return -1;
+          return new Date(b.usageDate).getTime() - new Date(a.usageDate).getTime();
         });
 
         setReports(sorted);
@@ -421,14 +421,14 @@ const UebersichtEintraege: FC = () => {
 
               {/* Erfassungsdatum */}
               <div className="space-y-2">
-                <label htmlFor="edit-creationDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                <label htmlFor="edit-usageDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   Erfassungsdatum
                 </label>
                 <input
-                  id="edit-creationDate"
+                  id="edit-usageDate"
                   type="date"
-                  value={editForm.creationDate}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, creationDate: e.target.value }))}
+                  value={editForm.usageDate}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, usageDate: e.target.value }))}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:invert"
                   required
                   disabled={!isAdmin}

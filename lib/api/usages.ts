@@ -6,7 +6,7 @@ export interface Usage {
   startOperatingHours?: number;
   endOperatingHours?: number;
   fuelLitersRefilled?: number;
-  creationDate?: string;
+  usageDate?: string;
 }
 
 export interface Vehicle {

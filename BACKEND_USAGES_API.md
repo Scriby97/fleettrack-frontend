@@ -31,7 +31,7 @@ Keine
       "startOperatingHours": 100,
       "endOperatingHours": 108,
       "fuelLitersRefilled": 45.5,
-      "creationDate": "2026-01-20T10:30:00Z",
+      "usageDate": "2026-01-20T10:30:00Z",
       "vehicle": {
         "id": "vehicle-uuid-123",
         "name": "Traktor 1",
@@ -44,7 +44,7 @@ Keine
       "startOperatingHours": 50,
       "endOperatingHours": 55,
       "fuelLitersRefilled": 30.0,
-      "creationDate": "2026-01-21T14:15:00Z",
+      "usageDate": "2026-01-21T14:15:00Z",
       "vehicle": {
         "id": "vehicle-uuid-456",
         "name": "Schneepflug 2",
@@ -71,7 +71,7 @@ SELECT
     u.start_operating_hours as "startOperatingHours",
     u.end_operating_hours as "endOperatingHours",
     u.fuel_liters_refilled as "fuelLitersRefilled",
-    u.creation_date as "creationDate",
+    u.creation_date as "usageDate",
     v.id as "vehicle.id",
     v.name as "vehicle.name",
     v.plate as "vehicle.plate"
@@ -128,7 +128,7 @@ router.get('/usages/with-vehicles', authenticateToken, async (req, res) => {
       startOperatingHours: row.start_operating_hours,
       endOperatingHours: row.end_operating_hours,
       fuelLitersRefilled: row.fuel_liters_refilled,
-      creationDate: row.creation_date,
+      usageDate: row.creation_date,
       vehicle: row.vehicle
     }));
     
