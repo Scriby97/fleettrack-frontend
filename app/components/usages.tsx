@@ -308,14 +308,7 @@ const UebersichtEintraege: FC = () => {
           usageDate: u.usageDate,
         }));
 
-        // Sortiere nach Erstellungsdatum, neueste zuerst
-        const sorted = mapped.sort((a, b) => {
-          if (!a.usageDate) return 1;
-          if (!b.usageDate) return -1;
-          return new Date(b.usageDate).getTime() - new Date(a.usageDate).getTime();
-        });
-
-        setReports(sorted);
+        setReports(mapped);
         setVehicles(Array.from(vehicleMap.values()));
         setError(null);
       } catch (err) {
