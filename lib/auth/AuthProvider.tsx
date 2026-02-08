@@ -180,6 +180,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabaseUser, fetchUserRole])
 
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        window.location.reload()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
     let initAuthCompleted = false
     
     // Check active sessions and sets the user
@@ -247,7 +255,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      subscription.unsubscribe()
+    }
   }, [supabase.auth, fetchUserRole])
 
   const signIn = async (email: string, password: string) => {
