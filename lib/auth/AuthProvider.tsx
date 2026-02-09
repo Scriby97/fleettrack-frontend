@@ -54,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isSuperAdmin = userRole === 'super_admin'
   const organizationId = userProfile?.organizationId ?? null
   const organization = userProfile?.organization ?? null
+  const isResetPasswordRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/reset-password')
 
   // Function to fetch user profile from backend
   const fetchUserRole = useCallback(async () => {
@@ -197,6 +198,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSupabaseUser(session?.user ?? null)
       
       if (session?.user) {
+        if (isResetPasswordRoute) {
+          console.log('[AUTH_PROVIDER] Reset password route aktiv, überspringe Rollen-Fetch');
+          setLoading(false)
+          initAuthCompleted = true
+          return
+        }
         // Get role from backend
         const roleFromBackend = await fetchUserRole()
         if (roleFromBackend) {
@@ -231,6 +238,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSupabaseUser(session?.user ?? null)
       
       if (session?.user) {
+        if (isResetPasswordRoute) {
+          console.log('[AUTH_PROVIDER] Reset password route aktiv, überspringe Rollen-Fetch');
+          setLoading(false)
+          return
+        }
         // Setze loading=true während wir auf die Rolle warten
         setLoading(true)
         
