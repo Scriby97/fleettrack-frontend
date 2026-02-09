@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FC, type FormEvent } from 'react'
+import { useEffect, useState, type FC, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/AuthProvider'
 
@@ -11,6 +11,19 @@ const LoginPage: FC = () => {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isRecoveryRedirect, setIsRecoveryRedirect] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const hash = window.location.hash
+    if (hash && hash.includes('type=recovery')) {
+      setIsRecoveryRedirect(true)
+      router.replace(`/reset-password${hash}`)
+    }
+  }, [router])
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -30,6 +43,19 @@ const LoginPage: FC = () => {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (isRecoveryRedirect) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 px-4">
+        <div className="max-w-md w-full text-center">
+          <div className="bg-white dark:bg-zinc-800 shadow-lg rounded-lg p-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-zinc-600 dark:text-zinc-400">Weiterleitung...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
