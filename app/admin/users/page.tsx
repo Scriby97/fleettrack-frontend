@@ -38,446 +38,229 @@ export default function UsersPage() {
         const data = await getOrganizationInvites()
         setInvites(data)
       } catch (err) {
-        console.error('Failed to fetch invites:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load invites')
-      } finally {
-        setLoading(false)
-      }
-    }
+        'use client'
 
-    if (isAdmin) {
-      fetchInvites()
-    }
-  }, [isAdmin])
+        import { useEffect, useMemo, useState } from 'react'
+        import { useRouter } from 'next/navigation'
+        import { useAuth } from '@/lib/auth/AuthProvider'
+        import { getUsers, sendUserResetPassword } from '@/lib/api/users'
+        import type { User } from '@/lib/types/user'
+        import { useToast } from '@/lib/hooks/useToast'
+        import { ToastContainer } from '@/app/components/Toast'
 
-  const handleCreateInvite = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    setError(null)
-    setSubmitting(true)
-    
-    try {
-      const newInvite = await createInvite({
-        email: inviteEmail,
-        role: inviteRole,
-      })
-      
-      setInvites(prev => [newInvite, ...prev])
-      
-      // Show invite link in modal (using query parameter format)
-      const inviteLink = `${window.location.origin}/invite/accept?token=${newInvite.token}`
-      setCreatedInviteLink(inviteLink)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create invite')
-    } finally {
-      setSubmitting(false)
-    }
-  }
+        export default function AdminUsersPage() {
+          const router = useRouter()
+          const { loading: authLoading, isAdmin, isSuperAdmin, organization } = useAuth()
+          const { toasts, showToast, removeToast } = useToast()
 
-  const handleDeleteInvite = async (inviteId: string) => {
-    if (!confirm('Are you sure you want to delete this invite?')) return
-    
-    try {
-      await deleteInvite(inviteId)
-      setInvites(prev => prev.filter(invite => invite.id !== inviteId))
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete invite')
-    }
-  }
+          const [users, setUsers] = useState<User[]>([])
+          const [loading, setLoading] = useState(true)
+          const [error, setError] = useState<string | null>(null)
+          const [searchTerm, setSearchTerm] = useState('')
+          const [confirmUser, setConfirmUser] = useState<User | null>(null)
+          const [submittingId, setSubmittingId] = useState<string | null>(null)
 
-  const handleCopyLink = async (token: string, inviteId: string) => {
-    const inviteLink = `${window.location.origin}/invite/accept?token=${token}`
-    await navigator.clipboard.writeText(inviteLink)
-    setCopiedId(inviteId)
-    setTimeout(() => setCopiedId(null), 2000)
-  }
+          useEffect(() => {
+            if (!authLoading && !isAdmin) {
+              router.push('/')
+              return
+            }
 
-  const handleCloseModal = () => {
-    setShowInviteModal(false)
-    setError(null)
-    setInviteEmail('')
-    setInviteRole('user')
-    setCreatedInviteLink(null)
-  }
+            if (!authLoading && isSuperAdmin) {
+              router.push('/super-admin/users')
+              return
+            }
 
-  const handleCopyCreatedLink = async () => {
-    if (createdInviteLink) {
-      await navigator.clipboard.writeText(createdInviteLink)
-      setCopiedId('created')
-      setTimeout(() => setCopiedId(null), 2000)
-    }
-  }
+            if (!authLoading && isAdmin && !isSuperAdmin) {
+              const loadUsers = async () => {
+                try {
+                  setLoading(true)
+                  const data = await getUsers()
+                  setUsers(data)
+                } catch (err) {
+                  const message = err instanceof Error ? err.message : 'Fehler beim Laden der Benutzer'
+                  setError(message)
+                } finally {
+                  setLoading(false)
+                }
+              }
 
-  const getInviteStatus = (invite: InviteEntity): InviteStatus => {
-    // Wurde bereits verwendet
-    if (invite.usedAt !== null) {
-      return 'used'
-    }
-    
-    // Ist abgelaufen
-    const now = new Date()
-    const expiresAt = new Date(invite.expiresAt)
-    if (expiresAt < now) {
-      return 'expired'
-    }
-    
-    // Ist noch gültig
-    return 'pending'
-  }
+              loadUsers()
+            }
+          }, [authLoading, isAdmin, isSuperAdmin, router])
 
-  const getStatusBadge = (invite: InviteEntity) => {
-    const status = getInviteStatus(invite)
-    
-    if (status === 'used') {
-      return (
-        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-          Verwendet
-        </span>
-      )
-    }
-    
-    if (status === 'expired') {
-      return (
-        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
-          Abgelaufen
-        </span>
-      )
-    }
-    
-    return (
-      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-        Ausstehend
-      </span>
-    )
-  }
+          const filteredUsers = useMemo(() => {
+            const term = searchTerm.trim().toLowerCase()
+            if (!term) return users
 
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    )
-  }
+            return users.filter((user) => {
+              const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim().toLowerCase()
+              return (
+                user.email.toLowerCase().includes(term) ||
+                name.includes(term) ||
+                user.role.toLowerCase().includes(term)
+              )
+            })
+          }, [searchTerm, users])
 
-  if (!isAdmin) {
-    return null
-  }
+          const getDisplayName = (user: User) => {
+            const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
+            return name || user.email
+          }
 
-  return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 p-4 sm:p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Navigation */}
-        <div className="mb-4 sm:mb-6">
-          <nav className="flex flex-wrap gap-2">
-            <button
-              onClick={() => router.push('/')}
-              className="px-3 sm:px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-            >
-              ← Dashboard
-            </button>
-            <span className="text-zinc-300 dark:text-zinc-600">|</span>
-            {isSuperAdmin && (
-              <>
-                <button
-                  onClick={() => router.push('/admin/organizations')}
-                  className="px-3 sm:px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                >
-                  Organizations
-                </button>
-                <span className="text-zinc-300 dark:text-zinc-600">|</span>
-              </>
-            )}
-            <span className="px-3 sm:px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400">
-              User Management
-            </span>
-          </nav>
-        </div>
+          const handleResetRequest = (user: User) => {
+            setConfirmUser(user)
+          }
 
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
-            User Management
-          </h1>
-          <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400">
-            Manage invitations for {organization?.name}
-          </p>
-        </div>
+          const handleConfirmReset = async () => {
+            if (!confirmUser) return
 
-        {/* Actions */}
-        <div className="mb-4 sm:mb-6">
-          <button
-            onClick={() => setShowInviteModal(true)}
-            className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Invite User
-          </button>
-        </div>
+            setSubmittingId(confirmUser.id)
+            try {
+              await sendUserResetPassword(confirmUser.id)
+              showToast(`Reset Email gesendet an ${confirmUser.email}`, 'success')
+              setConfirmUser(null)
+            } catch (err) {
+              const message = err instanceof Error ? err.message : 'Fehler beim Senden der Reset-Email'
+              showToast(message, 'error')
+            } finally {
+              setSubmittingId(null)
+            }
+          }
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-          </div>
-        )}
+          if (authLoading || loading) {
+            return (
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              </div>
+            )
+          }
 
-        {/* Success Message */}
-        {copiedId && (
-          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-            <p className="text-sm text-green-800 dark:text-green-200">
-              Invite link copied to clipboard!
-            </p>
-          </div>
-        )}
+          if (!isAdmin || isSuperAdmin) {
+            return null
+          }
 
-        {/* Invites List - Desktop Table View */}
-        <div className="hidden md:block bg-white dark:bg-zinc-800 rounded-lg shadow overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-zinc-100 dark:bg-zinc-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
-                  Rolle
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
-                  Datum
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
-                  Aktionen
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
-              {invites.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-zinc-500 dark:text-zinc-400">
-                    No invites yet. Click "Invite User" to get started.
-                  </td>
-                </tr>
-              ) : (
-                invites.map(invite => (
-                  <tr key={invite.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
-                    <td className="px-6 py-4 text-sm text-zinc-900 dark:text-zinc-100">
-                      {invite.email}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-400 capitalize">
-                      {invite.role}
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      {getStatusBadge(invite)}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-400">
-                      {getInviteStatus(invite) === 'used' && invite.usedAt ? (
-                        <div>
-                          <div className="text-xs text-zinc-500 dark:text-zinc-500">Verwendet am:</div>
-                          <div>{new Date(invite.usedAt).toLocaleString('de-DE')}</div>
-                        </div>
-                      ) : (
-                        <div>
-                          <div className="text-xs text-zinc-500 dark:text-zinc-500">Läuft ab am:</div>
-                          <div>{new Date(invite.expiresAt).toLocaleString('de-DE')}</div>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        {getInviteStatus(invite) === 'pending' && (
-                          <button
-                            onClick={() => handleCopyLink(invite.token, invite.id)}
-                            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium"
-                            title="Copy invite link"
-                          >
-                            {copiedId === invite.id ? 'Kopiert!' : 'Link kopieren'}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDeleteInvite(invite.id)}
-                          className="text-red-600 hover:text-red-700 dark:text-red-400 font-medium"
-                          title="Delete invite"
-                        >
-                          Löschen
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Invites List - Mobile Card View */}
-        <div className="md:hidden space-y-4">
-          {invites.length === 0 ? (
-            <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-6 text-center text-zinc-500 dark:text-zinc-400">
-              No invites yet. Click "Invite User" to get started.
-            </div>
-          ) : (
-            invites.map(invite => (
-              <div key={invite.id} className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4 space-y-3">
-                {/* Email & Status Row */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
-                      Email
-                    </div>
-                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100 break-words">
-                      {invite.email}
-                    </div>
+          return (
+            <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 p-4 sm:p-8">
+              <ToastContainer toasts={toasts} onRemove={removeToast} />
+              <div className="max-w-6xl mx-auto space-y-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+                      User Management
+                    </h1>
+                    <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400">
+                      Benutzer verwalten fuer {organization?.name}
+                    </p>
                   </div>
-                  <div className="flex-shrink-0">
-                    {getStatusBadge(invite)}
-                  </div>
-                </div>
-
-                {/* Role */}
-                <div>
-                  <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
-                    Rolle
-                  </div>
-                  <div className="text-sm text-zinc-900 dark:text-zinc-100 capitalize">
-                    {invite.role}
-                  </div>
-                </div>
-
-                {/* Date */}
-                <div>
-                  {getInviteStatus(invite) === 'used' && invite.usedAt ? (
-                    <>
-                      <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
-                        Verwendet am
-                      </div>
-                      <div className="text-sm text-zinc-900 dark:text-zinc-100">
-                        {new Date(invite.usedAt).toLocaleString('de-DE')}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
-                        Läuft ab am
-                      </div>
-                      <div className="text-sm text-zinc-900 dark:text-zinc-100">
-                        {new Date(invite.expiresAt).toLocaleString('de-DE')}
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
-                  {getInviteStatus(invite) === 'pending' && (
-                    <button
-                      onClick={() => handleCopyLink(invite.token, invite.id)}
-                      className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      {copiedId === invite.id ? '✓ Kopiert!' : 'Link kopieren'}
-                    </button>
-                  )}
                   <button
-                    onClick={() => handleDeleteInvite(invite.id)}
-                    className={`${getInviteStatus(invite) === 'pending' ? 'flex-shrink-0' : 'flex-1'} px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors`}
+                    onClick={() => router.push('/')}
+                    className="px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
                   >
-                    Löschen
+                    ← Dashboard
                   </button>
+                </div>
+
+                <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4 sm:p-6 space-y-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Benutzer</h2>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">{filteredUsers.length}</span>
+                    </div>
+                    <input
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="Suche nach Name oder Email"
+                      className="w-full sm:w-64 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm dark:bg-zinc-700 dark:text-zinc-100"
+                    />
+                  </div>
+
+                  {error && (
+                    <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
+                      <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+                    </div>
+                  )}
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
+                        <tr>
+                          <th className="px-4 py-3 text-left font-medium">Name</th>
+                          <th className="px-4 py-3 text-left font-medium">Email</th>
+                          <th className="px-4 py-3 text-left font-medium">Rolle</th>
+                          <th className="px-4 py-3 text-left font-medium">Aktionen</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                        {filteredUsers.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="px-4 py-6 text-center text-zinc-500 dark:text-zinc-400">
+                              Keine Benutzer gefunden.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredUsers.map((user) => (
+                            <tr key={user.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
+                              <td className="px-4 py-3 text-zinc-900 dark:text-zinc-100 font-medium">
+                                {getDisplayName(user)}
+                              </td>
+                              <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                                {user.email}
+                              </td>
+                              <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 capitalize">
+                                {user.role.replace('_', ' ')}
+                              </td>
+                              <td className="px-4 py-3">
+                                <button
+                                  onClick={() => handleResetRequest(user)}
+                                  className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                                  disabled={submittingId === user.id}
+                                >
+                                  {submittingId === user.id ? 'Sende...' : 'Passwort-Reset senden'}
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      </div>
 
-      {/* Invite Modal */}
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
-              Invite New User
-            </h2>
-            
-            {!createdInviteLink ? (
-              <form onSubmit={handleCreateInvite} className="space-y-4">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
-                    placeholder="user@example.com"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="role" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    Role
-                  </label>
-                  <select
-                    id="role"
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value as 'admin' | 'user')}
-                    className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
-                  >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-
-                {error && (
-                  <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="flex-1 px-4 py-2 border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {submitting ? 'Creating...' : 'Create Invite'}
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="space-y-4">
-                {/* Success Message */}
-                <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                  <div className="flex items-start">
-                    <svg className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>
-                      <h3 className="text-sm font-semibold text-green-900 dark:text-green-100 mb-1">
-                        Invite Created Successfully!
+              {confirmUser && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl max-w-md w-full">
+                    <div className="p-6 space-y-4">
+                      <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                        Reset Email senden
                       </h3>
-                      <p className="text-sm text-green-800 dark:text-green-200">
-                        Share this link with the new user to let them join your organization.
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                        Reset Email an <span className="font-medium">{confirmUser.email}</span> senden?
                       </p>
+                      <div className="flex gap-3 justify-end">
+                        <button
+                          onClick={() => setConfirmUser(null)}
+                          className="px-4 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                          disabled={submittingId === confirmUser.id}
+                        >
+                          Abbrechen
+                        </button>
+                        <button
+                          onClick={handleConfirmReset}
+                          className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                          disabled={submittingId === confirmUser.id}
+                        >
+                          {submittingId === confirmUser.id ? 'Sende...' : 'Reset senden'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Invite Link Display */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              )}
+            </div>
+          )
+        }
                     Invite Link
                   </label>
                   <div className="flex gap-2">

@@ -56,16 +56,31 @@ const UserMenu: FC = () => {
       </div>
 
       {/* Admin Links */}
+      <button
+        onClick={() => router.push('/settings')}
+        className="w-full px-4 py-2 text-sm bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-lg transition-colors text-left"
+      >
+        ⚙️ Einstellungen
+      </button>
+
       {isSuperAdmin && (
-        <button
-          onClick={() => router.push('/admin/organizations')}
-          className="w-full px-4 py-2 text-sm bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-900 dark:text-purple-100 rounded-lg transition-colors text-left"
-        >
-          🏢 Organizations
-        </button>
+        <>
+          <button
+            onClick={() => router.push('/super-admin/users')}
+            className="w-full px-4 py-2 text-sm bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-900 dark:text-blue-100 rounded-lg transition-colors text-left"
+          >
+            👥 Super Admin Users
+          </button>
+          <button
+            onClick={() => router.push('/admin/organizations')}
+            className="w-full px-4 py-2 text-sm bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-900 dark:text-purple-100 rounded-lg transition-colors text-left"
+          >
+            🏢 Organizations
+          </button>
+        </>
       )}
       
-      {isAdmin && (
+      {isAdmin && !isSuperAdmin && (
         <button
           onClick={() => router.push('/admin/users')}
           className="w-full px-4 py-2 text-sm bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-900 dark:text-blue-100 rounded-lg transition-colors text-left"

@@ -65,16 +65,25 @@ export default function Header() {
           )}
           
           {isSuperAdmin && (
-            <Link
-              href="/admin/organizations"
-              className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors whitespace-nowrap"
-            >
-              <span className="hidden sm:inline">Organizations</span>
-              <span className="sm:hidden">Orgs</span>
-            </Link>
+            <>
+              <Link
+                href="/super-admin/users"
+                className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap"
+              >
+                <span className="hidden sm:inline">Super Admin Users</span>
+                <span className="sm:hidden">Users</span>
+              </Link>
+              <Link
+                href="/admin/organizations"
+                className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors whitespace-nowrap"
+              >
+                <span className="hidden sm:inline">Organizations</span>
+                <span className="sm:hidden">Orgs</span>
+              </Link>
+            </>
           )}
           
-          {isAdmin && (
+          {isAdmin && !isSuperAdmin && (
             <Link
               href="/admin/users"
               className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap"
