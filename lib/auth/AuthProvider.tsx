@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import { User as SupabaseUser, AuthError } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch'
@@ -38,6 +39,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -54,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isSuperAdmin = userRole === 'super_admin'
   const organizationId = userProfile?.organizationId ?? null
   const organization = userProfile?.organization ?? null
-  const isResetPasswordRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/reset-password')
+  const isResetPasswordRoute = pathname?.startsWith('/reset-password') ?? false
 
   // Function to fetch user profile from backend
   const fetchUserRole = useCallback(async () => {
