@@ -273,7 +273,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       subscription.unsubscribe()
     }
-  }, [supabase.auth, fetchUserRole])
+  }, [supabase.auth, fetchUserRole, isResetPasswordRoute])
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
