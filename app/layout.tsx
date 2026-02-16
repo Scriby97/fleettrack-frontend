@@ -7,6 +7,7 @@ import { BackendLoadingWrapper } from "./components/BackendLoadingWrapper";
 import { ApiLoadingProvider } from "@/lib/api/ApiLoadingContext";
 import { ApiLoadingOverlay } from "./components/TopLoadingBar";
 import { ServiceWorkerRegistration } from "./components/ServiceWorkerRegistration";
+import { ThemeManager } from "./components/ThemeManager";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -60,6 +61,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ServiceWorkerRegistration />
+        <ThemeManager />
         <ApiLoadingProvider>
           <ApiLoadingOverlay />
           <AuthProvider>
