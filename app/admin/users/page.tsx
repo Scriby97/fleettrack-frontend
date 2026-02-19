@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { createInvite, deleteInvite, getOrganizationInvites } from '@/lib/api/invites'
 import type { InviteEntity, InviteStatus } from '@/lib/types/user'
@@ -154,6 +155,8 @@ export default function UsersPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 p-4 sm:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
+        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: 'User Management' }]} />
+
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
@@ -164,12 +167,6 @@ export default function UsersPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push('/')}
-              className="px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-            >
-              ← Dashboard
-            </button>
             <button
               onClick={() => setShowInviteModal(true)}
               className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"

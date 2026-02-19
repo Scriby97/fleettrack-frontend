@@ -1,71 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/AuthProvider'
-import { updatePassword } from '@/lib/api/auth'
-import { applyTheme, getStoredTheme, setStoredTheme, type ThemePreference } from '@/lib/theme'
-import { useToast } from '@/lib/hooks/useToast'
-import { ToastContainer } from '@/app/components/Toast'
+import Breadcrumbs from '@/app/components/Breadcrumbs'
 
 export default function SettingsPage() {
   const router = useRouter()
   const { supabaseUser, loading: authLoading } = useAuth()
-  const { toasts, showToast, removeToast } = useToast()
-
-  const [formData, setFormData] = useState({
-    newPassword: '',
-    confirmPassword: '',
-  })
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [themePreference, setThemePreference] = useState<ThemePreference>('system')
 
   useEffect(() => {
     if (!authLoading && !supabaseUser) {
       router.push('/login')
     }
   }, [authLoading, supabaseUser, router])
-
-  useEffect(() => {
-    setThemePreference(getStoredTheme())
-  }, [])
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setError(null)
-
-    if (formData.newPassword.length < 6) {
-      setError('Passwort muss mindestens 6 Zeichen lang sein')
-      return
-    }
-
-    if (formData.newPassword !== formData.confirmPassword) {
-      setError('Passwoerter stimmen nicht ueberein')
-      return
-    }
-
-    setSubmitting(true)
-
-    try {
-      await updatePassword(formData.newPassword)
-      showToast('Passwort aktualisiert', 'success')
-      setFormData({ newPassword: '', confirmPassword: '' })
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Aktualisieren des Passworts'
-      setError(message)
-      showToast(message, 'error')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleThemeChange = (preference: ThemePreference) => {
-    setThemePreference(preference)
-    setStoredTheme(preference)
-    applyTheme(preference)
-    showToast('Ansicht gespeichert', 'success')
-  }
 
   if (authLoading) {
     return (
@@ -77,141 +26,38 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 px-4 py-8">
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: 'Einstellungen' }]} />
+
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
             Einstellungen
           </h1>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Verwalte dein Konto und dein Passwort
+            Waehl aus, was du bearbeiten moechtest.
           </p>
         </div>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-6 space-y-6">
-          <section className="space-y-2">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Account</h2>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Angemeldet als <span className="font-medium">{supabaseUser?.email}</span>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Link
+            href="/settings/account"
+            className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+          >
+            <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Account</div>
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              Passwort aendern und Kontodetails ansehen.
             </p>
-          </section>
+          </Link>
 
-          <section className="border-t border-zinc-200 dark:border-zinc-700 pt-6 space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Ansicht</h2>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Waehle zwischen Systemstandard, dunklem oder hellem Modus.
-              </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Ansicht">
-              <button
-                type="button"
-                role="radio"
-                aria-checked={themePreference === 'system'}
-                onClick={() => handleThemeChange('system')}
-                className={`rounded-lg border px-4 py-3 text-left transition-colors ${
-                  themePreference === 'system'
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100'
-                    : 'border-zinc-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-600'
-                }`}
-              >
-                <div className="text-sm font-semibold">Systemstandard</div>
-                <div className="text-xs text-zinc-600 dark:text-zinc-400">Folgt deinem Geraet</div>
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={themePreference === 'dark'}
-                onClick={() => handleThemeChange('dark')}
-                className={`rounded-lg border px-4 py-3 text-left transition-colors ${
-                  themePreference === 'dark'
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100'
-                    : 'border-zinc-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-600'
-                }`}
-              >
-                <div className="text-sm font-semibold">Dunkel</div>
-                <div className="text-xs text-zinc-600 dark:text-zinc-400">Schont die Augen</div>
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={themePreference === 'light'}
-                onClick={() => handleThemeChange('light')}
-                className={`rounded-lg border px-4 py-3 text-left transition-colors ${
-                  themePreference === 'light'
-                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100'
-                    : 'border-zinc-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-600'
-                }`}
-              >
-                <div className="text-sm font-semibold">Hell</div>
-                <div className="text-xs text-zinc-600 dark:text-zinc-400">Heller Hintergrund</div>
-              </button>
-            </div>
-          </section>
-
-          <section className="border-t border-zinc-200 dark:border-zinc-700 pt-6 space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                Passwort aendern
-              </h2>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Verwende mindestens 6 Zeichen.
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="newPassword"
-                  className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2"
-                >
-                  Neues Passwort
-                </label>
-                <input
-                  id="newPassword"
-                  type="password"
-                  required
-                  value={formData.newPassword}
-                  onChange={(event) => setFormData({ ...formData, newPassword: event.target.value })}
-                  className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
-                  minLength={6}
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2"
-                >
-                  Passwort wiederholen
-                </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={(event) => setFormData({ ...formData, confirmPassword: event.target.value })}
-                  className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
-                  minLength={6}
-                />
-              </div>
-
-              {error && (
-                <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
-                  <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? 'Bitte warten...' : 'Passwort aendern'}
-              </button>
-            </form>
-          </section>
+          <Link
+            href="/settings/appearance"
+            className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+          >
+            <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Ansicht</div>
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              Hell, dunkel oder Systemstandard waehlen.
+            </p>
+          </Link>
         </div>
       </div>
     </div>

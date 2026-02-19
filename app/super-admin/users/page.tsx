@@ -8,6 +8,7 @@ import { getAllOrganizations } from '@/lib/api/organizations'
 import type { Organization, User } from '@/lib/types/user'
 import { useToast } from '@/lib/hooks/useToast'
 import { ToastContainer } from '@/app/components/Toast'
+import Breadcrumbs from '@/app/components/Breadcrumbs'
 
 export default function SuperAdminUsersPage() {
   const router = useRouter()
@@ -114,6 +115,8 @@ export default function SuperAdminUsersPage() {
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 p-4 sm:p-8">
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="max-w-6xl mx-auto space-y-6">
+        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: 'User Management' }]} />
+
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
@@ -123,12 +126,6 @@ export default function SuperAdminUsersPage() {
               Alle Benutzer verwalten
             </p>
           </div>
-          <button
-            onClick={() => router.push('/')}
-            className="px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-          >
-            ← Dashboard
-          </button>
         </div>
 
         <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4 sm:p-6 space-y-4">
