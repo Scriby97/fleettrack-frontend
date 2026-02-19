@@ -52,10 +52,12 @@ export async function acceptInvite(data: {
  * organizationId is automatically taken from the authenticated user
  */
 export async function createInvite(
-  data: { email: string; role: 'admin' | 'user' }
+  data: { email: string; role: 'admin' | 'user' },
+  organizationId?: string
 ): Promise<InviteEntity> {
   const response = await authenticatedFetch(`${API_URL}/organizations/invites`, {
     method: 'POST',
+    headers: organizationId ? { 'X-Organization-Id': organizationId } : undefined,
     body: JSON.stringify(data),
   })
   
@@ -71,8 +73,10 @@ export async function createInvite(
  * Get all invites for the authenticated user's organization (requires authentication)
  * organizationId is automatically taken from the authenticated user
  */
-export async function getOrganizationInvites(): Promise<InviteEntity[]> {
-  const response = await authenticatedFetch(`${API_URL}/organizations/invites`)
+export async function getOrganizationInvites(organizationId?: string): Promise<InviteEntity[]> {
+  const response = await authenticatedFetch(`${API_URL}/organizations/invites`, {
+    headers: organizationId ? { 'X-Organization-Id': organizationId } : undefined,
+  })
   
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Einladungen' }))
@@ -85,9 +89,10 @@ export async function getOrganizationInvites(): Promise<InviteEntity[]> {
 /**
  * Delete an invite (requires authentication)
  */
-export async function deleteInvite(inviteId: string): Promise<void> {
+export async function deleteInvite(inviteId: string, organizationId?: string): Promise<void> {
   const response = await authenticatedFetch(`${API_URL}/organizations/invites/${inviteId}`, {
     method: 'DELETE',
+    headers: organizationId ? { 'X-Organization-Id': organizationId } : undefined,
   })
   
   if (!response.ok) {
