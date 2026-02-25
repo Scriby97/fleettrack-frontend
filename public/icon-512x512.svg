@@ -3,32 +3,29 @@
   <rect width="512" height="512" fill="#6366f1" rx="102.4"/>
   
   <g transform="translate(256, 256) scale(12)">
-    <!-- Radiale Linien - Hauptrichtungen -->
-    <line x1="0" y1="0" x2="0" y2="-11" stroke="white" stroke-width="1.5" opacity="0.8"/>
-    <line x1="0" y1="0" x2="14" y2="0" stroke="white" stroke-width="1.5" opacity="0.8"/>
-    <line x1="0" y1="0" x2="0" y2="11" stroke="white" stroke-width="1.5" opacity="0.8"/>
-    <line x1="0" y1="0" x2="-14" y2="0" stroke="white" stroke-width="1.5" opacity="0.8"/>
+    <!-- Radiale Linien - Horizontale -->
+    <line x1="0" y1="0" x2="18" y2="0" stroke="white" stroke-width="1.5" opacity="0.8"/>
+    <line x1="0" y1="0" x2="-18" y2="0" stroke="white" stroke-width="1.5" opacity="0.8"/>
     
     <!-- Radiale Linien - Diagonalen -->
-    <line x1="0" y1="0" x2="4.5" y2="-4.5" stroke="white" stroke-width="1.5" opacity="0.8"/>
-    <line x1="0" y1="0" x2="4.5" y2="4.5" stroke="white" stroke-width="1.5" opacity="0.8"/>
-    <line x1="0" y1="0" x2="-4.5" y2="4.5" stroke="white" stroke-width="1.5" opacity="0.8"/>
-    <line x1="0" y1="0" x2="-4.5" y2="-4.5" stroke="white" stroke-width="1.5" opacity="0.8"/>
+    <line x1="0" y1="0" x2="9" y2="-9" stroke="white" stroke-width="1.5" opacity="0.8"/>
+    <line x1="0" y1="0" x2="9" y2="9" stroke="white" stroke-width="1.5" opacity="0.8"/>
+    <line x1="0" y1="0" x2="-9" y2="9" stroke="white" stroke-width="1.5" opacity="0.8"/>
+    <line x1="0" y1="0" x2="-9" y2="-9" stroke="white" stroke-width="1.5" opacity="0.8"/>
     
-    <!-- Äußere Punkte - Hauptrichtungen -->
-    <circle cx="0" cy="-11" r="2.5" fill="white"/>
-    <circle cx="14" cy="0" r="2.5" fill="white"/>
-    <circle cx="0" cy="11" r="2.5" fill="white"/>
-    <circle cx="-14" cy="0" r="2.5" fill="white"/>
+    <!-- Äußere Punkte - Horizontale -->
+    <circle cx="18" cy="0" r="2.5" fill="white"/>
+    <circle cx="-18" cy="0" r="2.5" fill="white"/>
     
     <!-- Äußere Punkte - Diagonalen -->
-    <circle cx="4.5" cy="-4.5" r="2.5" fill="white"/>
-    <circle cx="4.5" cy="4.5" r="2.5" fill="white"/>
-    <circle cx="-4.5" cy="4.5" r="2.5" fill="white"/>
-    <circle cx="-4.5" cy="-4.5" r="2.5" fill="white"/>
+    <circle cx="9" cy="-9" r="2.5" fill="white"/>
+    <circle cx="9" cy="9" r="2.5" fill="white"/>
+    <circle cx="-9" cy="9" r="2.5" fill="white"/>
+    <circle cx="-9" cy="-9" r="2.5" fill="white"/>
     
-    <!-- Zentraler Hub -->
-    <circle cx="0" cy="0" r="4" fill="white"/>
-    <circle cx="0" cy="0" r="5.5" stroke="white" stroke-width="1.5" opacity="0.5" fill="none"/>
+    <!-- Zentraler Hub - Größer und signifikanter -->
+    <circle cx="0" cy="0" r="5.5" fill="white"/>
+    <circle cx="0" cy="0" r="7" stroke="white" stroke-width="2" opacity="0.6" fill="none"/>
+    <circle cx="0" cy="0" r="3" fill="white" opacity="0.3"/>
   </g>
 </svg>
