@@ -142,18 +142,18 @@ function InviteAcceptContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 px-4">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 px-4 py-8">
+      <div className="w-full max-w-md space-y-6 sm:space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
             Join {invite?.organization.name}
           </h2>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-2 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
             Du wurdest eingeladen als <span className="font-semibold">{invite?.role}</span>
           </p>
         </div>
 
-        <div className="bg-white dark:bg-zinc-800 shadow-lg rounded-lg p-8">
+        <div className="bg-white dark:bg-zinc-800 shadow-lg rounded-lg p-6 sm:p-8">
           {/* Invite Info */}
           <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <div className="flex items-start">
@@ -186,7 +186,7 @@ function InviteAcceptContent() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                   Vorname

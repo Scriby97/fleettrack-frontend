@@ -367,20 +367,20 @@ export default function UsersPage() {
 
             <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4 sm:p-6 space-y-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Benutzer</h2>
+                <div className="flex items-center gap-2 min-w-0">
+                  <h2 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-50">Benutzer</h2>
                   <span className="text-xs text-zinc-500 dark:text-zinc-400">{filteredUsers.length}</span>
                 </div>
                 <input
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Suche nach Name oder Email"
-                  className="w-full sm:w-64 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm dark:bg-zinc-700 dark:text-zinc-100"
+                  placeholder="Suche..."
+                  className="w-full sm:w-64 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg text-xs sm:text-sm dark:bg-zinc-700 dark:text-zinc-100"
                 />
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                <table className="w-full text-xs sm:text-sm">
                   <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                     <tr>
                       <th className="px-4 py-3 text-left font-medium">Name</th>
@@ -430,7 +430,7 @@ export default function UsersPage() {
 
       {showInviteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl max-w-lg w-full">
+          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-sm sm:max-w-lg">
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
                 Neue Einladung
@@ -521,7 +521,7 @@ export default function UsersPage() {
 
       {confirmUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl max-w-md w-full">
+          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-sm">
             <div className="p-6 space-y-4">
               <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
                 Reset Email senden
