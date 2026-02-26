@@ -234,6 +234,17 @@ const UebersichtEintraege: FC = () => {
                 usageDate: updatedUsage.usageDate,
                 creatorFirstName: updatedUsage.creator?.firstName,
                 creatorLastName: updatedUsage.creator?.lastName,
+              }
+            : r
+        )
+      );
+
+      handleCancelEdit();
+      showToast('Nutzung erfolgreich aktualisiert', 'success');
+    } catch (err) {
+      console.error('Fehler beim Aktualisieren der Nutzung:', err);
+      setError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren');
+      showToast('Fehler beim Aktualisieren der Nutzung', 'error');
     } finally {
       setIsSubmitting(false);
     }
