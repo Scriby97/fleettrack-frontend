@@ -17,6 +17,8 @@ interface Report {
   endOperatingHours: number;
   fuel: number;
   usageDate?: string;
+  creatorFirstName?: string;
+  creatorLastName?: string;
 }
 
 interface Vehicle {
@@ -32,9 +34,16 @@ interface ReportItemProps {
   onEdit: (report: Report) => void;
   onDelete: (id: number | string) => void;
   isAdmin: boolean;
+  isSuperAdmin?: boolean;
 }
 
-const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin }) => (
+const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin, isSuperAdmin }) => {
+  const isAdmin_or_SuperAdmin = isAdmin || isSuperAdmin;
+  const creatorName = report.creatorFirstName || report.creatorLastName
+    ? `${report.creatorFirstName || ''} ${report.creatorLastName || ''}`.trim()
+    : null;
+
+  return (
   <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 hover:shadow-md transition-shadow flex justify-between items-start">
     <div className="flex-1">
       <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
@@ -53,12 +62,17 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin }) 
         <p>
           <span className="font-medium">Treibstoff:</span> {report.fuel} L
         </p>
+        {isAdmin_or_SuperAdmin && creatorName && (
+          <p>
+            <span className="font-medium">Erfasst von:</span> {creatorName}
+          </p>
+        )}
       </div>
     </div>
 
     {/* Action Buttons - nur für Admins sichtbar */}
     {isAdmin && (
-      <div className="flex gap-2 ml-4">
+      <div className="flex gap-2 ml-4 flex-shrink-0">
         <button
           onClick={() => onEdit(report)}
           className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
@@ -106,6 +120,7 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin }) 
     )}
   </div>
 );
+};
 
 const UebersichtEintraege: FC = () => {
   const { isAdmin, isSuperAdmin } = useAuth();
@@ -217,17 +232,8 @@ const UebersichtEintraege: FC = () => {
                 endOperatingHours: updatedUsage.endOperatingHours,
                 fuel: updatedUsage.fuelLitersRefilled,
                 usageDate: updatedUsage.usageDate,
-              }
-            : r
-        )
-      );
-
-      handleCancelEdit();
-      showToast('Nutzung erfolgreich aktualisiert', 'success');
-    } catch (err) {
-      console.error('Fehler beim Aktualisieren der Nutzung:', err);
-      setError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren');
-      showToast('Fehler beim Aktualisieren der Nutzung', 'error');
+                creatorFirstName: updatedUsage.creator?.firstName,
+                creatorLastName: updatedUsage.creator?.lastName,
     } finally {
       setIsSubmitting(false);
     }
@@ -306,6 +312,8 @@ const UebersichtEintraege: FC = () => {
           endOperatingHours: typeof u.endOperatingHours === 'number' ? u.endOperatingHours : Number(u.endOperatingHours ?? 0),
           fuel: typeof u.fuelLitersRefilled === 'number' ? u.fuelLitersRefilled : Number(u.fuelLitersRefilled ?? 0),
           usageDate: u.usageDate,
+          creatorFirstName: u.creator?.firstName,
+          creatorLastName: u.creator?.lastName,
         }));
 
         setReports(mapped);
@@ -377,9 +385,16 @@ const UebersichtEintraege: FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-zinc-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                Nutzung {isAdmin ? 'bearbeiten' : 'anzeigen'}
-              </h2>
+              <div>
+                <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+                  Nutzung {isAdmin ? 'bearbeiten' : 'anzeigen'}
+                </h2>
+                {(isAdmin || isSuperAdmin) && (editingReport.creatorFirstName || editingReport.creatorLastName) && (
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+                    Erfasst von: {editingReport.creatorFirstName} {editingReport.creatorLastName}
+                  </p>
+                )}
+              </div>
               <button
                 onClick={handleCancelEdit}
                 className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
@@ -528,6 +543,7 @@ const UebersichtEintraege: FC = () => {
               onEdit={handleEdit}
               onDelete={handleDelete}
               isAdmin={isAdmin}
+              isSuperAdmin={isSuperAdmin}
             />
           ))}
         </div>
