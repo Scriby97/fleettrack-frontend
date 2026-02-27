@@ -1,5 +1,11 @@
 import { authenticatedFetch } from './authenticatedFetch';
 
+export interface Creator {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
 export interface Usage {
   id: number | string;
   vehicleId?: string;
@@ -7,6 +13,8 @@ export interface Usage {
   endOperatingHours?: number;
   fuelLitersRefilled?: number;
   usageDate?: string;
+  creatorId?: string;
+  creator?: Creator;
 }
 
 export interface Vehicle {
@@ -17,6 +25,7 @@ export interface Vehicle {
 
 export interface UsageWithVehicle extends Usage {
   vehicle: Vehicle;
+  creator?: Creator;
 }
 
 export interface GetUsagesWithVehiclesResponse {
