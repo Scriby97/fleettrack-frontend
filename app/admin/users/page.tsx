@@ -281,7 +281,8 @@ export default function UsersPage() {
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{sortedInvites.length}</span>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* Desktop Tabelle */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                     <tr>
@@ -347,6 +348,62 @@ export default function UsersPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile Kacheln */}
+              <div className="md:hidden space-y-3">
+                {sortedInvites.length === 0 ? (
+                  <div className="py-6 text-center text-zinc-500 dark:text-zinc-400">
+                    Keine Einladungen gefunden.
+                  </div>
+                ) : (
+                  sortedInvites.map((invite) => {
+                    const status = getInviteStatus(invite)
+                    const link = inviteLinkForToken(invite.token)
+                    const isCopyDisabled = !link
+
+                    return (
+                      <div
+                        key={invite.id}
+                        className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-3"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                              {invite.email}
+                            </p>
+                            <p className="text-sm text-zinc-600 dark:text-zinc-400 capitalize mt-1">
+                              Rolle: {invite.role}
+                            </p>
+                          </div>
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${STATUS_CLASSES[status]}`}>
+                            {STATUS_LABELS[status]}
+                          </span>
+                        </div>
+                        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                          <span className="font-medium">Ablauf:</span> {new Date(invite.expiresAt).toLocaleDateString('de-DE')}
+                        </div>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <button
+                            onClick={() => handleCopyLink(link, invite.id)}
+                            disabled={isCopyDisabled}
+                            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
+                          </button>
+                          {status === 'pending' && (
+                            <button
+                              onClick={() => handleDeleteInvite(invite.id)}
+                              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+                            >
+                              Loeschen
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
             </div>
           </>
         )}
@@ -379,8 +436,9 @@ export default function UsersPage() {
                 />
               </div>
 
-              <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-                <table className="w-full text-xs sm:text-sm">
+              {/* Desktop Tabelle */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
                   <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                     <tr>
                       <th className="px-4 py-3 text-left font-medium">Name</th>
@@ -422,6 +480,43 @@ export default function UsersPage() {
                     )}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile Kacheln */}
+              <div className="md:hidden space-y-3">
+                {filteredUsers.length === 0 ? (
+                  <div className="py-6 text-center text-zinc-500 dark:text-zinc-400">
+                    Keine Benutzer gefunden.
+                  </div>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-3"
+                    >
+                      <div>
+                        <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                          {getDisplayName(user)}
+                        </p>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 break-all">
+                          {user.email}
+                        </p>
+                      </div>
+                      <div className="text-sm text-zinc-600 dark:text-zinc-400 capitalize">
+                        <span className="font-medium">Rolle:</span> {user.role.replace('_', ' ')}
+                      </div>
+                      <div className="pt-1">
+                        <button
+                          onClick={() => handleResetRequest(user)}
+                          className="w-full px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                          disabled={submittingId === user.id}
+                        >
+                          {submittingId === user.id ? 'Sende...' : 'Passwort-Reset senden'}
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </>

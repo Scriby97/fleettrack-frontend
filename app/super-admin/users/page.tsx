@@ -321,7 +321,8 @@ export default function SuperAdminUsersPage() {
               </div>
             )}
 
-            <div className="overflow-x-auto">
+            {/* Desktop Tabelle */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                   <tr>
@@ -369,6 +370,48 @@ export default function SuperAdminUsersPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Kacheln */}
+            <div className="md:hidden space-y-3">
+              {filteredUsers.length === 0 ? (
+                <div className="py-6 text-center text-zinc-500 dark:text-zinc-400">
+                  Keine Benutzer gefunden.
+                </div>
+              ) : (
+                filteredUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-3"
+                  >
+                    <div>
+                      <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                        {getDisplayName(user)}
+                      </p>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 break-all">
+                        {user.email}
+                      </p>
+                    </div>
+                    <div className="text-sm text-zinc-600 dark:text-zinc-400 space-y-1">
+                      <p className="capitalize">
+                        <span className="font-medium">Rolle:</span> {user.role.replace('_', ' ')}
+                      </p>
+                      <p>
+                        <span className="font-medium">Organization:</span> {user.organization?.name ?? '-'}
+                      </p>
+                    </div>
+                    <div className="pt-1">
+                      <button
+                        onClick={() => handleResetRequest(user)}
+                        className="w-full px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                        disabled={submittingId === user.id}
+                      >
+                        {submittingId === user.id ? 'Sende...' : 'Passwort-Reset senden'}
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
 
@@ -406,27 +449,85 @@ export default function SuperAdminUsersPage() {
             )}
 
             {inviteOrgId && (
-              <div className="overflow-x-auto">
+              <>
                 {invitesLoading ? (
                   <div className="py-8 text-center text-zinc-500 dark:text-zinc-400">Lade Einladungen...</div>
                 ) : (
-                  <table className="w-full text-sm">
-                    <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
-                      <tr>
-                        <th className="px-4 py-3 text-left font-medium">Email</th>
-                        <th className="px-4 py-3 text-left font-medium">Rolle</th>
-                        <th className="px-4 py-3 text-left font-medium">Status</th>
-                        <th className="px-4 py-3 text-left font-medium">Ablauf</th>
-                        <th className="px-4 py-3 text-left font-medium">Aktionen</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                  <>
+                    {/* Desktop Tabelle */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
+                          <tr>
+                            <th className="px-4 py-3 text-left font-medium">Email</th>
+                            <th className="px-4 py-3 text-left font-medium">Rolle</th>
+                            <th className="px-4 py-3 text-left font-medium">Status</th>
+                            <th className="px-4 py-3 text-left font-medium">Ablauf</th>
+                            <th className="px-4 py-3 text-left font-medium">Aktionen</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                          {sortedInvites.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="px-4 py-6 text-center text-zinc-500 dark:text-zinc-400">
+                                Keine Einladungen gefunden.
+                              </td>
+                            </tr>
+                          ) : (
+                            sortedInvites.map((invite) => {
+                              const status = getInviteStatus(invite)
+                              const link = inviteLinkForToken(invite.token)
+                              const isCopyDisabled = !link
+
+                              return (
+                                <tr key={invite.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
+                                  <td className="px-4 py-3 text-zinc-900 dark:text-zinc-100 font-medium">
+                                    {invite.email}
+                                  </td>
+                                  <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 capitalize">
+                                    {invite.role}
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${STATUS_CLASSES[status]}`}>
+                                      {STATUS_LABELS[status]}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                                    {new Date(invite.expiresAt).toLocaleDateString('de-DE')}
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <div className="flex flex-wrap gap-2">
+                                      <button
+                                        onClick={() => handleCopyLink(link, invite.id)}
+                                        disabled={isCopyDisabled}
+                                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                                      >
+                                        {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
+                                      </button>
+                                      {status === 'pending' && (
+                                        <button
+                                          onClick={() => handleDeleteInvite(invite.id)}
+                                          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+                                        >
+                                          Loeschen
+                                        </button>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              )
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile Kacheln */}
+                    <div className="md:hidden space-y-3">
                       {sortedInvites.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="px-4 py-6 text-center text-zinc-500 dark:text-zinc-400">
-                            Keine Einladungen gefunden.
-                          </td>
-                        </tr>
+                        <div className="py-6 text-center text-zinc-500 dark:text-zinc-400">
+                          Keine Einladungen gefunden.
+                        </div>
                       ) : (
                         sortedInvites.map((invite) => {
                           const status = getInviteStatus(invite)
@@ -434,48 +535,51 @@ export default function SuperAdminUsersPage() {
                           const isCopyDisabled = !link
 
                           return (
-                            <tr key={invite.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
-                              <td className="px-4 py-3 text-zinc-900 dark:text-zinc-100 font-medium">
-                                {invite.email}
-                              </td>
-                              <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 capitalize">
-                                {invite.role}
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${STATUS_CLASSES[status]}`}>
+                            <div
+                              key={invite.id}
+                              className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-3"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                                    {invite.email}
+                                  </p>
+                                  <p className="text-sm text-zinc-600 dark:text-zinc-400 capitalize mt-1">
+                                    Rolle: {invite.role}
+                                  </p>
+                                </div>
+                                <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${STATUS_CLASSES[status]}`}>
                                   {STATUS_LABELS[status]}
                                 </span>
-                              </td>
-                              <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
-                                {new Date(invite.expiresAt).toLocaleDateString('de-DE')}
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="flex flex-wrap gap-2">
+                              </div>
+                              <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                                <span className="font-medium">Ablauf:</span> {new Date(invite.expiresAt).toLocaleDateString('de-DE')}
+                              </div>
+                              <div className="flex flex-wrap gap-2 pt-1">
+                                <button
+                                  onClick={() => handleCopyLink(link, invite.id)}
+                                  disabled={isCopyDisabled}
+                                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                  {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
+                                </button>
+                                {status === 'pending' && (
                                   <button
-                                    onClick={() => handleCopyLink(link, invite.id)}
-                                    disabled={isCopyDisabled}
-                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                                    onClick={() => handleDeleteInvite(invite.id)}
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
                                   >
-                                    {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
+                                    Loeschen
                                   </button>
-                                  {status === 'pending' && (
-                                    <button
-                                      onClick={() => handleDeleteInvite(invite.id)}
-                                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
-                                    >
-                                      Loeschen
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
+                                )}
+                              </div>
+                            </div>
                           )
                         })
                       )}
-                    </tbody>
-                  </table>
+                    </div>
+                  </>
                 )}
-              </div>
+              </>
             )}
           </div>
         )}
