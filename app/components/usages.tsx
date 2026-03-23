@@ -44,7 +44,7 @@ interface ReportItemProps {
   onKeepRemote?: (id: number | string) => void;
 }
 
-const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin, isSuperAdmin, isPending, onResend, onCancelPending, onKeepLocal, onKeepRemote }) => {
+const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin, isSuperAdmin, isPending, onResend, onCancelPending }) => {
   const isAdmin_or_SuperAdmin = isAdmin || isSuperAdmin;
   const creatorName = report.creatorFirstName || report.creatorLastName
     ? `${report.creatorFirstName || ''} ${report.creatorLastName || ''}`.trim()
