@@ -8,6 +8,8 @@ import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { getUsagesWithVehicles, type UsageWithVehicle } from '@/lib/api/usages';
 import { useToast } from '@/lib/hooks/useToast';
 import { ToastContainer } from './Toast';
+import { getCachedUsages, getQueue, upsertCachedUsage, removeCachedUsage, updateQueue, removeQueueByPayloadId } from '@/lib/offline/db';
+import { setupOnlineSync } from '@/lib/offline/sync';
 
 interface Report {
   id: number | string;
@@ -35,9 +37,14 @@ interface ReportItemProps {
   onDelete: (id: number | string) => void;
   isAdmin: boolean;
   isSuperAdmin?: boolean;
+  isPending?: boolean;
+  onResend?: (id: number | string) => void;
+  onCancelPending?: (id: number | string) => void;
+  onKeepLocal?: (id: number | string) => void;
+  onKeepRemote?: (id: number | string) => void;
 }
 
-const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin, isSuperAdmin }) => {
+const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin, isSuperAdmin, isPending, onResend, onCancelPending }) => {
   const isAdmin_or_SuperAdmin = isAdmin || isSuperAdmin;
   const creatorName = report.creatorFirstName || report.creatorLastName
     ? `${report.creatorFirstName || ''} ${report.creatorLastName || ''}`.trim()
@@ -70,54 +77,87 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin, is
       </div>
     </div>
 
-    {/* Action Buttons - nur für Admins sichtbar */}
-    {isAdmin && (
-      <div className="flex gap-2 ml-4 flex-shrink-0">
-        <button
-          onClick={() => onEdit(report)}
-          className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
-          title="Bearbeiten"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-            />
-          </svg>
-        </button>
+    <div className="flex gap-2 ml-4 flex-shrink-0 items-start">
+      {isPending && (
+        <div className="mr-2 flex flex-col items-end">
+          <span className="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 rounded">Ausstehend</span>
+        </div>
+      )}
 
-        <button
-          onClick={() => {
-            if (confirm('Möchten Sie diesen Eintrag wirklich löschen?')) {
-              onDelete(report.id);
-            }
-          }}
-          className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
-          title="Löschen"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+      {/* Action Buttons - nur für Admins sichtbar */}
+      {isAdmin && (
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEdit(report)}
+            className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
+            title="Bearbeiten"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-        </button>
-      </div>
-    )}
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => {
+              if (confirm('Möchten Sie diesen Eintrag wirklich löschen?')) {
+                onDelete(report.id);
+              }
+            }}
+            className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
+            title="Löschen"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* Pending controls for pending entries (resend/cancel) */}
+      {isPending && (
+        <div className="flex flex-col gap-1 ml-3">
+          {onResend && (
+            <button onClick={() => onResend(report.id)} className="text-xs px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/20 text-blue-600">Retry</button>
+          )}
+          {onCancelPending && (
+            <button onClick={() => onCancelPending(report.id)} className="text-xs px-2 py-1 rounded bg-red-50 dark:bg-red-900/20 text-red-600">Abbrechen</button>
+          )}
+        </div>
+      )}
+
+      {/* Conflict controls */}
+      {(report as any).conflict && (
+        <div className="flex flex-col gap-1 ml-3">
+          <span className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded">Konflikt</span>
+          {onKeepLocal && (
+            <button onClick={() => onKeepLocal(report.id)} className="text-xs px-2 py-1 rounded bg-orange-50 dark:bg-orange-900/20 text-orange-600">Behalte lokal</button>
+          )}
+          {onKeepRemote && (
+            <button onClick={() => onKeepRemote(report.id)} className="text-xs px-2 py-1 rounded bg-green-50 dark:bg-green-900/20 text-green-600">Behalte remote</button>
+          )}
+        </div>
+      )}
+    </div>
   </div>
 );
 };
@@ -140,6 +180,7 @@ const UebersichtEintraege: FC = () => {
     usageDate: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingQueueIds, setPendingQueueIds] = useState<Set<string>>(new Set());
 
   const calendarEvents = reports
     .filter((r) => r.usageDate)
@@ -296,6 +337,41 @@ const UebersichtEintraege: FC = () => {
       setIsLoading(true);
       setError(null);
 
+      // Load cached usages first for offline UX
+      try {
+        const cached = await getCachedUsages();
+        if (Array.isArray(cached) && cached.length > 0) {
+          const mappedCached: Report[] = cached.map((u: any) => ({
+            id: u.id,
+            vehicleId: u.vehicleId,
+            vehicle: u.vehicle?.name ?? u.vehicle ?? String(u.vehicleId ?? 'Unbekannt'),
+            startOperatingHours: Number(u.startOperatingHours ?? 0),
+            endOperatingHours: Number(u.endOperatingHours ?? 0),
+            fuel: Number(u.fuelLitersRefilled ?? u.fuel ?? 0),
+            usageDate: u.usageDate,
+            creatorFirstName: u.creatorFirstName,
+            creatorLastName: u.creatorLastName,
+          }));
+          // show cached immediately
+          setReports(mappedCached);
+        }
+      } catch (cacheErr) {
+        console.warn('[USAGES] Fehler beim Lesen des Caches', cacheErr);
+      }
+
+      // Load queue to mark pending entries
+      try {
+        const queue = await getQueue();
+        const ids = new Set<string>();
+        for (const q of queue) {
+          const pid = q.payload?.id ?? q.id;
+          ids.add(String(pid));
+        }
+        setPendingQueueIds(ids);
+      } catch (qErr) {
+        console.warn('[USAGES] Fehler beim Lesen der Queue', qErr);
+      }
+
       try {
         console.log('[USAGES] Versuche Request zu senden...');
         
@@ -330,6 +406,23 @@ const UebersichtEintraege: FC = () => {
         setReports(mapped);
         setVehicles(Array.from(vehicleMap.values()));
         setError(null);
+
+        // Cache server results for offline access
+        try {
+          for (const u of usagesWithVehicles) {
+            await upsertCachedUsage(u);
+          }
+          try {
+            const queue = await getQueue();
+            const ids = new Set<string>();
+            for (const q of queue) ids.add(String(q.payload?.id ?? q.id));
+            setPendingQueueIds(ids);
+          } catch (e) {
+            // ignore
+          }
+        } catch (cacheErr) {
+          console.warn('[USAGES] Fehler beim Schreiben in Cache', cacheErr);
+        }
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         console.error('[USAGES] Fehler beim Laden der Nutzungen:', err);
@@ -343,11 +436,122 @@ const UebersichtEintraege: FC = () => {
     console.log('[USAGES] Rufe fetchData auf');
     fetchData();
 
+    // ensure sync is listening for online events
+    setupOnlineSync();
+
     return () => {
       console.log('[USAGES] useEffect cleanup');
       controller.abort();
     };
   }, [selectedOrgId, isSuperAdmin]);
+
+  const handleResend = async (reportId: string | number) => {
+    try {
+      const queue = await getQueue();
+      for (const q of queue) {
+        const pid = q.payload?.id ?? q.id;
+        if (String(pid) === String(reportId)) {
+          q.retries = 0;
+          q.lastAttempt = 0;
+          q.failed = false;
+          await updateQueue(q as any);
+        }
+      }
+      const mod = await import('@/lib/offline/sync');
+      await mod.processQueueOnce();
+      showToast('Retry gestartet', 'info');
+      const newQueue = await getQueue();
+      const ids = new Set<string>();
+      for (const q of newQueue) ids.add(String(q.payload?.id ?? q.id));
+      setPendingQueueIds(ids);
+    } catch (err) {
+      console.error('Resend failed', err);
+      showToast('Fehler beim Retry', 'error');
+    }
+  };
+
+  const handleCancelPending = async (reportId: string | number) => {
+    try {
+      const removed = await removeQueueByPayloadId(String(reportId));
+      try {
+        await removeCachedUsage(String(reportId));
+      } catch (e) {
+        // ignore
+      }
+      showToast(`Abgebrochen (${removed.length}) wartende Operation(en) entfernt`, 'success');
+      const newQueue = await getQueue();
+      const ids = new Set<string>();
+      for (const q of newQueue) ids.add(String(q.payload?.id ?? q.id));
+      setPendingQueueIds(ids);
+      const cached = await getCachedUsages();
+      const mappedCached: Report[] = cached.map((u: any) => ({
+        id: u.id,
+        vehicleId: u.vehicleId,
+        vehicle: u.vehicle?.name ?? u.vehicle ?? String(u.vehicleId ?? 'Unbekannt'),
+        startOperatingHours: Number(u.startOperatingHours ?? 0),
+        endOperatingHours: Number(u.endOperatingHours ?? 0),
+        fuel: Number(u.fuelLitersRefilled ?? u.fuel ?? 0),
+        usageDate: u.usageDate,
+        creatorFirstName: u.creatorFirstName,
+        creatorLastName: u.creatorLastName,
+      }));
+      setReports(mappedCached);
+    } catch (err) {
+      console.error('Cancel failed', err);
+      showToast('Fehler beim Abbrechen', 'error');
+    }
+  };
+
+  const handleKeepLocal = async (reportId: string | number) => {
+    try {
+      const queue = await getQueue();
+      for (const q of queue) {
+        const pid = q.payload?.id ?? q.id;
+        if (String(pid) === String(reportId)) {
+          q.payload = { ...q.payload, forceLocalResolve: true };
+          q.retries = 0;
+          q.failed = false;
+          await updateQueue(q as any);
+        }
+      }
+      const mod = await import('@/lib/offline/sync');
+      await mod.processQueueOnce();
+      showToast('Lokale Änderung wird bevorzugt und erneut gesendet', 'info');
+    } catch (err) {
+      console.error('KeepLocal failed', err);
+      showToast('Fehler beim Beibehalten der lokalen Änderung', 'error');
+    }
+  };
+
+  const handleKeepRemote = async (reportId: string | number) => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) throw new Error('API URL nicht konfiguriert');
+      const res = await authenticatedFetch(`${apiUrl}/usages/${reportId}`);
+      if (!res.ok) throw new Error('Konnte Remote-Version nicht laden');
+      const remote = await res.json();
+      await upsertCachedUsage({ ...remote, status: 'synced', id: remote.id });
+      await removeQueueByPayloadId(String(reportId));
+      showToast('Remote-Version übernommen', 'success');
+      // refresh list
+      const cached = await getCachedUsages();
+      const mappedCached: Report[] = cached.map((u: any) => ({
+        id: u.id,
+        vehicleId: u.vehicleId,
+        vehicle: u.vehicle?.name ?? u.vehicle ?? String(u.vehicleId ?? 'Unbekannt'),
+        startOperatingHours: Number(u.startOperatingHours ?? 0),
+        endOperatingHours: Number(u.endOperatingHours ?? 0),
+        fuel: Number(u.fuelLitersRefilled ?? u.fuel ?? 0),
+        usageDate: u.usageDate,
+        creatorFirstName: u.creatorFirstName,
+        creatorLastName: u.creatorLastName,
+      }));
+      setReports(mappedCached);
+    } catch (err) {
+      console.error('KeepRemote failed', err);
+      showToast('Fehler beim Übernehmen der Remote-Version', 'error');
+    }
+  };
 
   return (
     <section className="space-y-4">
@@ -555,6 +759,11 @@ const UebersichtEintraege: FC = () => {
               onDelete={handleDelete}
               isAdmin={isAdmin}
               isSuperAdmin={isSuperAdmin}
+              isPending={pendingQueueIds.has(String(report.id))}
+              onResend={handleResend}
+              onCancelPending={handleCancelPending}
+              onKeepLocal={handleKeepLocal}
+              onKeepRemote={handleKeepRemote}
             />
           ))}
         </div>

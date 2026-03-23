@@ -100,3 +100,29 @@ export async function deleteInvite(inviteId: string, organizationId?: string): P
     throw new Error(error.message || 'Fehler beim Löschen der Einladung')
   }
 }
+
+/**
+ * Delete all expired invites (requires authentication - Admin or Super-Admin)
+ * For Super-Admin: organizationId can be specified to target a specific organization
+ * For Admin: organizationId is automatically taken from the authenticated user
+ */
+export async function deleteExpiredInvites(organizationId?: string): Promise<{ count: number }> {
+  const url = new URL(`${API_URL}/organizations/invites/expired`)
+  
+  // For Super-Admin: add organizationId as query parameter if provided
+  if (organizationId) {
+    url.searchParams.append('organizationId', organizationId)
+  }
+  
+  const response = await authenticatedFetch(url.toString(), {
+    method: 'DELETE',
+    headers: organizationId ? { 'X-Organization-Id': organizationId } : undefined,
+  })
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Fehler beim Löschen der abgelaufenen Einladungen' }))
+    throw new Error(error.message || 'Fehler beim Löschen der abgelaufenen Einladungen')
+  }
+  
+  return response.json()
+}

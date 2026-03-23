@@ -6,6 +6,9 @@ import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { ToastContainer } from './Toast';
+import { addQueue, upsertCachedUsage, upsertCachedVehicle, getCachedVehicles, getCachedUsages, getQueue, removeQueueByPayloadId, updateQueue } from '@/lib/offline/db';
+import { processQueueOnce } from '@/lib/offline/sync';
+import { setupOnlineSync } from '@/lib/offline/sync';
 
 interface Vehicle {
   id: string;
@@ -55,6 +58,7 @@ const CreateUsage: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [loadingOperatingHours, setLoadingOperatingHours] = useState(false);
+  const [pendingCached, setPendingCached] = useState<any[]>([]);
 
   const updateCalculatedHours = useCallback(() => {
     const hours = calculateHoursDifference(formData.startOperatingHours, formData.endOperatingHours);
@@ -150,27 +154,52 @@ const CreateUsage: FC = () => {
       };
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL
-      if (apiUrl) {
-        const headers: HeadersInit = {};
-        if (isSuperAdmin && selectedOrgId) {
-          headers['X-Organization-Id'] = selectedOrgId;
-        }
-        
-        const res = await authenticatedFetch(`${apiUrl}/usages`, {
-          method: 'POST',
-          body: JSON.stringify(payload),
-          headers,
-        });
+      let created: any = null;
 
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(`API error ${res.status}: ${text}`);
-        }
+      // Try sending to server if online and api configured
+      if (apiUrl && navigator.onLine) {
+        try {
+          const headers: HeadersInit = {};
+          if (isSuperAdmin && selectedOrgId) {
+            headers['X-Organization-Id'] = selectedOrgId;
+          }
 
-        const created = await res.json();
-        console.log('Usage erstellt:', created);
-      } else {
-        console.log('NEXT_PUBLIC_API_URL nicht konfiguriert, Daten nur lokal gespeichert');
+          const res = await authenticatedFetch(`${apiUrl}/usages`, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers,
+          });
+
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`API error ${res.status}: ${text}`);
+          }
+
+          created = await res.json();
+          // cache server-created usage
+          await upsertCachedUsage({ ...created, status: 'synced', id: created.id });
+          console.log('Usage erstellt:', created);
+        } catch (apiErr) {
+          console.warn('API Write failed, fall back to queue:', apiErr);
+        }
+      }
+
+      // If not created on server, persist locally in queue and show optimistic UI
+      if (!created) {
+        const tempId = crypto.randomUUID();
+        const queued = {
+          id: tempId,
+          type: 'usage',
+          op: 'create',
+          payload,
+          createdAt: Date.now(),
+        };
+        await addQueue(queued as any);
+        // store local cached usage with pending flag and temp id
+        await upsertCachedUsage({ ...payload, id: tempId, status: 'pending', creatorFirstName: undefined, creatorLastName: undefined });
+        // ensure online sync is set up
+        setupOnlineSync();
+        showToast('Nutzung wird offline gespeichert und später synchronisiert', 'info');
       }
 
       setFormData({ vehicleId: vehicles[0]?.id ?? '', startOperatingHours: '', endOperatingHours: '', fuel: '', usageDate: getTodayDate() });
@@ -220,6 +249,12 @@ const CreateUsage: FC = () => {
         const data = await res.json();
         if (Array.isArray(data)) {
           setVehicles(data);
+          // Cache vehicles for offline
+          try {
+            for (const v of data) await upsertCachedVehicle(v);
+          } catch (cacheErr) {
+            console.warn('[CREATE_USAGE] Fehler beim Cachen der Fahrzeuge', cacheErr);
+          }
           // set default selected vehicle if none or mismatched
           const currentValid = data.find((v: Vehicle) => v.id === formData.vehicleId);
           const selectedVehicleId = currentValid ? formData.vehicleId : data[0]?.id ?? '';
@@ -238,6 +273,16 @@ const CreateUsage: FC = () => {
         console.error('[CREATE_USAGE] Fehler beim Laden der Fahrzeuge:', err);
         console.error('[CREATE_USAGE] Fehler Details:', err instanceof Error ? err.message : String(err));
         setVehiclesError('Fehler beim Laden der Fahrzeuge (Fallback verwendet)');
+        // Try loading cached vehicles
+        try {
+          const cached = await getCachedVehicles();
+          if (Array.isArray(cached) && cached.length > 0) {
+            setVehicles(cached);
+            setFormData((prev) => ({ ...prev, vehicleId: cached[0].id }));
+          }
+        } catch (cacheErr) {
+          console.warn('[CREATE_USAGE] Kein Vehicle-Cache verfügbar', cacheErr);
+        }
       } finally {
         setVehiclesLoading(false);
       }
@@ -251,6 +296,60 @@ const CreateUsage: FC = () => {
       controller.abort();
     };
   }, [fetchVehicleEndOperatingHours, selectedOrgId, isSuperAdmin]);
+
+  // Load pending cached usages for display
+  useEffect(() => {
+    let mounted = true;
+    const loadPending = async () => {
+      try {
+        const cached = await getCachedUsages();
+        if (!mounted) return;
+        const pending = (cached ?? []).filter((c: any) => c.status === 'pending' || c.status === 'conflict');
+        setPendingCached(pending);
+      } catch (err) {
+        console.warn('[CREATE_USAGE] Fehler beim Laden des Pending-Caches', err);
+      }
+    };
+    loadPending();
+    const onMessage = () => loadPending();
+    navigator.serviceWorker?.addEventListener?.('message', onMessage);
+    return () => { mounted = false; navigator.serviceWorker?.removeEventListener?.('message', onMessage); };
+  }, []);
+
+  const handleRetryPending = async (id: string) => {
+    try {
+      const queue = await getQueue();
+      for (const q of queue) {
+        const pid = q.payload?.id ?? q.id;
+        if (String(pid) === String(id)) {
+          q.retries = 0;
+          q.lastAttempt = 0;
+          q.failed = false;
+          await updateQueue(q as any);
+        }
+      }
+      await processQueueOnce();
+      showToast('Retry gestartet', 'info');
+      const cached = await getCachedUsages();
+      setPendingCached((cached ?? []).filter((c: any) => c.status === 'pending' || c.status === 'conflict'));
+    } catch (err) {
+      console.error('Retry failed', err);
+      showToast('Fehler beim Retry', 'error');
+    }
+  };
+
+  const handleCancelPendingLocal = async (id: string) => {
+    try {
+      await removeQueueByPayloadId(id);
+      try { await (await import('@/lib/offline/db')).removeCachedUsage(id); } catch(e){ }
+      const cached = await getCachedUsages();
+      setPendingCached((cached ?? []).filter((c: any) => c.status === 'pending' || c.status === 'conflict'));
+      showToast('Ausstehende Operation entfernt', 'success');
+    } catch (err) {
+      console.error('Cancel failed', err);
+      showToast('Fehler beim Abbrechen', 'error');
+    }
+  };
 
   return (
     <section className="space-y-6">
@@ -401,6 +500,25 @@ const CreateUsage: FC = () => {
           {isSubmitting ? 'Wird gespeichert...' : 'Nutzung speichern'}
         </button>
       </form>
+      {pendingCached.length > 0 && (
+        <div className="mt-4 rounded-lg border border-yellow-100 dark:border-yellow-900/30 bg-yellow-50 dark:bg-yellow-900/10 p-4">
+          <h3 className="font-semibold mb-2">Ausstehende Einträge (offline)</h3>
+          <ul className="space-y-2">
+            {pendingCached.map((p) => (
+              <li key={p.id} className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium">{p.vehicle ?? p.vehicleId ?? 'Unbenannt'}</div>
+                  <div className="text-xs text-zinc-600 dark:text-zinc-400">{p.usageDate ?? ''} — {p.startOperatingHours ?? ''} → {p.endOperatingHours ?? ''}</div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => handleRetryPending(p.id)} className="text-sm px-3 py-1 rounded bg-blue-50 dark:bg-blue-900/20 text-blue-600">Retry</button>
+                  <button onClick={() => handleCancelPendingLocal(p.id)} className="text-sm px-3 py-1 rounded bg-red-50 dark:bg-red-900/20 text-red-600">Abbrechen</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </section>
   );

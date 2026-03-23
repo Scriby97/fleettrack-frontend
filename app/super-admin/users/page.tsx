@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/AuthProvider'
-import { createInvite, deleteInvite, getOrganizationInvites } from '@/lib/api/invites'
+import { createInvite, deleteInvite, deleteExpiredInvites, getOrganizationInvites } from '@/lib/api/invites'
 import { getUsers, sendUserResetPassword } from '@/lib/api/users'
 import { getAllOrganizations } from '@/lib/api/organizations'
 import type { InviteEntity, InviteStatus, Organization, User } from '@/lib/types/user'
@@ -48,6 +48,7 @@ export default function SuperAdminUsersPage() {
   const [createdInviteLink, setCreatedInviteLink] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [origin, setOrigin] = useState('')
+  const [deletingExpired, setDeletingExpired] = useState(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -199,6 +200,32 @@ export default function SuperAdminUsersPage() {
     }
   }
 
+  const handleDeleteExpiredInvites = async () => {
+    if (!inviteOrgId) {
+      setInvitesError('Bitte zuerst eine Organization waehlen')
+      return
+    }
+
+    setDeletingExpired(true)
+    setInvitesError(null)
+    try {
+      const result = await deleteExpiredInvites(inviteOrgId)
+      // Remove expired invites from the local state
+      setInvites((prev) => prev.filter((invite) => getInviteStatus(invite) !== 'expired'))
+      if (result.count > 0) {
+        showToast(`${result.count} abgelaufene Einladung(en) erfolgreich gelöscht`, 'success')
+      } else {
+        showToast('Keine abgelaufenen Einladungen gefunden', 'info')
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Fehler beim Löschen der abgelaufenen Einladungen'
+      setInvitesError(message)
+      showToast(message, 'error')
+    } finally {
+      setDeletingExpired(false)
+    }
+  }
+
   const handleCloseInviteModal = () => {
     setShowInviteModal(false)
     setCreatedInviteLink(null)
@@ -254,12 +281,21 @@ export default function SuperAdminUsersPage() {
             </p>
           </div>
           {activeTab === 'invites' && (
-            <button
-              onClick={() => setShowInviteModal(true)}
-              className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-            >
-              + Einladung erstellen
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleDeleteExpiredInvites}
+                disabled={deletingExpired || !inviteOrgId}
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deletingExpired ? 'Lösche...' : 'Abgelaufene löschen'}
+              </button>
+              <button
+                onClick={() => setShowInviteModal(true)}
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              >
+                + Einladung erstellen
+              </button>
+            </div>
           )}
         </div>
 

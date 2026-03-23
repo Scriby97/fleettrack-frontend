@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { useAuth } from '@/lib/auth/AuthProvider'
-import { createInvite, deleteInvite, getOrganizationInvites } from '@/lib/api/invites'
+import { createInvite, deleteInvite, deleteExpiredInvites, getOrganizationInvites } from '@/lib/api/invites'
 import { getUsers, sendUserResetPassword } from '@/lib/api/users'
 import type { InviteEntity, InviteStatus, User } from '@/lib/types/user'
 
@@ -41,6 +41,7 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [confirmUser, setConfirmUser] = useState<User | null>(null)
   const [submittingId, setSubmittingId] = useState<string | null>(null)
+  const [deletingExpired, setDeletingExpired] = useState(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -153,6 +154,31 @@ export default function UsersPage() {
     }
   }
 
+  const handleDeleteExpiredInvites = async () => {
+    setDeletingExpired(true)
+    setError(null)
+    try {
+      const result = await deleteExpiredInvites()
+      // Remove expired invites from the local state
+      setInvites((prev) => prev.filter((invite) => getInviteStatus(invite) !== 'expired'))
+      if (result.count > 0) {
+        setError(null)
+        // Show success message
+        const successMsg = `${result.count} abgelaufene Einladung(en) erfolgreich gelöscht`
+        setError(successMsg)
+        setTimeout(() => setError(null), 3000)
+      } else {
+        setError('Keine abgelaufenen Einladungen gefunden')
+        setTimeout(() => setError(null), 3000)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Fehler beim Löschen der abgelaufenen Einladungen'
+      setError(message)
+    } finally {
+      setDeletingExpired(false)
+    }
+  }
+
   const handleCloseModal = () => {
     setShowInviteModal(false)
     setCreatedInviteLink(null)
@@ -234,6 +260,13 @@ export default function UsersPage() {
           </div>
           {activeTab === 'invites' && (
             <div className="flex items-center gap-3">
+              <button
+                onClick={handleDeleteExpiredInvites}
+                disabled={deletingExpired}
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deletingExpired ? 'Lösche...' : 'Abgelaufene löschen'}
+              </button>
               <button
                 onClick={() => setShowInviteModal(true)}
                 className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
