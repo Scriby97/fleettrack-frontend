@@ -96,22 +96,3 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
-
-// Background Sync: notify clients to flush their queues when sync event fires
-self.addEventListener('sync', (event) => {
-  console.log('[sw] sync event', event.tag);
-  event.waitUntil(
-    self.clients.matchAll().then((clients) => {
-      for (const client of clients) {
-        client.postMessage({ type: 'SYNC_QUEUE', tag: event.tag });
-      }
-    })
-  );
-});
-
-// Also support message events to trigger actions from clients
-self.addEventListener('message', (event) => {
-  // Placeholder: we don't process queue directly here because auth headers
-  // are typically available in the page context. We forward requests if needed.
-  console.log('[sw] message', event.data);
-});

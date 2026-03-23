@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation'
 import { User as SupabaseUser, AuthError } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch'
-import { saveProfile, getProfile } from '@/lib/offline/db';
 import { checkBackendHealth } from '@/lib/api/healthCheck'
 import type { User, Organization } from '@/lib/types/user'
 
@@ -110,22 +109,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (!healthResult.available) {
         console.error(`[AUTH_PROVIDER] Backend nicht verfügbar nach Health-Check (${healthCheckDuration}ms)`);
-        // Try to load cached profile when backend unavailable
-        try {
-          const cached = await getProfile();
-          if (cached) {
-            setUserProfile(cached);
-            console.log('[AUTH_PROVIDER] Verwende zwischengespeichertes Profil (offline)');
-            fetchingCountRef.current--
-            if (fetchingCountRef.current === 0) {
-              setBackendLoading(false)
-              setBackendRetryCount(0)
-            }
-            return cached.role ?? cached.user_metadata?.role ?? null
-          }
-        } catch (cacheErr) {
-          console.warn('[AUTH_PROVIDER] Error reading cached profile', cacheErr);
-        }
         fetchingCountRef.current--
         if (fetchingCountRef.current === 0) {
           setBackendLoading(false)
@@ -160,12 +143,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Update full profile in state
       setUserProfile(profile)
-      // Cache profile for offline use
-      try {
-        await saveProfile(profile);
-      } catch (cacheErr) {
-        console.warn('[AUTH_PROVIDER] Fehler beim Speichern des Profils im Cache', cacheErr);
-      }
       
       // Hide loading overlay after profile is loaded
       fetchingCountRef.current--
