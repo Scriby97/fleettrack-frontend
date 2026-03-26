@@ -56,7 +56,7 @@ export async function checkBackendHealth(
   const startTime = performance.now();
   
   const {
-    retries = 8,
+    retries = 5,
     retryDelay = 2000,
     useExponentialBackoff = true,
     onRetry,
@@ -79,6 +79,23 @@ export async function checkBackendHealth(
 
   let lastError: string | undefined;
   let retryCount = 0;
+
+  // If running in a browser and navigator reports offline, bail out immediately
+  try {
+    if (typeof navigator !== 'undefined' && 'onLine' in navigator && !(navigator as any).onLine) {
+      const result: HealthCheckResult = {
+        available: false,
+        retryCount: 0,
+        error: 'Navigator reports offline',
+      };
+      // cache offline result briefly to avoid repeated attempts
+      healthCheckCache = { result, timestamp: Date.now() };
+      console.log('[HEALTH_CHECK] Navigator offline — skipping health retries');
+      return result;
+    }
+  } catch (e) {
+    // ignore any errors checking navigator
+  }
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     retryCount = attempt;

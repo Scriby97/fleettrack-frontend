@@ -3,9 +3,42 @@
 import { useAuth } from '@/lib/auth/AuthProvider'
 import Link from 'next/link'
 import { InstallPrompt } from './InstallPrompt'
+import { useEffect, useState } from 'react'
+import { getQueue } from '@/lib/offline/db'
 
 export default function Header() {
-  const { organization, userProfile, userRole, isSuperAdmin, isAdmin } = useAuth()
+  const { organization, userProfile, userRole, isSuperAdmin, isAdmin, backendAvailable, backendLoading } = useAuth()
+  const [pendingCount, setPendingCount] = useState(0)
+
+  useEffect(() => {
+    let mounted = true
+    const refresh = async () => {
+      try {
+        const q = await getQueue()
+        if (!mounted) return
+        setPendingCount(q?.length ?? 0)
+      } catch (err) {
+        console.warn('Unable to read offline queue', err)
+      }
+    }
+
+    refresh()
+
+    const onOnline = () => refresh()
+    const onOffline = () => refresh()
+    window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
+
+    // Listen to Service Worker messages to refresh queue state
+    navigator.serviceWorker?.addEventListener?.('message', refresh)
+
+    return () => {
+      mounted = false
+      window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
+      navigator.serviceWorker?.removeEventListener?.('message', refresh)
+    }
+  }, [])
 
   const getRoleBadge = () => {
     if (isSuperAdmin) {
@@ -93,7 +126,37 @@ export default function Header() {
             </Link>
           )}
         </div>
-      </div>
+        </div>
+
+      {/* Offline / backend status banner */}
+      {(backendLoading || backendAvailable === false || !navigator.onLine || pendingCount > 0) && (
+        <div className="mt-2 px-3 py-2 rounded-md bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-900/20 text-sm flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {backendLoading && (
+              <>
+                <svg className="w-4 h-4 animate-spin text-yellow-600" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25"/><path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="4"/></svg>
+                <span>Backend wird hochgefahren — Änderungen werden zwischengespeichert</span>
+              </>
+            )}
+            {!backendLoading && backendAvailable === false && (
+              <span>Backend nicht erreichbar — Änderungen werden lokal gespeichert</span>
+            )}
+            {!backendLoading && backendAvailable !== false && !navigator.onLine && (
+              <span>Offline-Modus — Änderungen werden lokal gespeichert</span>
+            )}
+            {!backendLoading && navigator.onLine && backendAvailable !== false && pendingCount > 0 && (
+              <span>{pendingCount} ausstehende Änderung{pendingCount > 1 ? 'en' : ''} zum Synchronisieren</span>
+            )}
+          </div>
+          <div>
+            {pendingCount > 0 && (
+              <button className="text-xs px-2 py-1 bg-white dark:bg-zinc-800 rounded text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700" onClick={() => window.location.reload()}>
+                Synchronisation anstoßen
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   )
 }

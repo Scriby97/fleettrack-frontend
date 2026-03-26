@@ -26,6 +26,7 @@ interface AuthContextType {
   loading: boolean
   backendLoading: boolean
   backendRetryCount: number
+  backendAvailable: boolean | null
   isAdmin: boolean
   isSuperAdmin: boolean
   userRole: string | null
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [backendLoading, setBackendLoading] = useState(false)
   const [backendRetryCount, setBackendRetryCount] = useState(0)
+  const [backendAvailable, setBackendAvailable] = useState<boolean | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
   const supabase = createClient()
   
@@ -61,131 +63,95 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Function to fetch user profile from backend
   const fetchUserRole = useCallback(async () => {
-    console.log('[AUTH_PROVIDER] fetchUserRole aufgerufen, fetchingCountRef.current:', fetchingCountRef.current);
-    
-    // Increment counter
-    fetchingCountRef.current++
-    
-    // Check if this is a concurrent call
-    if (fetchingCountRef.current > 1) {
-      console.log('[AUTH_PROVIDER] Zusätzlicher fetch (wird übersprungen), Count:', fetchingCountRef.current);
-      fetchingCountRef.current--
-      return null
-    }
-    
-    console.log('[AUTH_PROVIDER] Erster fetch gestartet');
-    setBackendRetryCount(0)
-    setBackendLoading(true) // Set immediately when starting health check
-    
+    console.log('[AUTH_PROVIDER] fetchUserRole aufgerufen (non-blocking)');
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+
+    // First: try to load cached profile immediately so UI can render fast
     try {
-      console.log('[AUTH_PROVIDER] fetchUserRole try-block gestartet');
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-      if (!apiUrl) {
-        console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
-        fetchingCountRef.current--
-        if (fetchingCountRef.current === 0) {
-          setBackendLoading(false)
+      const cached = await getProfile();
+      if (cached) {
+        setUserProfile(cached as any)
+        console.log('[AUTH_PROVIDER] Verwende zwischengespeichertes Profil sofort (non-blocking)');
+        // return cached role immediately but still perform background health check
+        const cachedAny = cached as any
+        let cachedRole: string | null = null
+        if (cachedAny) {
+          if (cachedAny.role) cachedRole = cachedAny.role
+          else if (cachedAny.user_metadata && cachedAny.user_metadata.role) cachedRole = cachedAny.user_metadata.role
         }
-        return null
-      }
 
-      const healthCheckStart = performance.now();
-      console.log('[AUTH_PROVIDER] Prüfe Backend-Verfügbarkeit via Health-Check...');
-      
-      // First, check if backend is available using lightweight health check
-      const healthResult = await checkBackendHealth({
-        retries: 8,
-        retryDelay: 2000,
-        useExponentialBackoff: true,
-        onRetry: (attempt: number, maxRetries: number) => {
-          console.log(`[AUTH_PROVIDER] Backend Health-Check Retry ${attempt}/${maxRetries}`);
-          setBackendRetryCount(attempt)
-        }
-      });
-      
-      const healthCheckDuration = Math.round(performance.now() - healthCheckStart);
-      
-      console.log('[AUTH_PROVIDER] Health-Check abgeschlossen, prüfe Ergebnis...');
-      console.log('[AUTH_PROVIDER] healthResult:', JSON.stringify(healthResult));
-      
-      if (!healthResult.available) {
-        console.error(`[AUTH_PROVIDER] Backend nicht verfügbar nach Health-Check (${healthCheckDuration}ms)`);
-        // Try to load cached profile when backend unavailable
-        try {
-          const cached = await getProfile();
-          if (cached) {
-            setUserProfile(cached);
-            console.log('[AUTH_PROVIDER] Verwende zwischengespeichertes Profil (offline)');
-            fetchingCountRef.current--
-            if (fetchingCountRef.current === 0) {
-              setBackendLoading(false)
-              setBackendRetryCount(0)
+        // Start background health-check + fetch but do not await it
+        (async () => {
+          try {
+            setBackendLoading(true)
+            setBackendRetryCount(0)
+            console.log('[AUTH_PROVIDER] Hintergrund: Prüfe Backend-Verfügbarkeit...');
+            const healthResult = await checkBackendHealth({
+              retries: 3,
+              retryDelay: 1000,
+              useExponentialBackoff: false,
+              onRetry: (attempt: number) => setBackendRetryCount(attempt)
+            })
+            setBackendAvailable(Boolean(healthResult.available))
+            if (!healthResult.available) {
+              console.warn('[AUTH_PROVIDER] Hintergrund: Backend weiterhin nicht erreichbar')
+              return
             }
-            return cached.role ?? cached.user_metadata?.role ?? null
+            // backend is available -> fetch authoritative profile
+            const response = await authenticatedFetch(`${apiUrl}/auth/me`, { retries: 2, retryDelay: 1000, skipLoadingIndicator: true })
+            if (!response.ok) return
+            const profile: UserProfile = await response.json()
+            setUserProfile(profile)
+            try { await saveProfile(profile) } catch(e){ console.warn('Fehler beim Speichern des Profils', e) }
+            setBackendAvailable(true)
+          } catch (err) {
+            console.warn('[AUTH_PROVIDER] Hintergrund-Fehler beim Health-Check:', err)
+            setBackendAvailable(false)
+          } finally {
+            setBackendLoading(false)
+            setBackendRetryCount(0)
           }
-        } catch (cacheErr) {
-          console.warn('[AUTH_PROVIDER] Error reading cached profile', cacheErr);
-        }
-        fetchingCountRef.current--
-        if (fetchingCountRef.current === 0) {
-          setBackendLoading(false)
-          setBackendRetryCount(0)
-        }
-        return null
-      }
-      
-      console.log(`[AUTH_PROVIDER] Backend verfügbar nach ${healthCheckDuration}ms (cached: ${healthResult.cached}), rufe /auth/me auf...`);
-      
-      // Backend is available, now fetch actual user data
-      const response = await authenticatedFetch(`${apiUrl}/auth/me`, {
-        retries: 2, // Nur 2 Retries da Backend bereits verfügbar ist
-        retryDelay: 1000,
-        skipLoadingIndicator: true,
-      })
-      
-      console.log('[AUTH_PROVIDER] /auth/me Response Status:', response.status);
-      
-      if (!response.ok) {
-        console.error('Fehler beim Abrufen der User-Rolle:', response.status)
-        fetchingCountRef.current--
-        if (fetchingCountRef.current === 0) {
-          setBackendLoading(false)
-          setBackendRetryCount(0)
-        }
-        return null
-      }
+        })()
 
-      const profile: UserProfile = await response.json()
-      console.log('[AUTH_PROVIDER] User-Profile erhalten:', profile.email, 'Role:', profile.role, 'Org:', profile.organization?.name);
-      
-      // Update full profile in state
-      setUserProfile(profile)
-      // Cache profile for offline use
-      try {
-        await saveProfile(profile);
-      } catch (cacheErr) {
-        console.warn('[AUTH_PROVIDER] Fehler beim Speichern des Profils im Cache', cacheErr);
+        return cachedRole
       }
-      
-      // Hide loading overlay after profile is loaded
-      fetchingCountRef.current--
-      console.log('[AUTH_PROVIDER] Profile geladen, decrementiere Counter, neuer Wert:', fetchingCountRef.current);
-      if (fetchingCountRef.current === 0) {
-        console.log('[AUTH_PROVIDER] Counter ist 0, setze backendLoading=false');
-        setBackendLoading(false)
-        setBackendRetryCount(0)
-      }
-      
-      return profile.role
-    } catch (error) {
-      console.error('[AUTH_PROVIDER] Fehler beim Abrufen der User-Rolle:', error)
-      fetchingCountRef.current--
-      if (fetchingCountRef.current === 0) {
-        setBackendLoading(false)
-        setBackendRetryCount(0)
-      }
-      return null
+    } catch (cacheErr) {
+      console.warn('[AUTH_PROVIDER] Error reading cached profile', cacheErr)
     }
+
+    // If no cache, still run background health-check and fetch, but return null immediately
+    (async () => {
+      try {
+        setBackendLoading(true)
+        setBackendRetryCount(0)
+        const healthResult = await checkBackendHealth({
+          retries: 3,
+          retryDelay: 1000,
+          useExponentialBackoff: false,
+          onRetry: (attempt: number) => setBackendRetryCount(attempt)
+        })
+        setBackendAvailable(Boolean(healthResult.available))
+        if (!healthResult.available) {
+          console.warn('[AUTH_PROVIDER] Hintergrund: Backend nicht erreichbar')
+          return
+        }
+        const response = await authenticatedFetch(`${apiUrl}/auth/me`, { retries: 2, retryDelay: 1000, skipLoadingIndicator: true })
+        if (!response.ok) return
+        const profile: UserProfile = await response.json()
+        setUserProfile(profile)
+        try { await saveProfile(profile) } catch(e){ console.warn('Fehler beim Speichern des Profils', e) }
+        setBackendAvailable(true)
+      } catch (err) {
+        console.warn('[AUTH_PROVIDER] Hintergrund-Fehler beim Health-Check:', err)
+        setBackendAvailable(false)
+      } finally {
+        setBackendLoading(false)
+        setBackendRetryCount(0)
+      }
+    })()
+
+    return null
   }, [])
 
   // Function to refresh user role
@@ -208,7 +174,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        window.location.reload()
+        // When returning to the tab, refresh role/profile in background
+        // do not reload the page — prefer a non-blocking refresh
+        refreshUserRole().catch(() => {});
       }
     }
 
@@ -229,14 +197,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           initAuthCompleted = true
           return
         }
-        // Get role from backend
-        const roleFromBackend = await fetchUserRole()
-        if (roleFromBackend) {
-          setUserRole(roleFromBackend)
-        } else {
-          // Fallback to metadata
-          setUserRole(session.user.user_metadata?.role ?? null)
-        }
+        // Immediate fallback to metadata for fast UI
+        setUserRole(session.user.user_metadata?.role ?? null)
+        // Fetch authoritative role/profile in background (non-blocking)
+        fetchUserRole().then((role) => {
+          if (role) setUserRole(role)
+        }).catch(() => {});
         // Wait a tick to ensure userProfile state has been updated
         await new Promise(resolve => setTimeout(resolve, 0))
       }
@@ -268,20 +234,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false)
           return
         }
-        // Setze loading=true während wir auf die Rolle warten
+        // Use metadata immediately and refresh role/profile in background
         setLoading(true)
-        
-        // Get role from backend
-        const roleFromBackend = await fetchUserRole()
-        if (roleFromBackend) {
-          console.log('[AUTH_PROVIDER] Setze userRole auf:', roleFromBackend);
-          setUserRole(roleFromBackend)
-          setLoading(false)
-        } else {
-          // Bei Fehler: Sofort Seite neu laden für sauberen Zustand
-          console.log('[AUTH_PROVIDER] Konnte Rolle nicht vom Backend holen, lade Seite neu...');
-          window.location.reload()
-        }
+        setUserRole(session.user.user_metadata?.role ?? null)
+        fetchUserRole().then((role) => {
+          if (role) {
+            console.log('[AUTH_PROVIDER] Setze userRole auf:', role);
+            setUserRole(role)
+          }
+        }).finally(() => setLoading(false))
         // Wait a tick to ensure userProfile state has been updated
         await new Promise(resolve => setTimeout(resolve, 0))
       } else {
@@ -327,6 +288,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     backendLoading,
     backendRetryCount,
+    backendAvailable,
     isAdmin,
     isSuperAdmin,
     userRole,

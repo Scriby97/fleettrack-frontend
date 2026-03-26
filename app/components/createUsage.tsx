@@ -219,6 +219,19 @@ const CreateUsage: FC = () => {
     console.log('[CREATE_USAGE] useEffect gestartet');
     const apiUrl = process.env.NEXT_PUBLIC_API_URL
     console.log('[CREATE_USAGE] API URL:', apiUrl);
+    // Always attempt to load cached vehicles first so the select works offline
+    (async () => {
+      try {
+        const cachedVehicles = await getCachedVehicles();
+        if (Array.isArray(cachedVehicles) && cachedVehicles.length > 0) {
+          setVehicles(cachedVehicles);
+          setFormData((prev) => ({ ...prev, vehicleId: prev.vehicleId || cachedVehicles[0].id }));
+        }
+      } catch (e) {
+        // ignore cache errors
+      }
+    })();
+
     if (!apiUrl) {
       console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
       return
@@ -396,18 +409,18 @@ const CreateUsage: FC = () => {
               onChange={(e) => handleVehicleChange(e.target.value)}
               className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
             >
-              {vehiclesLoading ? (
-                <option value="" disabled>Lade Fahrzeuge...</option>
-              ) : vehiclesError ? (
-                <option value="" disabled>{vehiclesError}</option>
-              ) : vehicles.length === 0 ? (
-                <option value="" disabled>Keine Fahrzeuge verfügbar</option>
-              ) : (
+              {vehicles.length > 0 ? (
                 vehicles.map((vehicle) => (
                   <option key={vehicle.id} value={vehicle.id}>
                     {vehicle.snowsatNumber ? `${vehicle.snowsatNumber} - ${vehicle.name}` : vehicle.name}
                   </option>
                 ))
+              ) : vehiclesLoading ? (
+                <option value="" disabled>Lade Fahrzeuge...</option>
+              ) : vehiclesError ? (
+                <option value="" disabled>{vehiclesError}</option>
+              ) : (
+                <option value="" disabled>Keine Fahrzeuge verfügbar</option>
               )}
             </select>
         </div>

@@ -5,6 +5,7 @@ import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
+import { getCachedVehicles, upsertCachedVehicle } from '@/lib/offline/db';
 import { ToastContainer } from './Toast';
 
 interface Vehicle {
@@ -17,6 +18,9 @@ interface Vehicle {
   vehicleType?: string;
   fuelType?: string;
   notes?: string;
+  // optional cached stats for offline display
+  totalWorkHours?: number;
+  totalFuelLiters?: number;
 }
 
 interface VehicleItemProps {
@@ -138,6 +142,26 @@ const FlottenUebersicht: FC = () => {
     console.log('[VEHICLES] useEffect gestartet');
     const apiUrl = process.env.NEXT_PUBLIC_API_URL
     console.log('[VEHICLES] API URL:', apiUrl);
+    // Try loading cached vehicles first so the list is available offline
+    getCachedVehicles()
+      .then((cached) => {
+        if (Array.isArray(cached) && cached.length > 0) {
+          setVehicles(cached);
+          // derive statsMap from cached entries when available
+          const cachedMap: Record<string, { hours: number; fuelLiters: number }> = {};
+          cached.forEach((c: any) => {
+            const id = String(c.id);
+            const hours = Number(c.totalWorkHours ?? c.hours ?? 0);
+            const fuel = Number(c.totalFuelLiters ?? c.fuelLiters ?? 0);
+            if (hours || fuel) cachedMap[id] = { hours, fuelLiters: fuel };
+          });
+          if (Object.keys(cachedMap).length > 0) setStatsMap((prev) => ({ ...prev, ...cachedMap }));
+        }
+      })
+      .catch((cacheErr) => {
+        console.warn('[VEHICLES] Fehler beim Lesen des Vehicle-Caches', cacheErr);
+      });
+
     if (!apiUrl) {
       console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
       return
@@ -213,6 +237,16 @@ const FlottenUebersicht: FC = () => {
 
         setVehicles(vehiclesFromStats);
         setStatsMap(map);
+
+        // Cache vehicles (including stats) for offline use
+        try {
+          for (const v of vehiclesFromStats) {
+            const toCache = { ...v, totalWorkHours: map[v.id]?.hours ?? 0, totalFuelLiters: map[v.id]?.fuelLiters ?? 0 };
+            await upsertCachedVehicle(toCache);
+          }
+        } catch (cacheErr) {
+          console.warn('[VEHICLES] Fehler beim Cachen der Fahrzeuge', cacheErr);
+        }
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         console.error('[VEHICLES] Fehler beim Laden der Fahrzeug-Stats:', err);

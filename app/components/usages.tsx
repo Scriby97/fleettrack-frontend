@@ -325,6 +325,26 @@ const UebersichtEintraege: FC = () => {
       return
     }
 
+    // Load cached usages immediately so they persist across reloads
+    getCachedUsages()
+      .then((cached) => {
+        if (Array.isArray(cached) && cached.length > 0) {
+          const mappedCached: Report[] = cached.map((u: any) => ({
+            id: u.id,
+            vehicleId: u.vehicleId,
+            vehicle: u.vehicle?.name ?? u.vehicle ?? String(u.vehicleId ?? 'Unbekannt'),
+            startOperatingHours: Number(u.startOperatingHours ?? 0),
+            endOperatingHours: Number(u.endOperatingHours ?? 0),
+            fuel: Number(u.fuelLitersRefilled ?? u.fuel ?? 0),
+            usageDate: u.usageDate,
+            creatorFirstName: u.creatorFirstName,
+            creatorLastName: u.creatorLastName,
+          }));
+          setReports(mappedCached);
+        }
+      })
+      .catch((cacheErr) => console.warn('[USAGES] Fehler beim Lesen des Caches', cacheErr));
+
     // Wait for organization to be selected
     if (!selectedOrgId) {
       console.log('[USAGES] Waiting for organization selection...');
@@ -407,10 +427,18 @@ const UebersichtEintraege: FC = () => {
         setVehicles(Array.from(vehicleMap.values()));
         setError(null);
 
-        // Cache server results for offline access
+        // Cache server results for offline access (usages + vehicles)
         try {
           for (const u of usagesWithVehicles) {
             await upsertCachedUsage(u);
+          }
+          try {
+            // also cache extracted vehicles so createUsage can use them offline
+            for (const v of Array.from(vehicleMap.values())) {
+              await (await import('@/lib/offline/db')).upsertCachedVehicle(v);
+            }
+          } catch (vehicleCacheErr) {
+            console.warn('[USAGES] Fehler beim Cachen der Fahrzeuge', vehicleCacheErr);
           }
           try {
             const queue = await getQueue();
