@@ -90,6 +90,22 @@ export default function Header() {
         <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
           <InstallPrompt />
           
+          {/* Backend / offline status icon (global) */}
+          <div className="hidden sm:flex items-center ml-2">
+            {backendLoading ? (
+              <svg className="w-5 h-5 animate-spin text-yellow-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25"/>
+                <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="4"/>
+              </svg>
+            ) : (!navigator.onLine || backendAvailable !== true) ? (
+              <span title="Offline" aria-label="Offline" className="text-yellow-600">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" fill="none" />
+                  <path d="M4 4l16 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </span>
+            ) : null}
+          </div>
           {displayName && (
             <div className="hidden lg:flex items-center gap-2">
               <span className="text-sm text-zinc-600 dark:text-zinc-400">{displayName}</span>
@@ -128,35 +144,7 @@ export default function Header() {
         </div>
         </div>
 
-      {/* Offline / backend status banner */}
-      {(backendLoading || backendAvailable === false || !navigator.onLine || pendingCount > 0) && (
-        <div className="mt-2 px-3 py-2 rounded-md bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-900/20 text-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {backendLoading && (
-              <>
-                <svg className="w-4 h-4 animate-spin text-yellow-600" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25"/><path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="4"/></svg>
-                <span>Backend wird hochgefahren — Änderungen werden zwischengespeichert</span>
-              </>
-            )}
-            {!backendLoading && backendAvailable === false && (
-              <span>Backend nicht erreichbar — Änderungen werden lokal gespeichert</span>
-            )}
-            {!backendLoading && backendAvailable !== false && !navigator.onLine && (
-              <span>Offline-Modus — Änderungen werden lokal gespeichert</span>
-            )}
-            {!backendLoading && navigator.onLine && backendAvailable !== false && pendingCount > 0 && (
-              <span>{pendingCount} ausstehende Änderung{pendingCount > 1 ? 'en' : ''} zum Synchronisieren</span>
-            )}
-          </div>
-          <div>
-            {pendingCount > 0 && (
-              <button className="text-xs px-2 py-1 bg-white dark:bg-zinc-800 rounded text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700" onClick={() => window.location.reload()}>
-                Synchronisation anstoßen
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Status-Banner entfernt; globales Icon signalisiert Offline/Loading */}
     </header>
   )
 }

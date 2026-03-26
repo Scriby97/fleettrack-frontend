@@ -340,6 +340,12 @@ const UebersichtEintraege: FC = () => {
             creatorFirstName: u.creatorFirstName,
             creatorLastName: u.creatorLastName,
           }));
+          // sort cached by usageDate (newest first) for stable offline ordering
+          mappedCached.sort((a, b) => {
+            const ta = a.usageDate ? new Date(a.usageDate).getTime() : 0;
+            const tb = b.usageDate ? new Date(b.usageDate).getTime() : 0;
+            return tb - ta;
+          });
           setReports(mappedCached);
         }
       })
@@ -372,7 +378,12 @@ const UebersichtEintraege: FC = () => {
             creatorFirstName: u.creatorFirstName,
             creatorLastName: u.creatorLastName,
           }));
-          // show cached immediately
+          // show cached immediately; sort by usageDate (newest first) for stable ordering offline
+          mappedCached.sort((a, b) => {
+            const ta = a.usageDate ? new Date(a.usageDate).getTime() : 0;
+            const tb = b.usageDate ? new Date(b.usageDate).getTime() : 0;
+            return tb - ta;
+          });
           setReports(mappedCached);
         }
       } catch (cacheErr) {
@@ -430,8 +441,12 @@ const UebersichtEintraege: FC = () => {
         // Cache server results for offline access (usages + vehicles)
         try {
           for (const u of usagesWithVehicles) {
-            await upsertCachedUsage(u);
-          }
+              await upsertCachedUsage({
+                ...u,
+                creatorFirstName: u.creator?.firstName,
+                creatorLastName: u.creator?.lastName,
+              });
+            }
           try {
             // also cache extracted vehicles so createUsage can use them offline
             for (const v of Array.from(vehicleMap.values())) {
@@ -464,8 +479,8 @@ const UebersichtEintraege: FC = () => {
     console.log('[USAGES] Rufe fetchData auf');
     fetchData();
 
-    // ensure sync is listening for online events
-    setupOnlineSync();
+    // ensure sync is listening for online events (provide selected org for org-scoped refresh)
+    setupOnlineSync({ getOrganizationId: () => selectedOrgId || undefined });
 
     return () => {
       console.log('[USAGES] useEffect cleanup');
@@ -558,7 +573,13 @@ const UebersichtEintraege: FC = () => {
       const res = await authenticatedFetch(`${apiUrl}/usages/${reportId}`);
       if (!res.ok) throw new Error('Konnte Remote-Version nicht laden');
       const remote = await res.json();
-      await upsertCachedUsage({ ...remote, status: 'synced', id: remote.id });
+      await upsertCachedUsage({
+        ...remote,
+        status: 'synced',
+        id: remote.id,
+        creatorFirstName: remote?.creator?.firstName,
+        creatorLastName: remote?.creator?.lastName,
+      });
       await removeQueueByPayloadId(String(reportId));
       showToast('Remote-Version übernommen', 'success');
       // refresh list

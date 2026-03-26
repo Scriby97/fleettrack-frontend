@@ -15,7 +15,7 @@ type MenuKey = "nutzung" | "uebersichtEintraege" | "uebersicht" | "fahrzeug";
 export default function Home() {
   const [active, setActive] = useState<MenuKey>("nutzung");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isAdmin } = useAuth();
+  const { isAdmin, backendAvailable, backendLoading } = useAuth();
 
   return (
     <div className="flex min-h-screen bg-zinc-50 dark:bg-black font-sans">
@@ -24,6 +24,22 @@ export default function Home() {
         <div className="flex items-center mb-8 flex-shrink-0">
           <Image src="/fleettrack-logo.svg" alt="FleetTrack Logo" width={120} height={120} className="dark:invert" />
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 -ml-3">FleetTrack</h2>
+          {/* Global backend/offline status icon for desktop sidebar */}
+          <div className="ml-3">
+            {backendLoading ? (
+              <svg className="w-5 h-5 animate-spin text-yellow-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25"/>
+                <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="4"/>
+              </svg>
+            ) : (!navigator.onLine || backendAvailable !== true) ? (
+              <span title="Offline" aria-label="Offline" className="text-yellow-600">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" fill="none" />
+                  <path d="M4 4l16 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </span>
+            ) : null}
+          </div>
         </div>
 
         <nav className="flex flex-col gap-2 flex-1 overflow-y-auto">
@@ -96,6 +112,20 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-2">
           <InstallPrompt />
+          {/* Mobile offline/loading icon */}
+          {backendLoading ? (
+            <svg className="w-5 h-5 animate-spin text-yellow-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25"/>
+              <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="4"/>
+            </svg>
+          ) : (!navigator.onLine || backendAvailable !== true) ? (
+            <span title="Offline" aria-label="Offline" className="text-yellow-600">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" fill="none" />
+                <path d="M4 4l16 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </span>
+          ) : null}
           <button 
             onClick={() => setMobileMenuOpen(true)}
             className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md transition-colors"

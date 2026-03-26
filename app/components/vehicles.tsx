@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { getCachedVehicles, upsertCachedVehicle } from '@/lib/offline/db';
+import { setupOnlineSync } from '@/lib/offline/sync';
 import { ToastContainer } from './Toast';
 
 interface Vehicle {
@@ -118,7 +119,7 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
 );
 
 const FlottenUebersicht: FC = () => {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, backendAvailable, backendLoading } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
   const { toasts, showToast, removeToast } = useToast();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -146,10 +147,20 @@ const FlottenUebersicht: FC = () => {
     getCachedVehicles()
       .then((cached) => {
         if (Array.isArray(cached) && cached.length > 0) {
-          setVehicles(cached);
+          // normalize cached vehicles and sort by name for stable ordering
+          const mapped = cached.map((c: any) => ({
+            ...c,
+            id: String(c.id),
+            name: c.name ?? c.vehicle ?? `Fahrzeug ${c.id}`,
+            plate: c.plate ?? '',
+            snowsatNumber: c.snowsatNumber ?? c.SNOWsatNumber ?? c.snowsat ?? undefined,
+          }));
+          mapped.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+          setVehicles(mapped);
+
           // derive statsMap from cached entries when available
           const cachedMap: Record<string, { hours: number; fuelLiters: number }> = {};
-          cached.forEach((c: any) => {
+          mapped.forEach((c: any) => {
             const id = String(c.id);
             const hours = Number(c.totalWorkHours ?? c.hours ?? 0);
             const fuel = Number(c.totalFuelLiters ?? c.fuelLiters ?? 0);
@@ -260,6 +271,10 @@ const FlottenUebersicht: FC = () => {
 
     console.log('[VEHICLES] Rufe fetchStats auf');
     fetchStats();
+
+    // ensure sync is listening for online events (provide selected org for org-scoped refresh)
+    // this makes refreshCaches() run with the correct organization when online
+    setupOnlineSync({ getOrganizationId: () => selectedOrgId || undefined });
 
     return () => {
       console.log('[VEHICLES] useEffect cleanup');
@@ -422,6 +437,7 @@ const FlottenUebersicht: FC = () => {
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             {vehicles.length} Fahrzeuge in der Flotte
           </p>
+          {/* Per-page backend status badge removed — global header icon shows offline status */}
         </div>
       </div>
 
@@ -612,7 +628,7 @@ const FlottenUebersicht: FC = () => {
         </div>
       )}
 
-      {error && (
+      {error && vehicles.length === 0 && (
         <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
           <p className="text-sm text-red-900 dark:text-red-100">{error}</p>
         </div>

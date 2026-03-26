@@ -176,8 +176,14 @@ const CreateUsage: FC = () => {
           }
 
           created = await res.json();
-          // cache server-created usage
-          await upsertCachedUsage({ ...created, status: 'synced', id: created.id });
+          // cache server-created usage (include flattened creator fields)
+          await upsertCachedUsage({
+            ...created,
+            status: 'synced',
+            id: created.id,
+            creatorFirstName: created?.creator?.firstName,
+            creatorLastName: created?.creator?.lastName,
+          });
           console.log('Usage erstellt:', created);
         } catch (apiErr) {
           console.warn('API Write failed, fall back to queue:', apiErr);
@@ -197,8 +203,8 @@ const CreateUsage: FC = () => {
         await addQueue(queued as any);
         // store local cached usage with pending flag and temp id
         await upsertCachedUsage({ ...payload, id: tempId, status: 'pending', creatorFirstName: undefined, creatorLastName: undefined });
-        // ensure online sync is set up
-        setupOnlineSync();
+        // ensure online sync is set up (provide selected org for org-scoped refresh)
+        setupOnlineSync({ getOrganizationId: () => selectedOrgId || undefined });
         showToast('Nutzung wird offline gespeichert und später synchronisiert', 'info');
       }
 
