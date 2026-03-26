@@ -37,9 +37,9 @@ export default function SuperAdminUsersPage() {
   const [selectedOrgId, setSelectedOrgId] = useState<string>('')
   const [confirmUser, setConfirmUser] = useState<User | null>(null)
   const [submittingId, setSubmittingId] = useState<string | null>(null)
-  const [invites, setInvites] = useState<InviteEntity[]>([])
   const [invitesLoading, setInvitesLoading] = useState(false)
   const [invitesError, setInvitesError] = useState<string | null>(null)
+  const [allInvites, setAllInvites] = useState<InviteEntity[]>([])
   const [inviteOrgId, setInviteOrgId] = useState<string>('')
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<'admin' | 'user'>('user')
@@ -84,14 +84,15 @@ export default function SuperAdminUsersPage() {
   }, [authLoading, isSuperAdmin, router])
 
   useEffect(() => {
-    if (authLoading || !isSuperAdmin || activeTab !== 'invites' || !inviteOrgId) return
+    if (authLoading || !isSuperAdmin || activeTab !== 'invites') return
 
     const fetchInvites = async () => {
       try {
         setInvitesLoading(true)
         setInvitesError(null)
-        const data = await getOrganizationInvites(inviteOrgId)
-        setInvites(data)
+        // For super-admin: backend returns invites for all organizations when no org header is provided
+        const data = await getOrganizationInvites()
+        setAllInvites(Array.isArray(data) ? data : [])
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Fehler beim Laden der Einladungen'
         setInvitesError(message)
@@ -101,7 +102,7 @@ export default function SuperAdminUsersPage() {
     }
 
     fetchInvites()
-  }, [authLoading, activeTab, inviteOrgId, isSuperAdmin])
+  }, [authLoading, activeTab, isSuperAdmin])
 
   const filteredUsers = useMemo(() => {
     let result = users
@@ -143,8 +144,11 @@ export default function SuperAdminUsersPage() {
   }
 
   const sortedInvites = useMemo(() => {
-    return [...invites].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-  }, [invites])
+    const filtered = inviteOrgId
+      ? allInvites.filter((i) => String(i.organizationId) === String(inviteOrgId))
+      : allInvites
+    return [...filtered].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  }, [allInvites, inviteOrgId])
 
   const handleCreateInvite = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -164,7 +168,8 @@ export default function SuperAdminUsersPage() {
     setInviteSubmitting(true)
     try {
       const invite = await createInvite({ email, role: inviteRole }, inviteOrgId)
-      setInvites((prev) => [invite, ...prev])
+      // prepend to local cache of invites (server returns invites for all orgs to super-admin)
+      setAllInvites((prev) => [invite, ...prev])
       setCreatedInviteLink(inviteLinkForToken(invite.token))
       setInviteEmail('')
       setInviteRole('user')
@@ -192,7 +197,7 @@ export default function SuperAdminUsersPage() {
   const handleDeleteInvite = async (inviteId: string) => {
     try {
       await deleteInvite(inviteId, inviteOrgId)
-      setInvites((prev) => prev.filter((invite) => invite.id !== inviteId))
+      setAllInvites((prev) => prev.filter((invite) => invite.id !== inviteId))
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Fehler beim Loeschen der Einladung'
       setInvitesError(message)
@@ -427,7 +432,7 @@ export default function SuperAdminUsersPage() {
                 onChange={(event) => setInviteOrgId(event.target.value)}
                 className="w-full sm:w-64 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm dark:bg-zinc-700 dark:text-zinc-100"
               >
-                <option value="">Organization waehlen</option>
+                <option value="">Alle Organizations</option>
                 {organizations.map((org) => (
                   <option key={org.id} value={org.id}>
                     {org.name}
@@ -442,92 +447,31 @@ export default function SuperAdminUsersPage() {
               </div>
             )}
 
-            {!inviteOrgId && (
-              <div className="rounded-lg bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-700 p-4 text-sm text-zinc-600 dark:text-zinc-300">
-                Bitte waehle eine Organization, um Einladungen zu sehen oder zu erstellen.
-              </div>
-            )}
+            {/* Show invites (all or filtered) */}
 
-            {inviteOrgId && (
+            {invitesLoading ? (
+              <div className="py-8 text-center text-zinc-500 dark:text-zinc-400">Lade Einladungen...</div>
+            ) : (
               <>
-                {invitesLoading ? (
-                  <div className="py-8 text-center text-zinc-500 dark:text-zinc-400">Lade Einladungen...</div>
-                ) : (
-                  <>
-                    {/* Desktop Tabelle */}
-                    <div className="hidden md:block overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
-                          <tr>
-                            <th className="px-4 py-3 text-left font-medium">Email</th>
-                            <th className="px-4 py-3 text-left font-medium">Rolle</th>
-                            <th className="px-4 py-3 text-left font-medium">Status</th>
-                            <th className="px-4 py-3 text-left font-medium">Ablauf</th>
-                            <th className="px-4 py-3 text-left font-medium">Aktionen</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
-                          {sortedInvites.length === 0 ? (
-                            <tr>
-                              <td colSpan={5} className="px-4 py-6 text-center text-zinc-500 dark:text-zinc-400">
-                                Keine Einladungen gefunden.
-                              </td>
-                            </tr>
-                          ) : (
-                            sortedInvites.map((invite) => {
-                              const status = getInviteStatus(invite)
-                              const link = inviteLinkForToken(invite.token)
-                              const isCopyDisabled = !link
-
-                              return (
-                                <tr key={invite.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
-                                  <td className="px-4 py-3 text-zinc-900 dark:text-zinc-100 font-medium">
-                                    {invite.email}
-                                  </td>
-                                  <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 capitalize">
-                                    {invite.role}
-                                  </td>
-                                  <td className="px-4 py-3">
-                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${STATUS_CLASSES[status]}`}>
-                                      {STATUS_LABELS[status]}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
-                                    {new Date(invite.expiresAt).toLocaleDateString('de-DE')}
-                                  </td>
-                                  <td className="px-4 py-3">
-                                    <div className="flex flex-wrap gap-2">
-                                      <button
-                                        onClick={() => handleCopyLink(link, invite.id)}
-                                        disabled={isCopyDisabled}
-                                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                                      >
-                                        {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
-                                      </button>
-                                      {status === 'pending' && (
-                                        <button
-                                          onClick={() => handleDeleteInvite(invite.id)}
-                                          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
-                                        >
-                                          Loeschen
-                                        </button>
-                                      )}
-                                    </div>
-                                  </td>
-                                </tr>
-                              )
-                            })
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Mobile Kacheln */}
-                    <div className="md:hidden space-y-3">
+                {/* Desktop Tabelle */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-medium">Email</th>
+                        <th className="px-4 py-3 text-left font-medium">Rolle</th>
+                        <th className="px-4 py-3 text-left font-medium">Status</th>
+                        <th className="px-4 py-3 text-left font-medium">Ablauf</th>
+                        <th className="px-4 py-3 text-left font-medium">Aktionen</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
                       {sortedInvites.length === 0 ? (
-                        <div className="py-6 text-center text-zinc-500 dark:text-zinc-400">
-                          Keine Einladungen gefunden.
-                        </div>
+                        <tr>
+                          <td colSpan={5} className="px-4 py-6 text-center text-zinc-500 dark:text-zinc-400">
+                            Keine Einladungen gefunden.
+                          </td>
+                        </tr>
                       ) : (
                         sortedInvites.map((invite) => {
                           const status = getInviteStatus(invite)
@@ -535,50 +479,103 @@ export default function SuperAdminUsersPage() {
                           const isCopyDisabled = !link
 
                           return (
-                            <div
-                              key={invite.id}
-                              className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-3"
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                                    {invite.email}
-                                  </p>
-                                  <p className="text-sm text-zinc-600 dark:text-zinc-400 capitalize mt-1">
-                                    Rolle: {invite.role}
-                                  </p>
-                                </div>
-                                <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${STATUS_CLASSES[status]}`}>
+                            <tr key={invite.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
+                              <td className="px-4 py-3 text-zinc-900 dark:text-zinc-100 font-medium">
+                                {invite.email}
+                              </td>
+                              <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400capitalize">
+                                {invite.role}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${STATUS_CLASSES[status]}`}>
                                   {STATUS_LABELS[status]}
                                 </span>
-                              </div>
-                              <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                                <span className="font-medium">Ablauf:</span> {new Date(invite.expiresAt).toLocaleDateString('de-DE')}
-                              </div>
-                              <div className="flex flex-wrap gap-2 pt-1">
-                                <button
-                                  onClick={() => handleCopyLink(link, invite.id)}
-                                  disabled={isCopyDisabled}
-                                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                                >
-                                  {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
-                                </button>
-                                {status === 'pending' && (
+                              </td>
+                              <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                                {new Date(invite.expiresAt).toLocaleDateString('de-DE')}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex flex-wrap gap-2">
                                   <button
-                                    onClick={() => handleDeleteInvite(invite.id)}
-                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+                                    onClick={() => handleCopyLink(link, invite.id)}
+                                    disabled={isCopyDisabled}
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                                   >
-                                    Loeschen
+                                    {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
                                   </button>
-                                )}
-                              </div>
-                            </div>
+                                  {status === 'pending' && (
+                                    <button
+                                      onClick={() => handleDeleteInvite(invite.id)}
+                                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+                                    >
+                                      Loeschen
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
                           )
                         })
                       )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Kacheln */}
+                <div className="md:hidden space-y-3">
+                  {sortedInvites.length === 0 ? (
+                    <div className="py-6 text-center text-zinc-500 dark:text-zinc-400">
+                      Keine Einladungen gefunden.
                     </div>
-                  </>
-                )}
+                  ) : (
+                    sortedInvites.map((invite) => {
+                      const status = getInviteStatus(invite)
+                      const link = inviteLinkForToken(invite.token)
+                      const isCopyDisabled = !link
+
+                      return (
+                        <div
+                          key={invite.id}
+                          className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-3"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                                {invite.email}
+                              </p>
+                              <p className="text-sm text-zinc-600 dark:text-zinc-400 capitalize mt-1">
+                                Rolle: {invite.role}
+                              </p>
+                            </div>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${STATUS_CLASSES[status]}`}>
+                              {STATUS_LABELS[status]}
+                            </span>
+                          </div>
+                          <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                            <span className="font-medium">Ablauf:</span> {new Date(invite.expiresAt).toLocaleDateString('de-DE')}
+                          </div>
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            <button
+                              onClick={() => handleCopyLink(link, invite.id)}
+                              disabled={isCopyDisabled}
+                              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                            >
+                              {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
+                            </button>
+                            {status === 'pending' && (
+                              <button
+                                onClick={() => handleDeleteInvite(invite.id)}
+                                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+                              >
+                                Loeschen
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
               </>
             )}
           </div>

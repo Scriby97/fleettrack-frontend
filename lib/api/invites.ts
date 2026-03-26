@@ -55,10 +55,14 @@ export async function createInvite(
   data: { email: string; role: 'admin' | 'user' },
   organizationId?: string
 ): Promise<InviteEntity> {
+  const payload = organizationId ? { ...data, organizationId } : data
+
+  // Include organizationId in the JSON body (required by backend for super_admin)
+  // Keep the X-Organization-Id header as well for backward compatibility.
   const response = await authenticatedFetch(`${API_URL}/organizations/invites`, {
     method: 'POST',
     headers: organizationId ? { 'X-Organization-Id': organizationId } : undefined,
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   })
   
   if (!response.ok) {
