@@ -496,21 +496,24 @@ export default function SuperAdminUsersPage() {
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex flex-wrap gap-2">
-                                  <button
-                                    onClick={() => handleCopyLink(link, invite.id)}
-                                    disabled={isCopyDisabled}
-                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                                  >
-                                    {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
-                                  </button>
-                                  {status === 'pending' && (
-                                    <button
-                                      onClick={() => handleDeleteInvite(invite.id)}
-                                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
-                                    >
-                                      Loeschen
-                                    </button>
-                                  )}
+                                      {status === 'pending' && (
+                                        <button
+                                          onClick={() => handleCopyLink(link, invite.id)}
+                                          disabled={isCopyDisabled}
+                                          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                                        >
+                                          {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
+                                        </button>
+                                      )}
+
+                                      {(status === 'pending' || status === 'used') && (
+                                        <button
+                                          onClick={() => handleDeleteInvite(invite.id)}
+                                          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+                                        >
+                                          Loeschen
+                                        </button>
+                                      )}
                                 </div>
                               </td>
                             </tr>
@@ -555,14 +558,17 @@ export default function SuperAdminUsersPage() {
                             <span className="font-medium">Ablauf:</span> {new Date(invite.expiresAt).toLocaleDateString('de-DE')}
                           </div>
                           <div className="flex flex-wrap gap-2 pt-1">
-                            <button
-                              onClick={() => handleCopyLink(link, invite.id)}
-                              disabled={isCopyDisabled}
-                              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                            >
-                              {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
-                            </button>
                             {status === 'pending' && (
+                              <button
+                                onClick={() => handleCopyLink(link, invite.id)}
+                                disabled={isCopyDisabled}
+                                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                              >
+                                {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
+                              </button>
+                            )}
+
+                            {(status === 'pending' || status === 'used') && (
                               <button
                                 onClick={() => handleDeleteInvite(invite.id)}
                                 className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
