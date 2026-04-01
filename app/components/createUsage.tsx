@@ -67,12 +67,12 @@ const CreateUsage: FC = () => {
 
     setLoadingOperatingHours(true);
     try {
-      const headers: HeadersInit = {};
+      const url = new URL(`${apiUrl}/vehicles/${vehicleId}/last-operating-hours`);
       if (isSuperAdmin && selectedOrgId) {
-        headers['X-Organization-Id'] = selectedOrgId;
+        url.searchParams.set('organizationId', selectedOrgId);
       }
-      
-      const res = await authenticatedFetch(`${apiUrl}/vehicles/${vehicleId}/last-operating-hours`, { headers });
+
+      const res = await authenticatedFetch(url.toString());
       if (!res.ok) {
         console.warn('Konnte letzte Betriebsstunden nicht laden, setze auf 0');
         setFormData((prev) => ({ ...prev, startOperatingHours: '0' }));
@@ -209,12 +209,12 @@ const CreateUsage: FC = () => {
 
       try {
         console.log('[CREATE_USAGE] Versuche Request zu senden...');
-        const headers: HeadersInit = {};
+        const url = new URL(`${apiUrl}/vehicles`);
         if (isSuperAdmin && selectedOrgId) {
-          headers['X-Organization-Id'] = selectedOrgId;
+          url.searchParams.set('organizationId', selectedOrgId);
         }
-        
-        const res = await authenticatedFetch(`${apiUrl}/vehicles`, { signal: controller.signal, headers });
+
+        const res = await authenticatedFetch(url.toString(), { signal: controller.signal });
         console.log('[CREATE_USAGE] Request erfolgreich, Status:', res.status);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();

@@ -156,12 +156,12 @@ const FlottenUebersicht: FC = () => {
 
       try {
         console.log('[VEHICLES] Versuche Request zu senden...');
-        const headers: HeadersInit = {};
+        const url = new URL(`${apiUrl}/vehicles/stats`);
         if (isSuperAdmin && selectedOrgId) {
-          headers['X-Organization-Id'] = selectedOrgId;
+          url.searchParams.set('organizationId', selectedOrgId);
         }
-        
-        const res = await authenticatedFetch(`${apiUrl}/vehicles/stats`, { signal: controller.signal, headers });
+
+        const res = await authenticatedFetch(url.toString(), { signal: controller.signal });
         console.log('[VEHICLES] Request erfolgreich, Status:', res.status);
         if (!res.ok) throw new Error(`Vehicles stats HTTP ${res.status}`);
         const statsData = await res.json();

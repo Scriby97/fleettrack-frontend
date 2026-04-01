@@ -47,14 +47,12 @@ export async function getUsagesWithVehicles(
     throw new Error('API URL nicht konfiguriert');
   }
 
-  const headers: HeadersInit = {};
+  const url = new URL(`${apiUrl}/usages/with-vehicles`);
   if (organizationId) {
-    headers['X-Organization-Id'] = organizationId;
+    url.searchParams.set('organizationId', organizationId);
   }
 
-  const response = await authenticatedFetch(`${apiUrl}/usages/with-vehicles`, {
-    headers,
-  });
+  const response = await authenticatedFetch(url.toString());
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}: ${await response.text()}`);
