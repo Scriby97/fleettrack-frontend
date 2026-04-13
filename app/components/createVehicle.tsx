@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, type FC, type FormEvent } from 'react';import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
+import { useState, type FC, type FormEvent } from 'react';
+import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
