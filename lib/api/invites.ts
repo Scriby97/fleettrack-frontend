@@ -28,8 +28,8 @@ export async function acceptInvite(data: {
   lastName: string
 }): Promise<{
   message: string
-  user: any
-  session: any
+  user: { id: string; email: string } | null
+  session: { access_token: string; refresh_token: string; token_type?: string } | null
 }> {
   const response = await fetch(`${API_URL}/invites/accept`, {
     method: 'POST',

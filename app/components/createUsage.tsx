@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, type FC, type FormEvent } from 'react';
+import { useState, useCallback, useEffect, useRef, type FC, type FormEvent } from 'react';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
@@ -55,6 +55,9 @@ const CreateUsage: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [loadingOperatingHours, setLoadingOperatingHours] = useState(false);
+  // Keep a ref of the current vehicleId so the vehicles-fetching effect can check
+  // if the currently selected vehicle is still valid without being in its dep array.
+  const currentVehicleIdRef = useRef<string>('');
 
   const updateCalculatedHours = useCallback(() => {
     const hours = calculateHoursDifference(formData.startOperatingHours, formData.endOperatingHours);
@@ -74,7 +77,6 @@ const CreateUsage: FC = () => {
 
       const res = await authenticatedFetch(url.toString());
       if (!res.ok) {
-        console.warn('Konnte letzte Betriebsstunden nicht laden, setze auf 0');
         setFormData((prev) => ({ ...prev, startOperatingHours: '0' }));
         return;
       }
@@ -82,12 +84,10 @@ const CreateUsage: FC = () => {
       if (data.endOperatingHours !== undefined && data.endOperatingHours !== null) {
         setFormData((prev) => ({ ...prev, startOperatingHours: String(data.endOperatingHours) }));
       } else {
-        // Keine vorherige Nutzung vorhanden, setze auf 0
         setFormData((prev) => ({ ...prev, startOperatingHours: '0' }));
       }
     } catch (err) {
       console.error('Fehler beim Laden der letzten Betriebsstunden:', err);
-      // Bei Fehler auf 0 setzen
       setFormData((prev) => ({ ...prev, startOperatingHours: '0' }));
     } finally {
       setLoadingOperatingHours(false);
@@ -95,6 +95,7 @@ const CreateUsage: FC = () => {
   }, [isSuperAdmin, selectedOrgId]);
 
   const handleVehicleChange = useCallback((vehicleId: string) => {
+    currentVehicleIdRef.current = vehicleId;
     setFormData((prev) => ({ ...prev, vehicleId }));
     fetchVehicleEndOperatingHours(vehicleId);
   }, [fetchVehicleEndOperatingHours]);
@@ -149,29 +150,26 @@ const CreateUsage: FC = () => {
         usageDate: formData.usageDate,
       };
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-      if (apiUrl) {
-        const headers: HeadersInit = {};
-        if (isSuperAdmin && selectedOrgId) {
-          headers['X-Organization-Id'] = selectedOrgId;
-        }
-        
-        const res = await authenticatedFetch(`${apiUrl}/usages`, {
-          method: 'POST',
-          body: JSON.stringify(payload),
-          headers,
-        });
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) throw new Error('API URL nicht konfiguriert');
 
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(`API error ${res.status}: ${text}`);
-        }
-
-        const created = await res.json();
-        console.log('Usage erstellt:', created);
-      } else {
-        console.log('NEXT_PUBLIC_API_URL nicht konfiguriert, Daten nur lokal gespeichert');
+      const headers: HeadersInit = {};
+      if (isSuperAdmin && selectedOrgId) {
+        headers['X-Organization-Id'] = selectedOrgId;
       }
+
+      const res = await authenticatedFetch(`${apiUrl}/usages`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers,
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`API-Fehler ${res.status}: ${text}`);
+      }
+
+      await res.json();
 
       setFormData({ vehicleId: vehicles[0]?.id ?? '', startOperatingHours: '', endOperatingHours: '', fuel: '', usageDate: getTodayDate() });
       setCalculatedHours(null);
@@ -187,46 +185,34 @@ const CreateUsage: FC = () => {
 
   // Fetch vehicles when organization is selected
   useEffect(() => {
-    console.log('[CREATE_USAGE] useEffect gestartet');
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL
-    console.log('[CREATE_USAGE] API URL:', apiUrl);
-    if (!apiUrl) {
-      console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
-      return
-    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) return;
 
     // Wait for organization to be selected
-    if (!selectedOrgId) {
-      console.log('[CREATE_USAGE] Waiting for organization selection...');
-      return;
-    }
+    if (!selectedOrgId) return;
 
     const controller = new AbortController();
     const fetchVehicles = async () => {
-      console.log('[CREATE_USAGE] fetchVehicles wird aufgerufen');
       setVehiclesLoading(true);
       setVehiclesError(null);
 
       try {
-        console.log('[CREATE_USAGE] Versuche Request zu senden...');
         const url = new URL(`${apiUrl}/vehicles`);
         if (isSuperAdmin && selectedOrgId) {
           url.searchParams.set('organizationId', selectedOrgId);
         }
 
         const res = await authenticatedFetch(url.toString(), { signal: controller.signal });
-        console.log('[CREATE_USAGE] Request erfolgreich, Status:', res.status);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (Array.isArray(data)) {
           setVehicles(data);
-          // set default selected vehicle if none or mismatched
-          const currentValid = data.find((v: Vehicle) => v.id === formData.vehicleId);
-          const selectedVehicleId = currentValid ? formData.vehicleId : data[0]?.id ?? '';
-          
+          const currentValid = data.find((v: Vehicle) => v.id === currentVehicleIdRef.current);
+          const selectedVehicleId = currentValid ? currentVehicleIdRef.current : data[0]?.id ?? '';
+
           setFormData((prev) => ({ ...prev, vehicleId: selectedVehicleId }));
-          
-          // Lade die letzten Betriebsstunden für das ausgewählte Fahrzeug
+          currentVehicleIdRef.current = selectedVehicleId;
+
           if (selectedVehicleId) {
             fetchVehicleEndOperatingHours(selectedVehicleId);
           }
@@ -235,19 +221,16 @@ const CreateUsage: FC = () => {
         }
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
-        console.error('[CREATE_USAGE] Fehler beim Laden der Fahrzeuge:', err);
-        console.error('[CREATE_USAGE] Fehler Details:', err instanceof Error ? err.message : String(err));
-        setVehiclesError('Fehler beim Laden der Fahrzeuge (Fallback verwendet)');
+        console.error('Fehler beim Laden der Fahrzeuge:', err);
+        setVehiclesError('Fehler beim Laden der Fahrzeuge');
       } finally {
         setVehiclesLoading(false);
       }
     };
 
-    console.log('[CREATE_USAGE] Rufe fetchVehicles auf');
     fetchVehicles();
 
     return () => {
-      console.log('[CREATE_USAGE] useEffect cleanup');
       controller.abort();
     };
   }, [fetchVehicleEndOperatingHours, selectedOrgId, isSuperAdmin]);
