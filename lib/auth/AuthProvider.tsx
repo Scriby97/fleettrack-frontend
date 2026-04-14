@@ -43,6 +43,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchingCountRef = useRef(0)
   // Flag to avoid processing onAuthStateChange events before initAuth completes
   const initAuthCompletedRef = useRef(false)
+  // Ref to always hold the latest supabaseUser without being a useEffect dependency
+  const supabaseUserRef = useRef(supabaseUser)
+
+  // Keep ref in sync with latest supabaseUser value
+  supabaseUserRef.current = supabaseUser
 
   // Compute derived values
   const isAdmin = userRole === 'admin' || userRole === 'super_admin'
@@ -153,7 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible') {
         const { data } = await supabase.auth.getSession()
-        if (!data.session && supabaseUser) {
+        if (!data.session && supabaseUserRef.current) {
           // Session expired while the tab was in the background – reload to clear state
           window.location.reload()
         }
@@ -219,7 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       subscription.unsubscribe()
     }
-  }, [supabase, fetchUserRole, isResetPasswordRoute, supabaseUser])
+  }, [supabase, fetchUserRole, isResetPasswordRoute])
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
