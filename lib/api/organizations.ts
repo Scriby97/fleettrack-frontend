@@ -1,7 +1,7 @@
 import { CreateOrganizationRequest, CreateOrganizationResponse, Organization } from '@/lib/types/user'
 import { authenticatedFetch } from './authenticatedFetch'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 /**
  * Create a new organization (Super Admin only)

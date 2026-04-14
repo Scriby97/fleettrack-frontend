@@ -84,7 +84,7 @@ export default function InvitePage() {
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-zinc-600 dark:text-zinc-400">Loading invite...</p>
+          <p className="mt-4 text-zinc-600 dark:text-zinc-400">Einladung wird geladen...</p>
         </div>
       </div>
     )
@@ -100,13 +100,13 @@ export default function InvitePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Invalid Invite</h2>
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Ungültige Einladung</h2>
             <p className="text-zinc-600 dark:text-zinc-400 mb-6">{error}</p>
             <button
               onClick={() => router.push('/login')}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Go to Login
+              Zum Login
             </button>
           </div>
         </div>
@@ -119,7 +119,7 @@ export default function InvitePage() {
       <div className="w-full max-w-md space-y-6 sm:space-y-8">
         <div className="text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-            Join {invite?.organization.name}
+            Beitreten: {invite?.organization.name}
           </h2>
           <p className="mt-2 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
             Du wurdest eingeladen als <span className="font-semibold">{invite?.role}</span>

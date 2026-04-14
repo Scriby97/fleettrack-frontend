@@ -1,172 +1,122 @@
 /**
  * Health Check API
- * 
+ *
  * Provides lightweight backend availability checks without authentication.
  * Industry best practice for startup/readiness probes.
  */
 
 interface HealthCheckOptions {
-  retries?: number;
-  retryDelay?: number;
-  useExponentialBackoff?: boolean;
-  onRetry?: (attempt: number, maxRetries: number) => void;
-  bypassCache?: boolean; // Force a new check, ignoring cache
+  retries?: number
+  retryDelay?: number
+  useExponentialBackoff?: boolean
+  onRetry?: (attempt: number, maxRetries: number) => void
+  bypassCache?: boolean
 }
 
 interface HealthCheckResult {
-  available: boolean;
-  retryCount: number;
-  error?: string;
-  cached?: boolean; // Indicates if result was from cache
+  available: boolean
+  retryCount: number
+  error?: string
+  cached?: boolean
 }
 
 // Cache for health check results
 let healthCheckCache: {
-  result: HealthCheckResult | null;
-  timestamp: number;
+  result: HealthCheckResult | null
+  timestamp: number
 } = {
   result: null,
   timestamp: 0,
-};
+}
 
-const CACHE_DURATION_MS = 30000; // 30 seconds
+const CACHE_DURATION_MS = 30000 // 30 seconds
 
 /**
- * Check if backend is available using /health endpoint
- * Falls back to /auth/me if /health doesn't exist (backwards compatibility)
- * Results are cached for 30 seconds to avoid unnecessary checks
+ * Check if backend is available using /health endpoint.
+ * Falls back to /api/health for backwards compatibility.
+ * Results are cached for 30 seconds to avoid unnecessary checks.
  */
 export async function checkBackendHealth(
   options: HealthCheckOptions = {}
 ): Promise<HealthCheckResult> {
-  const { bypassCache = false } = options;
-  
-  // Check if we have a valid cached result
-  const now = Date.now();
-  const cacheAge = now - healthCheckCache.timestamp;
-  
+  const { bypassCache = false } = options
+
+  const now = Date.now()
+  const cacheAge = now - healthCheckCache.timestamp
+
   if (!bypassCache && healthCheckCache.result && cacheAge < CACHE_DURATION_MS) {
-    console.log(`[HEALTH_CHECK] Using cached result (${Math.round(cacheAge / 1000)}s old)`);
-    return {
-      ...healthCheckCache.result,
-      cached: true,
-    };
+    return { ...healthCheckCache.result, cached: true }
   }
-  
-  const startTime = performance.now();
-  
+
   const {
     retries = 8,
     retryDelay = 2000,
     useExponentialBackoff = true,
     onRetry,
-  } = options;
+  } = options
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL
   if (!apiUrl) {
-    return {
-      available: false,
-      retryCount: 0,
-      error: 'API URL not configured',
-    };
+    return { available: false, retryCount: 0, error: 'API URL nicht konfiguriert' }
   }
 
-  // Try /health endpoint first (lightweight, no auth needed)
-  const healthEndpoints = [
-    `${apiUrl}/health`,
-    `${apiUrl}/api/health`,
-  ];
+  const healthEndpoints = [`${apiUrl}/health`, `${apiUrl}/api/health`]
 
-  let lastError: string | undefined;
-  let retryCount = 0;
+  let lastError: string | undefined
+  let retryCount = 0
 
   for (let attempt = 0; attempt <= retries; attempt++) {
-    retryCount = attempt;
+    retryCount = attempt
 
-    // Try each health endpoint
     for (const endpoint of healthEndpoints) {
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000)
 
         const response = await fetch(endpoint, {
           method: 'GET',
           signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+          headers: { 'Content-Type': 'application/json' },
+        })
 
-        clearTimeout(timeoutId);
+        clearTimeout(timeoutId)
 
         if (response.ok) {
-          const duration = Math.round(performance.now() - startTime);
-          console.log(`[HEALTH_CHECK] Backend available via ${endpoint} (${duration}ms)`);
-          
-          const result: HealthCheckResult = {
-            available: true,
-            retryCount,
-          };
-          
-          // Update cache
-          healthCheckCache = {
-            result,
-            timestamp: Date.now(),
-          };
-          
-          return result;
+          const result: HealthCheckResult = { available: true, retryCount }
+          healthCheckCache = { result, timestamp: Date.now() }
+          return result
         }
       } catch (error) {
-        // Continue to next endpoint
-        lastError = error instanceof Error ? error.message : 'Unknown error';
+        lastError = error instanceof Error ? error.message : 'Unbekannter Fehler'
       }
     }
 
-    // If this was the last attempt, don't wait
-    if (attempt >= retries) {
-      break;
-    }
+    if (attempt >= retries) break
 
-    // Calculate delay with optional exponential backoff
     const delay = useExponentialBackoff
       ? retryDelay * Math.pow(1.5, attempt)
-      : retryDelay;
+      : retryDelay
 
-    console.log(
-      `[HEALTH_CHECK] Backend not available, retrying in ${Math.round(delay)}ms (${attempt + 1}/${retries})`
-    );
-
-    onRetry?.(attempt + 1, retries);
-
-    // Wait before next retry
-    await new Promise((resolve) => setTimeout(resolve, delay));
+    onRetry?.(attempt + 1, retries)
+    await new Promise(resolve => setTimeout(resolve, delay))
   }
 
-  const duration = Math.round(performance.now() - startTime);
-  console.log(`[HEALTH_CHECK] Backend not available after ${duration}ms`);
-  
   const result: HealthCheckResult = {
     available: false,
     retryCount,
-    error: lastError || 'Backend not available',
-  };
-  
-  // Update cache (even for failures, to avoid hammering unavailable backend)
-  healthCheckCache = {
-    result,
-    timestamp: Date.now(),
-  };
-  
-  return result;
+    error: lastError || 'Backend nicht erreichbar',
+  }
+
+  // Cache failures too, to avoid hammering an unavailable backend
+  healthCheckCache = { result, timestamp: Date.now() }
+
+  return result
 }
 
 /**
- * Wait for backend to become available
- * Useful for startup scenarios
+ * Wait for backend to become available. Useful for startup scenarios.
  */
-export async function waitForBackend(
-  options: HealthCheckOptions = {}
-): Promise<boolean> {
-  const result = await checkBackendHealth(options);
-  return result.available;
+export async function waitForBackend(options: HealthCheckOptions = {}): Promise<boolean> {
+  const result = await checkBackendHealth(options)
+  return result.available
 }

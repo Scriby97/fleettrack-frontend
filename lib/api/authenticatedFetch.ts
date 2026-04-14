@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/client'
+import type { Session } from '@supabase/supabase-js'
 
-// Global loading callbacks - will be set by ApiLoadingContext
+// Global loading callbacks - set by ApiLoadingContext
 let globalStartLoading: (() => void) | null = null
 let globalStopLoading: (() => void) | null = null
 
@@ -18,113 +19,101 @@ interface AuthenticatedFetchOptions extends RequestInit {
 }
 
 /**
- * Makes an authenticated fetch request to the backend API
- * Automatically adds the Authorization header with the Supabase JWT token
- * Supports retry logic for cold starts (e.g., Render free tier)
+ * Makes an authenticated fetch request to the backend API.
+ * Automatically adds the Authorization header with the Supabase JWT token.
+ * Supports retry logic for cold starts (e.g., Render free tier).
  */
 export async function authenticatedFetch(
   url: string,
   options: AuthenticatedFetchOptions = {}
 ): Promise<Response> {
-  const { retries = 0, retryDelay = 5000, useExponentialBackoff = false, onRetry, skipLoadingIndicator = false, ...fetchOptions } = options
-  
-  // Track loading state
+  const {
+    retries = 0,
+    retryDelay = 5000,
+    useExponentialBackoff = false,
+    onRetry,
+    skipLoadingIndicator = false,
+    ...fetchOptions
+  } = options
+
   if (!skipLoadingIndicator && globalStartLoading) {
     globalStartLoading()
   }
-  
+
   try {
-    console.log('[AUTH_FETCH] Starte authenticatedFetch für URL:', url);
     const supabase = createClient()
-    
-    // Get the current session token with timeout
-    console.log('[AUTH_FETCH] Hole Session...');
-    
-    // Add timeout to prevent hanging
+
+    // Get the current session token with a 10-second timeout
     const getSessionWithTimeout = Promise.race([
       supabase.auth.getSession(),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Session timeout - bitte Seite neu laden')), 10000)
-      )
-    ]);
-    
-    let session;
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Session timeout – bitte Seite neu laden')), 10000)
+      ),
+    ])
+
+    let session: Session | null
     try {
-      const result = await getSessionWithTimeout as any;
-      session = result?.data?.session;
-      console.log('[AUTH_FETCH] Session erhalten:', session ? 'JA' : 'NEIN', session?.user?.email);
+      const result = await getSessionWithTimeout
+      session = result.data.session
     } catch (error) {
-      console.error('[AUTH_FETCH] Fehler beim Abrufen der Session:', error);
-      throw error;
-    }
-    
-    if (!session?.access_token) {
-      console.error('[AUTH_FETCH] FEHLER: Keine aktive Session!');
-      throw new Error('No active session. Please login first.')
+      console.error('Fehler beim Abrufen der Session:', error)
+      throw error
     }
 
-    // Merge headers with authorization
+    if (!session?.access_token) {
+      throw new Error('Keine aktive Session. Bitte zuerst anmelden.')
+    }
+
     const headers = {
       ...fetchOptions.headers,
-      'Authorization': `Bearer ${session.access_token}`,
+      Authorization: `Bearer ${session.access_token}`,
       'Content-Type': 'application/json',
     }
 
-    console.log('[AUTH_FETCH] Sende fetch Request zu:', url);
-    
     let lastError: Error | null = null
-    
+
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const response = await fetch(url, {
           ...fetchOptions,
           headers,
-          signal: AbortSignal.timeout(20000), // 20 Sekunden Timeout pro Versuch
+          signal: AbortSignal.timeout(20000),
         })
-        
-        console.log('[AUTH_FETCH] Response erhalten, Status:', response.status);
-        
-        // Bei Erfolg (2xx) oder Client-Fehler (4xx) sofort zurückgeben
+
+        // Return immediately for 2xx success or 4xx client errors
         if (response.ok || (response.status >= 400 && response.status < 500)) {
-          console.log('[AUTH_FETCH] ✓ Request erfolgreich, beende Retries');
           return response
         }
-        
-        // Bei Server-Fehler (5xx) wiederholen, falls Retries konfiguriert
+
+        // Retry on 5xx server errors
         if (attempt < retries) {
-          const currentDelay = useExponentialBackoff 
-            ? retryDelay * Math.pow(1.5, attempt) // Exponentieller Backoff: 2s, 3s, 4.5s, 6.75s...
+          const currentDelay = useExponentialBackoff
+            ? retryDelay * Math.pow(1.5, attempt)
             : retryDelay
-          console.log(`[AUTH_FETCH] Server Error ${response.status}, Retry ${attempt + 1}/${retries} in ${Math.round(currentDelay)}ms`);
           if (onRetry) onRetry(attempt + 1, retries)
           await new Promise(resolve => setTimeout(resolve, currentDelay))
           continue
         }
-        
+
         return response
       } catch (error) {
         lastError = error as Error
-        console.error(`[AUTH_FETCH] Fetch Fehler (Versuch ${attempt + 1}/${retries + 1}):`, error);
-        
-        // Bei Netzwerkfehler oder Timeout wiederholen
+
         if (attempt < retries) {
-          const currentDelay = useExponentialBackoff 
+          const currentDelay = useExponentialBackoff
             ? retryDelay * Math.pow(1.5, attempt)
             : retryDelay
-          console.log(`[AUTH_FETCH] Retry ${attempt + 1}/${retries} in ${Math.round(currentDelay)}ms`);
           if (onRetry) onRetry(attempt + 1, retries)
           await new Promise(resolve => setTimeout(resolve, currentDelay))
           continue
         }
-        
+
         throw error
       }
     }
-    
-    // Falls wir hier ankommen, werfen wir den letzten Fehler
-    throw lastError || new Error('Request failed after retries')
+
+    throw lastError || new Error('Anfrage nach Wiederholungsversuchen fehlgeschlagen')
   } finally {
-    // Stop loading indicator
     if (!skipLoadingIndicator && globalStopLoading) {
       globalStopLoading()
     }

@@ -71,9 +71,9 @@ export default function SuperAdminOrganizationsPage() {
       
       // Reload organizations list
       loadOrganizations()
-    } catch (error: any) {
-      console.error('Failed to create organization:', error)
-      alert('Fehler beim Erstellen der Organization: ' + (error.message || 'Unbekannter Fehler'))
+    } catch (error: unknown) {
+      console.error('Fehler beim Erstellen der Organisation:', error)
+      alert('Fehler beim Erstellen der Organization: ' + (error instanceof Error ? error.message : 'Unbekannter Fehler'))
     }
   }
 

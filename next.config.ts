@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  reactStrictMode: true, // Explicitly set (on by default in dev, off in prod)
+  reactStrictMode: true, // Double-invokes renders in development to surface side-effects
   async headers() {
     return [
       {

@@ -5,9 +5,10 @@ import CalendarView from './CalendarView';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
-import { getUsagesWithVehicles, type UsageWithVehicle } from '@/lib/api/usages';
+import { getUsagesWithVehicles } from '@/lib/api/usages';
 import { useToast } from '@/lib/hooks/useToast';
 import { ToastContainer } from './Toast';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface Report {
   id: number | string;
@@ -94,11 +95,7 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin, is
         </button>
 
         <button
-          onClick={() => {
-            if (confirm('Möchten Sie diesen Eintrag wirklich löschen?')) {
-              onDelete(report.id);
-            }
-          }}
+          onClick={() => onDelete(report.id)}
           className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
           title="Löschen"
         >
@@ -140,6 +137,7 @@ const UebersichtEintraege: FC = () => {
     usageDate: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | string | null>(null);
 
   const calendarEvents = reports
     .filter((r) => r.usageDate)
@@ -253,7 +251,7 @@ const UebersichtEintraege: FC = () => {
   const handleDelete = async (id: number | string) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!apiUrl) {
-      setReports((prev) => prev.filter((report) => report.id !== id));
+      showToast('API URL nicht konfiguriert', 'error');
       return;
     }
 
@@ -276,35 +274,22 @@ const UebersichtEintraege: FC = () => {
 
   // Fetch usages data when organization is selected
   useEffect(() => {
-    console.log('[USAGES] useEffect gestartet');
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL
-    console.log('[USAGES] API URL:', apiUrl);
-    if (!apiUrl) {
-      console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
-      return
-    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) return;
 
     // Wait for organization to be selected
-    if (!selectedOrgId) {
-      console.log('[USAGES] Waiting for organization selection...');
-      return;
-    }
+    if (!selectedOrgId) return;
 
     const controller = new AbortController();
     const fetchData = async () => {
-      console.log('[USAGES] fetchData wird aufgerufen');
       setIsLoading(true);
       setError(null);
 
       try {
-        console.log('[USAGES] Versuche Request zu senden...');
-        
         // Single optimized request to fetch usages with vehicle data
         const usagesWithVehicles = await getUsagesWithVehicles(
           isSuperAdmin ? selectedOrgId || undefined : undefined
         );
-        
-        console.log('[USAGES] Request erfolgreich, Anzahl:', usagesWithVehicles.length);
 
         // Extract unique vehicles from the response
         const vehicleMap = new Map<string, Vehicle>();
@@ -332,19 +317,16 @@ const UebersichtEintraege: FC = () => {
         setError(null);
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
-        console.error('[USAGES] Fehler beim Laden der Nutzungen:', err);
-        console.error('[USAGES] Fehler Details:', err instanceof Error ? err.message : String(err));
+        console.error('Fehler beim Laden der Nutzungen:', err);
         setError('Fehler beim Laden der Nutzungen');
       } finally {
         setIsLoading(false);
       }
     };
 
-    console.log('[USAGES] Rufe fetchData auf');
     fetchData();
 
     return () => {
-      console.log('[USAGES] useEffect cleanup');
       controller.abort();
     };
   }, [selectedOrgId, isSuperAdmin]);
@@ -552,7 +534,7 @@ const UebersichtEintraege: FC = () => {
               key={report.id}
               report={report}
               onEdit={handleEdit}
-              onDelete={handleDelete}
+              onDelete={(id) => setConfirmDeleteId(id)}
               isAdmin={isAdmin}
               isSuperAdmin={isSuperAdmin}
             />
@@ -564,6 +546,14 @@ const UebersichtEintraege: FC = () => {
         </div>
       )}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+      {confirmDeleteId !== null && (
+        <ConfirmDialog
+          title="Nutzung löschen"
+          message="Möchten Sie diesen Eintrag wirklich löschen?"
+          onConfirm={() => { handleDelete(confirmDeleteId); setConfirmDeleteId(null); }}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
     </section>
   );
 };

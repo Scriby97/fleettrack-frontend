@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { ToastContainer } from './Toast';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface Vehicle {
   id: string;
@@ -17,6 +18,66 @@ interface Vehicle {
   vehicleType?: string;
   fuelType?: string;
   notes?: string;
+}
+
+// Shape of each element returned by the /vehicles/stats endpoint (fields vary by backend)
+interface StatsArrayItem {
+  vehicleId?: string;
+  id?: string;
+  vehicle?: string;
+  name?: string;
+  vehicleName?: string;
+  plate?: string;
+  kennzeichen?: string;
+  registration?: string;
+  snowsatNumber?: string;
+  SNOWsatNumber?: string;
+  snowsat?: string;
+  isRetired?: boolean;
+  location?: string;
+  ort?: string;
+  vehicleType?: string;
+  type?: string;
+  typ?: string;
+  fuelType?: string;
+  fuel?: string;
+  treibstoff?: string;
+  notes?: string;
+  bemerkung?: string;
+  remarks?: string;
+  totalWorkHours?: number;
+  totalHours?: number;
+  hours?: number;
+  totalFuelLiters?: number;
+  fuelLiters?: number;
+}
+
+// Shape of each value when the endpoint returns a keyed object
+interface StatsObjectValue {
+  name?: string;
+  vehicleName?: string;
+  plate?: string;
+  kennzeichen?: string;
+  snowsatNumber?: string;
+  SNOWsatNumber?: string;
+  snowsat?: string;
+  isRetired?: boolean;
+  location?: string;
+  ort?: string;
+  vehicleType?: string;
+  type?: string;
+  typ?: string;
+  fuelType?: string;
+  fuel?: string;
+  treibstoff?: string;
+  notes?: string;
+  bemerkung?: string;
+  remarks?: string;
+  totalWorkHours?: number;
+  totalHours?: number;
+  hours?: number;
+  totalFuelLiters?: number;
+  fuelLiters?: number;
 }
 
 interface VehicleItemProps {
@@ -87,11 +148,7 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
       </button>
 
       <button
-        onClick={() => {
-          if (confirm(`Möchten Sie "${vehicle.name}" wirklich löschen?`)) {
-            onDelete(vehicle.id);
-          }
-        }}
+        onClick={() => onDelete(vehicle.id)}
         className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
         title="Löschen"
       >
@@ -132,37 +189,28 @@ const FlottenUebersicht: FC = () => {
     notes: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Fetch vehicle stats when organization is selected
+  // Fetch vehicle stats when organization is selected
   useEffect(() => {
-    console.log('[VEHICLES] useEffect gestartet');
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL
-    console.log('[VEHICLES] API URL:', apiUrl);
-    if (!apiUrl) {
-      console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
-      return
-    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) return;
 
-    if (!selectedOrgId) {
-      console.log('[VEHICLES] Waiting for organization selection...');
-      return;
-    }
+    if (!selectedOrgId) return;
 
     const controller = new AbortController();
     const fetchStats = async () => {
-      console.log('[VEHICLES] fetchStats wird aufgerufen');
       setIsLoading(true);
       setError(null);
 
       try {
-        console.log('[VEHICLES] Versuche Request zu senden...');
         const url = new URL(`${apiUrl}/vehicles/stats`);
         if (isSuperAdmin && selectedOrgId) {
           url.searchParams.set('organizationId', selectedOrgId);
         }
 
         const res = await authenticatedFetch(url.toString(), { signal: controller.signal });
-        console.log('[VEHICLES] Request erfolgreich, Status:', res.status);
         if (!res.ok) throw new Error(`Vehicles stats HTTP ${res.status}`);
         const statsData = await res.json();
 
@@ -172,8 +220,8 @@ const FlottenUebersicht: FC = () => {
 
         if (Array.isArray(statsData)) {
           // Expect items like { id|vehicleId, name, plate, totalHours, totalFuelLiters }
-          statsData.forEach((s: any) => {
-            const id = String(s.vehicleId ?? s.id ?? s.vehicleId ?? s.vehicle ?? s.vehicleId ?? '');
+          statsData.forEach((s: StatsArrayItem) => {
+            const id = String(s.vehicleId ?? s.id ?? s.vehicle ?? '');
             const name = s.name ?? s.vehicleName ?? s.vehicle ?? `Fahrzeug ${id}`;
             const plate = s.plate ?? s.kennzeichen ?? s.registration ?? '';
             const snowsatNumber = s.snowsatNumber ?? s.SNOWsatNumber ?? s.snowsat ?? undefined;
@@ -190,8 +238,7 @@ const FlottenUebersicht: FC = () => {
           });
         } else if (statsData && typeof statsData === 'object') {
           // object mapping: { vehicleId: { hours, fuelLiters, name?, plate? }, ... }
-          Object.entries(statsData).forEach(([k, v]) => {
-            const obj: any = v as any;
+          Object.entries(statsData as Record<string, StatsObjectValue>).forEach(([k, obj]) => {
             const id = String(k);
             const name = obj.name ?? obj.vehicleName ?? `Fahrzeug ${id}`;
             const plate = obj.plate ?? obj.kennzeichen ?? '';
@@ -215,20 +262,16 @@ const FlottenUebersicht: FC = () => {
         setStatsMap(map);
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
-        console.error('[VEHICLES] Fehler beim Laden der Fahrzeug-Stats:', err);
-        console.error('[VEHICLES] Fehler Details:', err instanceof Error ? err.message : String(err));
+        console.error('Fehler beim Laden der Fahrzeug-Stats:', err);
         setError('Fehler beim Laden der Fahrzeuge');
-        // keep empty vehicles and statsMap
       } finally {
         setIsLoading(false);
       }
     };
 
-    console.log('[VEHICLES] Rufe fetchStats auf');
     fetchStats();
 
     return () => {
-      console.log('[VEHICLES] useEffect cleanup');
       controller.abort();
     };
   }, [selectedOrgId, isSuperAdmin]);
@@ -330,7 +373,7 @@ const FlottenUebersicht: FC = () => {
   const handleDelete = async (id: string) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!apiUrl) {
-      setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== id));
+      showToast('API URL nicht konfiguriert', 'error');
       return;
     }
 
@@ -591,7 +634,7 @@ const FlottenUebersicht: FC = () => {
               key={vehicle.id}
               vehicle={vehicle}
               onEdit={handleEdit}
-              onDelete={handleDelete}
+              onDelete={(id) => setConfirmDeleteId(id)}
               stats={statsMap[vehicle.id] ?? null}
             />
           ))}
@@ -604,6 +647,14 @@ const FlottenUebersicht: FC = () => {
         </div>
       )}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+      {confirmDeleteId !== null && (
+        <ConfirmDialog
+          title="Fahrzeug löschen"
+          message={`Möchten Sie das Fahrzeug wirklich löschen?`}
+          onConfirm={() => { handleDelete(confirmDeleteId); setConfirmDeleteId(null); }}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
     </section>
   );
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type FC, type FormEvent } from 'react';
+import { useState, type FC, type FormEvent } from 'react';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
@@ -36,38 +36,36 @@ const CreateVehicle: FC = () => {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+
+    // Validate first, before setting isSubmitting
+    if (!formData.name.trim() || !formData.plate.trim() || !formData.snowsatNumber.trim()) {
+      setError('Alle Felder sind erforderlich');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Validierung
-      if (!formData.name.trim() || !formData.plate.trim() || !formData.snowsatNumber.trim()) {
-        setError('Alle Felder sind erforderlich');
-        return;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) throw new Error('API URL nicht konfiguriert');
+
+      const headers: HeadersInit = {};
+      if (isSuperAdmin && selectedOrgId) {
+        headers['X-Organization-Id'] = selectedOrgId;
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-      if (apiUrl) {
-        const headers: HeadersInit = {};
-        if (isSuperAdmin && selectedOrgId) {
-          headers['X-Organization-Id'] = selectedOrgId;
-        }
-        
-        const res = await authenticatedFetch(`${apiUrl}/vehicles`, {
-          method: 'POST',
-          body: JSON.stringify(formData),
-          headers,
-        });
+      const res = await authenticatedFetch(`${apiUrl}/vehicles`, {
+        method: 'POST',
+        body: JSON.stringify(formData),
+        headers,
+      });
 
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(`API error ${res.status}: ${text}`);
-        }
-
-        const created = await res.json();
-        console.log('Fahrzeug erstellt:', created);
-      } else {
-        console.log('NEXT_PUBLIC_API_URL nicht konfiguriert, Daten nur lokal gespeichert');
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`API-Fehler ${res.status}: ${text}`);
       }
+
+      await res.json();
 
       setFormData({ name: '', plate: '', snowsatNumber: '', location: '', vehicleType: '', fuelType: '', notes: '' });
       showToast('Fahrzeug erfolgreich erfasst', 'success');

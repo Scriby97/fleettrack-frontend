@@ -16,6 +16,7 @@ export interface User {
   organization: Organization
   firstName?: string
   lastName?: string
+  name?: string
 }
 
 export interface InviteInfo {

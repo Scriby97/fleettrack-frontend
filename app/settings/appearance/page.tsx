@@ -13,17 +13,13 @@ export default function SettingsAppearancePage() {
   const { supabaseUser, loading: authLoading } = useAuth()
   const { toasts, showToast, removeToast } = useToast()
 
-  const [themePreference, setThemePreference] = useState<ThemePreference>('system')
+  const [themePreference, setThemePreference] = useState<ThemePreference>(() => getStoredTheme())
 
   useEffect(() => {
     if (!authLoading && !supabaseUser) {
       router.push('/login')
     }
   }, [authLoading, supabaseUser, router])
-
-  useEffect(() => {
-    setThemePreference(getStoredTheme())
-  }, [])
 
   const handleThemeChange = (preference: ThemePreference) => {
     setThemePreference(preference)
