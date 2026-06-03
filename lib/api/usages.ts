@@ -1,4 +1,5 @@
 import { authenticatedFetch } from './authenticatedFetch';
+import { buildApiUrl } from './url';
 
 export interface Creator {
   id: string;
@@ -42,12 +43,7 @@ export interface GetUsagesWithVehiclesResponse {
 export async function getUsagesWithVehicles(
   organizationId?: string
 ): Promise<UsageWithVehicle[]> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!apiUrl) {
-    throw new Error('API URL nicht konfiguriert');
-  }
-
-  const url = new URL(`${apiUrl}/usages/with-vehicles`);
+  const url = new URL(buildApiUrl('/usages/with-vehicles'));
   if (organizationId) {
     url.searchParams.set('organizationId', organizationId);
   }

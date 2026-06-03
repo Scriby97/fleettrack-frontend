@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type FC, type FormEvent } from 'react';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
+import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
@@ -194,8 +195,8 @@ const FlottenUebersicht: FC = () => {
   // Fetch vehicle stats when organization is selected
   // Fetch vehicle stats when organization is selected
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl) return;
+    const apiBaseUrl = getApiBaseUrlOrNull();
+    if (!apiBaseUrl) return;
 
     if (!selectedOrgId) return;
 
@@ -205,7 +206,7 @@ const FlottenUebersicht: FC = () => {
       setError(null);
 
       try {
-        const url = new URL(`${apiUrl}/vehicles/stats`);
+        const url = new URL(buildApiUrl('/vehicles/stats'));
         if (isSuperAdmin && selectedOrgId) {
           url.searchParams.set('organizationId', selectedOrgId);
         }
@@ -310,9 +311,6 @@ const FlottenUebersicht: FC = () => {
     setError(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!apiUrl) throw new Error('API URL nicht konfiguriert');
-
       const payload = {
         name: editForm.name,
         plate: editForm.plate,
@@ -328,7 +326,7 @@ const FlottenUebersicht: FC = () => {
         headers['X-Organization-Id'] = selectedOrgId;
       }
 
-      const res = await authenticatedFetch(`${apiUrl}/vehicles/${editingVehicle.id}`, {
+      const res = await authenticatedFetch(buildApiUrl(`/vehicles/${editingVehicle.id}`), {
         method: 'PUT',
         body: JSON.stringify(payload),
         headers,
@@ -371,19 +369,13 @@ const FlottenUebersicht: FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl) {
-      showToast('API URL nicht konfiguriert', 'error');
-      return;
-    }
-
     try {
       const headers: HeadersInit = {};
       if (isSuperAdmin && selectedOrgId) {
         headers['X-Organization-Id'] = selectedOrgId;
       }
 
-      const res = await authenticatedFetch(`${apiUrl}/vehicles/${id}`, {
+      const res = await authenticatedFetch(buildApiUrl(`/vehicles/${id}`), {
         method: 'DELETE',
         headers,
       });

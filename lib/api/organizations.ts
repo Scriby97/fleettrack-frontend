@@ -1,7 +1,6 @@
 import { CreateOrganizationRequest, CreateOrganizationResponse, Organization } from '@/lib/types/user'
 import { authenticatedFetch } from './authenticatedFetch'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+import { buildApiUrl } from './url'
 
 /**
  * Create a new organization (Super Admin only)
@@ -9,7 +8,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL
 export async function createOrganization(
   data: CreateOrganizationRequest
 ): Promise<CreateOrganizationResponse> {
-  const response = await authenticatedFetch(`${API_URL}/organizations`, {
+  const response = await authenticatedFetch(buildApiUrl('/organizations'), {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -26,7 +25,7 @@ export async function createOrganization(
  * Get all organizations (Super Admin only)
  */
 export async function getAllOrganizations(): Promise<Organization[]> {
-  const response = await authenticatedFetch(`${API_URL}/organizations`)
+  const response = await authenticatedFetch(buildApiUrl('/organizations'))
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Organisationen' }))

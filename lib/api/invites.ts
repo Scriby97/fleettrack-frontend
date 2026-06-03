@@ -1,13 +1,12 @@
 import { authenticatedFetch } from './authenticatedFetch'
+import { buildApiUrl } from './url'
 import type { InviteInfo, InviteEntity } from '@/lib/types/user'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 /**
  * Get invite information by token (public endpoint - no auth required)
  */
 export async function getInviteByToken(token: string): Promise<InviteInfo> {
-  const response = await fetch(`${API_URL}/invites/${token}`)
+  const response = await fetch(buildApiUrl(`/invites/${token}`))
   
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Ungültige oder abgelaufene Einladung' }))
@@ -31,7 +30,7 @@ export async function acceptInvite(data: {
   user: { id: string; email: string } | null
   session: { access_token: string; refresh_token: string; token_type?: string } | null
 }> {
-  const response = await fetch(`${API_URL}/invites/accept`, {
+  const response = await fetch(buildApiUrl('/invites/accept'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -59,7 +58,7 @@ export async function createInvite(
 
   // Include organizationId in the JSON body (required by backend for super_admin)
   // Keep the X-Organization-Id header as well for backward compatibility.
-  const response = await authenticatedFetch(`${API_URL}/organizations/invites`, {
+  const response = await authenticatedFetch(buildApiUrl('/organizations/invites'), {
     method: 'POST',
     headers: organizationId ? { 'X-Organization-Id': organizationId } : undefined,
     body: JSON.stringify(payload),
@@ -78,7 +77,7 @@ export async function createInvite(
  * organizationId is automatically taken from the authenticated user
  */
 export async function getOrganizationInvites(organizationId?: string): Promise<InviteEntity[]> {
-  const response = await authenticatedFetch(`${API_URL}/organizations/invites`, {
+  const response = await authenticatedFetch(buildApiUrl('/organizations/invites'), {
     headers: organizationId ? { 'X-Organization-Id': organizationId } : undefined,
   })
   
@@ -94,7 +93,7 @@ export async function getOrganizationInvites(organizationId?: string): Promise<I
  * Delete an invite (requires authentication)
  */
 export async function deleteInvite(inviteId: string, organizationId?: string): Promise<void> {
-  const response = await authenticatedFetch(`${API_URL}/organizations/invites/${inviteId}`, {
+  const response = await authenticatedFetch(buildApiUrl(`/organizations/invites/${inviteId}`), {
     method: 'DELETE',
     headers: organizationId ? { 'X-Organization-Id': organizationId } : undefined,
   })

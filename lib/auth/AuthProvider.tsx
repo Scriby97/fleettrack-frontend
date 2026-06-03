@@ -6,6 +6,7 @@ import { User as SupabaseUser, AuthError } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch'
 import { checkBackendHealth } from '@/lib/api/healthCheck'
+import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url'
 import type { User, Organization } from '@/lib/types/user'
 
 interface AuthContextType {
@@ -71,8 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setBackendLoading(true)
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-      if (!apiUrl) {
+      const apiBaseUrl = getApiBaseUrlOrNull()
+      if (!apiBaseUrl) {
         console.warn('NEXT_PUBLIC_API_URL nicht konfiguriert')
         fetchingCountRef.current--
         if (fetchingCountRef.current === 0) setBackendLoading(false)
@@ -99,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Backend is available, now fetch actual user data
-      const response = await authenticatedFetch(`${apiUrl}/auth/me`, {
+      const response = await authenticatedFetch(buildApiUrl('/auth/me'), {
         retries: 2,
         retryDelay: 1000,
         skipLoadingIndicator: true,

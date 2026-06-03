@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, type FC, type FormEvent } from 'react';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
+import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
@@ -65,12 +66,12 @@ const CreateUsage: FC = () => {
   }, [formData.startOperatingHours, formData.endOperatingHours]);
 
   const fetchVehicleEndOperatingHours = useCallback(async (vehicleId: string) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl || !vehicleId) return;
+    const apiBaseUrl = getApiBaseUrlOrNull();
+    if (!apiBaseUrl || !vehicleId) return;
 
     setLoadingOperatingHours(true);
     try {
-      const url = new URL(`${apiUrl}/vehicles/${vehicleId}/last-operating-hours`);
+      const url = new URL(buildApiUrl(`/vehicles/${vehicleId}/last-operating-hours`));
       if (isSuperAdmin && selectedOrgId) {
         url.searchParams.set('organizationId', selectedOrgId);
       }
@@ -150,15 +151,12 @@ const CreateUsage: FC = () => {
         usageDate: formData.usageDate,
       };
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!apiUrl) throw new Error('API URL nicht konfiguriert');
-
       const headers: HeadersInit = {};
       if (isSuperAdmin && selectedOrgId) {
         headers['X-Organization-Id'] = selectedOrgId;
       }
 
-      const res = await authenticatedFetch(`${apiUrl}/usages`, {
+      const res = await authenticatedFetch(buildApiUrl('/usages'), {
         method: 'POST',
         body: JSON.stringify(payload),
         headers,
@@ -185,8 +183,8 @@ const CreateUsage: FC = () => {
 
   // Fetch vehicles when organization is selected
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl) return;
+    const apiBaseUrl = getApiBaseUrlOrNull();
+    if (!apiBaseUrl) return;
 
     // Wait for organization to be selected
     if (!selectedOrgId) return;
@@ -197,7 +195,7 @@ const CreateUsage: FC = () => {
       setVehiclesError(null);
 
       try {
-        const url = new URL(`${apiUrl}/vehicles`);
+        const url = new URL(buildApiUrl('/vehicles'));
         if (isSuperAdmin && selectedOrgId) {
           url.searchParams.set('organizationId', selectedOrgId);
         }

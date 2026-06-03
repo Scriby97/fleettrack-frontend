@@ -1,9 +1,8 @@
 import { authenticatedFetch } from './authenticatedFetch'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+import { buildApiUrl } from './url'
 
 export async function updatePassword(newPassword: string): Promise<void> {
-  const response = await authenticatedFetch(`${API_URL}/auth/update-password`, {
+  const response = await authenticatedFetch(buildApiUrl('/auth/update-password'), {
     method: 'POST',
     body: JSON.stringify({ new_password: newPassword }),
   })

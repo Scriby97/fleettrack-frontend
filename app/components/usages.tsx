@@ -3,6 +3,7 @@
 import { useState, useEffect, type FC, type FormEvent } from 'react';
 import CalendarView from './CalendarView';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
+import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { getUsagesWithVehicles } from '@/lib/api/usages';
@@ -193,9 +194,6 @@ const UebersichtEintraege: FC = () => {
     setError(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!apiUrl) throw new Error('API URL nicht konfiguriert');
-
       const payload = {
         vehicleId: editForm.vehicleId,
         startOperatingHours: parseFloat(editForm.startOperatingHours),
@@ -204,7 +202,7 @@ const UebersichtEintraege: FC = () => {
         usageDate: editForm.usageDate,
       };
 
-      const res = await authenticatedFetch(`${apiUrl}/usages/${editingReport.id}`, {
+      const res = await authenticatedFetch(buildApiUrl(`/usages/${editingReport.id}`), {
         method: 'PUT',
         body: JSON.stringify(payload),
       });
@@ -249,14 +247,8 @@ const UebersichtEintraege: FC = () => {
   };
 
   const handleDelete = async (id: number | string) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl) {
-      showToast('API URL nicht konfiguriert', 'error');
-      return;
-    }
-
     try {
-      const res = await authenticatedFetch(`${apiUrl}/usages/${id}`, {
+      const res = await authenticatedFetch(buildApiUrl(`/usages/${id}`), {
         method: 'DELETE',
       });
 
@@ -274,8 +266,8 @@ const UebersichtEintraege: FC = () => {
 
   // Fetch usages data when organization is selected
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl) return;
+    const apiBaseUrl = getApiBaseUrlOrNull();
+    if (!apiBaseUrl) return;
 
     // Wait for organization to be selected
     if (!selectedOrgId) return;

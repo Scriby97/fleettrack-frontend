@@ -5,6 +5,8 @@
  * Industry best practice for startup/readiness probes.
  */
 
+import { getApiBaseUrlOrNull, getBackendRootUrlOrNull } from './url'
+
 interface HealthCheckOptions {
   retries?: number
   retryDelay?: number
@@ -33,7 +35,7 @@ const CACHE_DURATION_MS = 30000 // 30 seconds
 
 /**
  * Check if backend is available using /health endpoint.
- * Falls back to /api/health for backwards compatibility.
+ * Handles API URLs with and without a trailing /api segment.
  * Results are cached for 30 seconds to avoid unnecessary checks.
  */
 export async function checkBackendHealth(
@@ -55,12 +57,18 @@ export async function checkBackendHealth(
     onRetry,
   } = options
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL
-  if (!apiUrl) {
+  const apiBaseUrl = getApiBaseUrlOrNull()
+  const backendRootUrl = getBackendRootUrlOrNull()
+  if (!apiBaseUrl || !backendRootUrl) {
     return { available: false, retryCount: 0, error: 'API URL nicht konfiguriert' }
   }
 
-  const healthEndpoints = [`${apiUrl}/health`, `${apiUrl}/api/health`]
+  const healthEndpoints = Array.from(
+    new Set([
+      `${backendRootUrl}/health`,
+      `${apiBaseUrl}/health`,
+    ])
+  )
 
   let lastError: string | undefined
   let retryCount = 0

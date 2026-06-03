@@ -2,6 +2,7 @@
 
 import { useState, type FC, type FormEvent } from 'react';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
+import { buildApiUrl } from '@/lib/api/url';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
@@ -46,15 +47,12 @@ const CreateVehicle: FC = () => {
     setIsSubmitting(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!apiUrl) throw new Error('API URL nicht konfiguriert');
-
       const headers: HeadersInit = {};
       if (isSuperAdmin && selectedOrgId) {
         headers['X-Organization-Id'] = selectedOrgId;
       }
 
-      const res = await authenticatedFetch(`${apiUrl}/vehicles`, {
+      const res = await authenticatedFetch(buildApiUrl('/vehicles'), {
         method: 'POST',
         body: JSON.stringify(formData),
         headers,
