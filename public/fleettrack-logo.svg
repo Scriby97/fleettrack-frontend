@@ -22,9 +22,9 @@
     <circle cx="-18" cy="18" r="3" fill="currentColor"/>
     <circle cx="-18" cy="-18" r="3" fill="currentColor"/>
     
-    <!-- Zentraler Hub - Größer und signifikanter -->
-    <circle cx="0" cy="0" r="6.5" fill="currentColor"/>
-    <circle cx="0" cy="0" r="8.5" stroke="currentColor" stroke-width="2" opacity="0.4" fill="none"/>
-    <circle cx="0" cy="0" r="3.5" fill="currentColor" opacity="0.3"/>
+    <!-- Zentraler Hub in Orange fuer Development-Builds -->
+    <circle cx="0" cy="0" r="6.5" fill="#f97316"/>
+    <circle cx="0" cy="0" r="8.5" stroke="#f97316" stroke-width="2" opacity="0.5" fill="none"/>
+    <circle cx="0" cy="0" r="3.5" fill="#f97316" opacity="0.35"/>
   </g>
 </svg>
