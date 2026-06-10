@@ -12,8 +12,8 @@ export interface User {
   id: string
   email: string
   role: 'super_admin' | 'admin' | 'user'
-  organizationId: string
-  organization: Organization
+  organizationId: string | null
+  organization: Organization | null
   firstName?: string
   lastName?: string
   name?: string
@@ -37,6 +37,26 @@ export interface InviteEntity {
   invitedBy: string
   createdAt: string
   organizationId: string
+}
+
+export type SubscriptionPlan = 'starter' | 'growth' | 'enterprise'
+
+export interface SelfServiceOrganizationRequest {
+  name: string
+  contactEmail: string
+  description?: string
+  plan: SubscriptionPlan
+}
+
+export interface SelfServiceOrganizationResponse {
+  organization: Organization
+  subscription: {
+    plan: SubscriptionPlan
+    status: 'active' | 'trial' | 'pending'
+    maxVehicles: number
+    maxUsers: number
+  }
+  checkoutUrl?: string
 }
 
 export type InviteStatus = 'used' | 'pending' | 'expired'

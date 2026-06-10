@@ -2,16 +2,20 @@
 
 import { useEffect, useState, type FC, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth/AuthProvider'
 
 const LoginPage: FC = () => {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { signIn } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isRecoveryRedirect, setIsRecoveryRedirect] = useState(false)
+  const [infoMessage, setInfoMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -24,6 +28,23 @@ const LoginPage: FC = () => {
       router.replace(`/reset-password${hash}`)
     }
   }, [router])
+
+  useEffect(() => {
+    const message = searchParams.get('message')
+    const registered = searchParams.get('registered')
+
+    if (message) {
+      setInfoMessage(message)
+      return
+    }
+
+    if (registered === '1') {
+      setInfoMessage('Registrierung erfolgreich. Du kannst dich jetzt anmelden.')
+      return
+    }
+
+    setInfoMessage(null)
+  }, [searchParams])
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -71,6 +92,12 @@ const LoginPage: FC = () => {
         </div>
 
         <div className="bg-white dark:bg-zinc-800 shadow-lg rounded-lg p-8">
+          {infoMessage && (
+            <div className="mb-6 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3">
+              <p className="text-sm text-green-800 dark:text-green-200">{infoMessage}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
@@ -123,6 +150,21 @@ const LoginPage: FC = () => {
               {loading ? 'Bitte warten...' : 'Anmelden'}
             </button>
           </form>
+
+          <div className="mt-6 border-t border-zinc-200 dark:border-zinc-700 pt-4 flex items-center justify-between">
+            <Link
+              href="/register"
+              className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Registrieren
+            </Link>
+            <Link
+              href="/reset-password"
+              className="text-sm text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+            >
+              Passwort vergessen?
+            </Link>
+          </div>
         </div>
       </div>
     </div>

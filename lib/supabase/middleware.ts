@@ -40,6 +40,7 @@ export async function updateSession(request: NextRequest) {
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
+    !request.nextUrl.pathname.startsWith('/register') &&
     !request.nextUrl.pathname.startsWith('/auth') &&
     !request.nextUrl.pathname.startsWith('/invite') &&
     !request.nextUrl.pathname.startsWith('/reset-password')
@@ -50,7 +51,11 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Redirect to home if already logged in and trying to access login
-  if (user && request.nextUrl.pathname.startsWith('/login')) {
+  if (
+    user &&
+    (request.nextUrl.pathname.startsWith('/login') ||
+      request.nextUrl.pathname.startsWith('/register'))
+  ) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)

@@ -1,4 +1,10 @@
-import { CreateOrganizationRequest, CreateOrganizationResponse, Organization } from '@/lib/types/user'
+import {
+  CreateOrganizationRequest,
+  CreateOrganizationResponse,
+  Organization,
+  SelfServiceOrganizationRequest,
+  SelfServiceOrganizationResponse,
+} from '@/lib/types/user'
 import { authenticatedFetch } from './authenticatedFetch'
 import { buildApiUrl } from './url'
 
@@ -30,6 +36,25 @@ export async function getAllOrganizations(): Promise<Organization[]> {
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Organisationen' }))
     throw new Error(error.message || 'Fehler beim Laden der Organisationen')
+  }
+
+  return response.json()
+}
+
+/**
+ * Create an organization for the current authenticated user.
+ */
+export async function createSelfServiceOrganization(
+  data: SelfServiceOrganizationRequest
+): Promise<SelfServiceOrganizationResponse> {
+  const response = await authenticatedFetch(buildApiUrl('/organizations/self-service'), {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Fehler beim Erstellen der Organisation' }))
+    throw new Error(error.message || 'Fehler beim Erstellen der Organisation')
   }
 
   return response.json()

@@ -1,7 +1,7 @@
 'use client';
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CreateUsage from "./components/createUsage";
 import UebersichtEintraege from "./components/usages";
 import FlottenUebersicht from "./components/vehicles";
@@ -9,13 +9,32 @@ import FahrzeugErfassen from "./components/createVehicle";
 import UserMenu from "./components/UserMenu";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { InstallPrompt } from "./components/InstallPrompt";
+import { useRouter } from "next/navigation";
 
 type MenuKey = "nutzung" | "uebersichtEintraege" | "uebersicht" | "fahrzeug";
 
 export default function Home() {
+  const router = useRouter();
   const [active, setActive] = useState<MenuKey>("nutzung");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isAdmin } = useAuth();
+  const { isAdmin, userProfile, organizationId } = useAuth();
+
+  useEffect(() => {
+    if (userProfile && !organizationId) {
+      router.replace('/onboarding');
+    }
+  }, [userProfile, organizationId, router]);
+
+  if (userProfile && !organizationId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 px-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-zinc-600 dark:text-zinc-400">Weiterleitung zur Organisationseinrichtung...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-zinc-50 dark:bg-black font-sans">
