@@ -59,14 +59,16 @@ export async function checkBackendHealth(
 
   const apiBaseUrl = getApiBaseUrlOrNull()
   const backendRootUrl = getBackendRootUrlOrNull()
-  if (!apiBaseUrl || !backendRootUrl) {
+  if (!apiBaseUrl) {
     return { available: false, retryCount: 0, error: 'API URL nicht konfiguriert' }
   }
 
+  // The backend health endpoint is expected under the API prefix, while the
+  // root endpoint remains as a compatibility fallback for older deployments.
   const healthEndpoints = Array.from(
     new Set([
-      `${backendRootUrl}/health`,
       `${apiBaseUrl}/health`,
+      ...(backendRootUrl ? [`${backendRootUrl}/health`] : []),
     ])
   )
 
