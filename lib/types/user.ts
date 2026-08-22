@@ -8,12 +8,55 @@ export interface Organization {
   updatedAt: string
 }
 
+export type OrganizationRole = 'employee' | 'admin' | 'owner'
+export type SubscriptionTier = 'lieutenant' | 'captain' | 'general'
+export type SubscriptionStatus = 'active' | 'past_due' | 'canceled'
+
+export interface OrganizationMembership {
+  id: string
+  userId: string
+  organizationId: string
+  organization?: Organization
+  role: OrganizationRole
+  joinedAt: string
+}
+
+export interface SubscriptionLimits {
+  maxVehicles: number | null
+  maxMembers: number | null
+  priceChf: number
+}
+
+export interface OrganizationSubscription {
+  id: string
+  organizationId: string
+  tier: SubscriptionTier
+  status: SubscriptionStatus
+  currentPeriodStart?: string
+  currentPeriodEnd?: string
+  canceledAt?: string
+  createdAt: string
+  updatedAt: string
+  limits?: SubscriptionLimits
+}
+
+export interface PendingInvite {
+  token: string
+  role: OrganizationRole
+  organization: {
+    id: string
+    name: string
+  }
+  expiresAt: string
+}
+
 export interface User {
   id: string
   email: string
   role: 'super_admin' | 'admin' | 'user'
   organizationId: string | null
   organization: Organization | null
+  organizationMemberships?: OrganizationMembership[]
   firstName?: string
   lastName?: string
   name?: string
@@ -39,24 +82,17 @@ export interface InviteEntity {
   organizationId: string
 }
 
-export type SubscriptionPlan = 'starter' | 'growth' | 'enterprise'
-
 export interface SelfServiceOrganizationRequest {
   name: string
-  contactEmail: string
-  description?: string
-  plan: SubscriptionPlan
+  subdomain?: string
+  contactEmail?: string
+  tier: SubscriptionTier
 }
 
 export interface SelfServiceOrganizationResponse {
   organization: Organization
-  subscription: {
-    plan: SubscriptionPlan
-    status: 'active' | 'trial' | 'pending'
-    maxVehicles: number
-    maxUsers: number
-  }
-  checkoutUrl?: string
+  subscription: OrganizationSubscription
+  checkoutUrl: string | null
 }
 
 export type InviteStatus = 'used' | 'pending' | 'expired'

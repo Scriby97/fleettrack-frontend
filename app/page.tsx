@@ -17,15 +17,15 @@ export default function Home() {
   const router = useRouter();
   const [active, setActive] = useState<MenuKey>("nutzung");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isAdmin, userProfile, organizationId } = useAuth();
+  const { isAdmin, userProfile, hasOrganization } = useAuth();
 
   useEffect(() => {
-    if (userProfile && !organizationId) {
+    if (userProfile && !hasOrganization) {
       router.replace('/onboarding');
     }
-  }, [userProfile, organizationId, router]);
+  }, [userProfile, hasOrganization, router]);
 
-  if (userProfile && !organizationId) {
+  if (userProfile && !hasOrganization) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 px-4">
         <div className="text-center">

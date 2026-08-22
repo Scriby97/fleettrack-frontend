@@ -7,7 +7,8 @@ import { createClient } from '@/lib/supabase/client'
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch'
 import { checkBackendHealth } from '@/lib/api/healthCheck'
 import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url'
-import type { User, Organization } from '@/lib/types/user'
+import { getMyOrganizations } from '@/lib/api/organizations'
+import type { User, Organization, OrganizationMembership, OrganizationRole } from '@/lib/types/user'
 
 interface AuthContextType {
   supabaseUser: SupabaseUser | null
@@ -20,10 +21,14 @@ interface AuthContextType {
   userRole: string | null
   organizationId: string | null
   organization: Organization | null
+  organizationMemberships: OrganizationMembership[]
+  organizationRole: OrganizationRole | null
+  hasOrganization: boolean
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signUp: (email: string, password: string, metadata?: { fullName?: string, role?: string }) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   refreshUserRole: () => Promise<void>
+  refreshOrganizations: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -36,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [backendLoading, setBackendLoading] = useState(false)
   const [backendRetryCount, setBackendRetryCount] = useState(0)
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [organizationMemberships, setOrganizationMemberships] = useState<OrganizationMembership[]>([])
 
   // Stable supabase client – created once per mount
   const supabase = useMemo(() => createClient(), [])
@@ -53,9 +59,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Compute derived values
   const isAdmin = userRole === 'admin' || userRole === 'super_admin'
   const isSuperAdmin = userRole === 'super_admin'
-  const organizationId = userProfile?.organizationId ?? null
-  const organization = userProfile?.organization ?? null
+  const organizationId = organizationMemberships[0]?.organizationId ?? null
+  const organization = organizationMemberships[0]?.organization ?? null
+  const organizationRole = organizationMemberships[0]?.role ?? null
+  const hasOrganization = organizationMemberships.length > 0
   const isResetPasswordRoute = pathname?.startsWith('/reset-password') ?? false
+
+  // Function to fetch the organizations the current user is a member of
+  const fetchOrganizationMemberships = useCallback(async () => {
+    try {
+      const memberships = await getMyOrganizations()
+      setOrganizationMemberships(memberships)
+    } catch (error) {
+      console.error('Fehler beim Abrufen der Organisationen:', error)
+      setOrganizationMemberships([])
+    }
+  }, [])
 
   // Function to fetch user profile from backend
   const fetchUserRole = useCallback(async () => {
@@ -118,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const profile: User = await response.json()
       setUserProfile(profile)
+      await fetchOrganizationMemberships()
 
       fetchingCountRef.current--
       if (fetchingCountRef.current === 0) {
@@ -135,13 +155,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return null
     }
-  }, [])
+  }, [fetchOrganizationMemberships])
 
   // Function to refresh user role
   const refreshUserRole = useCallback(async () => {
     if (!supabaseUser) {
       setUserRole(null)
       setUserProfile(null)
+      setOrganizationMemberships([])
       return
     }
 
@@ -217,6 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUserRole(null)
         setUserProfile(null)
+        setOrganizationMemberships([])
         setLoading(false)
       }
     })
@@ -261,10 +283,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userRole,
     organizationId,
     organization,
+    organizationMemberships,
+    organizationRole,
+    hasOrganization,
     signIn,
     signUp,
     signOut,
     refreshUserRole,
+    refreshOrganizations: fetchOrganizationMemberships,
   }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

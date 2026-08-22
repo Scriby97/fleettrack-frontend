@@ -1,25 +1,64 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { getMyInvites, acceptInviteAsExistingUser, declineInviteAsExistingUser } from '@/lib/api/invites'
+import { useAuth } from '@/lib/auth/AuthProvider'
+import type { PendingInvite } from '@/lib/types/user'
 
 export default function OnboardingInvitationsPage() {
   const router = useRouter()
-  const [token, setToken] = useState('')
+  const { refreshOrganizations } = useAuth()
+
+  const [invites, setInvites] = useState<PendingInvite[]>([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [processingToken, setProcessingToken] = useState<string | null>(null)
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setError(null)
+  useEffect(() => {
+    let cancelled = false
 
-    const normalizedToken = token.trim()
-    if (!normalizedToken) {
-      setError('Bitte gib einen Einladungstoken ein.')
-      return
+    getMyInvites()
+      .then((data) => {
+        if (!cancelled) setInvites(data)
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Fehler beim Laden der Einladungen')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
     }
+  }, [])
 
-    router.push(`/invite/${normalizedToken}`)
+  const handleAccept = async (token: string) => {
+    setError(null)
+    setProcessingToken(token)
+    try {
+      await acceptInviteAsExistingUser(token)
+      await refreshOrganizations()
+      router.push('/')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Annehmen der Einladung')
+      setProcessingToken(null)
+    }
+  }
+
+  const handleDecline = async (token: string) => {
+    setError(null)
+    setProcessingToken(token)
+    try {
+      await declineInviteAsExistingUser(token)
+      setInvites((prev) => prev.filter((invite) => invite.token !== token))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Ablehnen der Einladung')
+    } finally {
+      setProcessingToken(null)
+    }
   }
 
   return (
@@ -31,44 +70,67 @@ export default function OnboardingInvitationsPage() {
           </Link>
           <h1 className="mt-3 text-3xl font-bold text-zinc-900 dark:text-zinc-50">Organisationseinladungen</h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Öffne deinen Einladungslink oder gib den Einladungstoken ein.
+            Diese Einladungen wurden an deine Email-Adresse geschickt. Nimm eine an oder lehne sie ab.
           </p>
         </div>
 
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="token" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Einladungstoken
-              </label>
-              <input
-                id="token"
-                value={token}
-                onChange={(event) => setToken(event.target.value)}
-                placeholder="z. B. 1f4c7f8f-..."
-                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
-              />
-            </div>
-
-            {error && (
-              <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
-                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-            >
-              Einladung öffnen
-            </button>
-          </form>
-
-          <div className="mt-6 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 p-4">
-            <p className="text-sm text-zinc-700 dark:text-zinc-300">
-              Hinweis: Nach erfolgreicher Einladung wirst du automatisch einer Organisation zugeordnet und kannst FleetTrack direkt nutzen.
-            </p>
+        {error && (
+          <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
+            <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
           </div>
+        )}
+
+        {loading && (
+          <div className="text-center py-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          </div>
+        )}
+
+        {!loading && invites.length === 0 && (
+          <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 text-center">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Aktuell liegen keine offenen Einladungen für dich vor.
+            </p>
+            <Link href="/onboarding" className="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline">
+              Zurück zur Übersicht
+            </Link>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {invites.map((invite) => (
+            <div
+              key={invite.token}
+              className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6"
+            >
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                {invite.organization.name}
+              </h2>
+              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                Rolle: <span className="font-medium">{invite.role}</span>
+              </p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                Läuft ab: {new Date(invite.expiresAt).toLocaleDateString()}
+              </p>
+
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={() => handleAccept(invite.token)}
+                  disabled={processingToken === invite.token}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {processingToken === invite.token ? 'Wird verarbeitet...' : 'Annehmen'}
+                </button>
+                <button
+                  onClick={() => handleDecline(invite.token)}
+                  disabled={processingToken === invite.token}
+                  className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-900 dark:text-zinc-100 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Ablehnen
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

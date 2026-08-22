@@ -2,6 +2,7 @@ import {
   CreateOrganizationRequest,
   CreateOrganizationResponse,
   Organization,
+  OrganizationMembership,
   SelfServiceOrganizationRequest,
   SelfServiceOrganizationResponse,
 } from '@/lib/types/user'
@@ -32,6 +33,20 @@ export async function createOrganization(
  */
 export async function getAllOrganizations(): Promise<Organization[]> {
   const response = await authenticatedFetch(buildApiUrl('/organizations'))
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Organisationen' }))
+    throw new Error(error.message || 'Fehler beim Laden der Organisationen')
+  }
+
+  return response.json()
+}
+
+/**
+ * Get all organizations the current user is a member of, including their role.
+ */
+export async function getMyOrganizations(): Promise<OrganizationMembership[]> {
+  const response = await authenticatedFetch(buildApiUrl('/organizations/mine'))
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Organisationen' }))

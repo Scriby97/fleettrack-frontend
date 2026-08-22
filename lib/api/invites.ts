@@ -1,6 +1,6 @@
 import { authenticatedFetch } from './authenticatedFetch'
 import { buildApiUrl } from './url'
-import type { InviteInfo, InviteEntity } from '@/lib/types/user'
+import type { InviteInfo, InviteEntity, PendingInvite } from '@/lib/types/user'
 
 /**
  * Get invite information by token (public endpoint - no auth required)
@@ -86,6 +86,52 @@ export async function getOrganizationInvites(organizationId?: string): Promise<I
     throw new Error(error.message || 'Fehler beim Laden der Einladungen')
   }
   
+  return response.json()
+}
+
+/**
+ * Get all pending invites addressed to the current authenticated user's email.
+ */
+export async function getMyInvites(): Promise<PendingInvite[]> {
+  const response = await authenticatedFetch(buildApiUrl('/invites/mine'))
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Einladungen' }))
+    throw new Error(error.message || 'Fehler beim Laden der Einladungen')
+  }
+
+  return response.json()
+}
+
+/**
+ * Accept an invite as an already logged-in, existing user (no registration).
+ */
+export async function acceptInviteAsExistingUser(token: string): Promise<{ message: string }> {
+  const response = await authenticatedFetch(buildApiUrl(`/invites/${token}/accept`), {
+    method: 'POST',
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Fehler beim Annehmen der Einladung' }))
+    throw new Error(error.message || 'Fehler beim Annehmen der Einladung')
+  }
+
+  return response.json()
+}
+
+/**
+ * Decline an invite addressed to the current authenticated user.
+ */
+export async function declineInviteAsExistingUser(token: string): Promise<{ message: string }> {
+  const response = await authenticatedFetch(buildApiUrl(`/invites/${token}/decline`), {
+    method: 'POST',
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Fehler beim Ablehnen der Einladung' }))
+    throw new Error(error.message || 'Fehler beim Ablehnen der Einladung')
+  }
+
   return response.json()
 }
 
