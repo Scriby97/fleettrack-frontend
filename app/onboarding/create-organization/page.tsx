@@ -52,8 +52,6 @@ export default function CreateOrganizationOnboardingPage() {
 
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionTier>('lieutenant')
   const [organizationName, setOrganizationName] = useState('')
-  const [subdomain, setSubdomain] = useState('')
-  const [contactEmail, setContactEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -76,8 +74,6 @@ export default function CreateOrganizationOnboardingPage() {
     try {
       const result = await createSelfServiceOrganization({
         name: organizationName.trim(),
-        subdomain: subdomain.trim() || undefined,
-        contactEmail: contactEmail.trim() || undefined,
         tier: selectedPlan,
       })
 
@@ -152,7 +148,7 @@ export default function CreateOrganizationOnboardingPage() {
           </section>
 
           <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 space-y-4">
-            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">2) Organisation konfigurieren</h2>
+            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">2) Name der Organisation</h2>
 
             <div>
               <label htmlFor="organizationName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
@@ -167,50 +163,6 @@ export default function CreateOrganizationOnboardingPage() {
                 placeholder="z. B. Muster Logistik GmbH"
               />
             </div>
-
-            <div>
-              <label htmlFor="subdomain" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Subdomain (optional)
-              </label>
-              <input
-                id="subdomain"
-                value={subdomain}
-                onChange={(event) => setSubdomain(event.target.value)}
-                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
-                placeholder="z. B. muster-logistik"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="contactEmail" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Kontakt-E-Mail (optional)
-              </label>
-              <input
-                id="contactEmail"
-                type="email"
-                value={contactEmail}
-                onChange={(event) => setContactEmail(event.target.value)}
-                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
-                placeholder="admin@unternehmen.de"
-              />
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800/60 p-5">
-            <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">Zusammenfassung</h3>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Paket: <span className="font-medium">{currentPlan.label}</span> ({currentPlan.price})
-            </p>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Limits: {currentPlan.maxVehicles} Fahrzeuge, {currentPlan.maxMembers} Mitarbeiter
-            </p>
-            {currentPlan.paid && (
-              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                Du wirst zu Stripe Checkout weitergeleitet, um die Zahlung sicher abzuschließen. Deine Organisation
-                ist bereits auf dem kostenlosen Lieutenant-Paket nutzbar, sobald die Zahlung bestätigt ist, wird sie
-                automatisch auf {currentPlan.label} hochgestuft.
-              </p>
-            )}
           </section>
 
           {error && (
