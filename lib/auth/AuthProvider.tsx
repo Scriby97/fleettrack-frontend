@@ -175,6 +175,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [supabaseUser, fetchUserRole])
 
+  // Log which build/environment is running, once per page load, to make it
+  // obvious which code state is actually being tested (dev preview vs. prod, etc.)
+  useEffect(() => {
+    console.log(
+      `[FleetTrack] version=${process.env.NEXT_PUBLIC_APP_VERSION ?? 'local'} built=${process.env.NEXT_PUBLIC_BUILD_TIME ?? 'unknown'} api=${getApiBaseUrlOrNull() ?? 'not configured'}`
+    )
+  }, [])
+
   useEffect(() => {
     // Only reload when the session has actually expired during a background stay
     const handleVisibilityChange = async () => {
