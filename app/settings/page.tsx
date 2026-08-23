@@ -58,6 +58,16 @@ export default function SettingsPage() {
               Hell, dunkel oder Systemstandard waehlen.
             </p>
           </Link>
+
+          <Link
+            href="/onboarding/create-organization"
+            className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+          >
+            <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Organisation erstellen</div>
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              Eine neue Organisation anlegen und automatisch Owner werden.
+            </p>
+          </Link>
         </div>
       </div>
     </div>

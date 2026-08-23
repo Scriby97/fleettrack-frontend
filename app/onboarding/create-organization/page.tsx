@@ -46,9 +46,10 @@ const plans: PlanDefinition[] = [
 ]
 
 export default function CreateOrganizationOnboardingPage() {
-  const { refreshOrganizations } = useAuth()
+  const { refreshOrganizations, hasOrganization } = useAuth()
   const searchParams = useSearchParams()
   const wasCanceled = searchParams.get('canceled') === '1'
+  const backHref = hasOrganization ? '/settings' : '/onboarding'
 
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionTier>('lieutenant')
   const [organizationName, setOrganizationName] = useState('')
@@ -95,7 +96,7 @@ export default function CreateOrganizationOnboardingPage() {
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 px-4 py-10">
       <div className="max-w-5xl mx-auto space-y-8">
         <div>
-          <Link href="/onboarding" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+          <Link href={backHref} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
             ← Zurück
           </Link>
           <h1 className="mt-3 text-3xl font-bold text-zinc-900 dark:text-zinc-50">Organisation erstellen</h1>
