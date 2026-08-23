@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import type { FC } from 'react'
 
 const UserMenu: FC = () => {
-  const { supabaseUser, userProfile, signOut, isAdmin, isSuperAdmin, userRole, organization } = useAuth()
+  const { supabaseUser, userProfile, signOut, isAdmin, isSuperAdmin, userRole, organization, canManageOrganization } = useAuth()
   const router = useRouter()
 
   const handleSignOut = async () => {
@@ -80,7 +80,7 @@ const UserMenu: FC = () => {
         </>
       )}
       
-      {isAdmin && !isSuperAdmin && (
+      {canManageOrganization && !isSuperAdmin && (
         <button
           onClick={() => router.push('/admin/users')}
           className="w-full px-4 py-2 text-sm bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-900 dark:text-blue-100 rounded-lg transition-colors text-left"

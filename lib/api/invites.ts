@@ -51,7 +51,7 @@ export async function acceptInvite(data: {
  * organizationId is automatically taken from the authenticated user
  */
 export async function createInvite(
-  data: { email: string; role: 'admin' | 'user' },
+  data: { email: string; role: 'admin' | 'employee' },
   organizationId?: string
 ): Promise<InviteEntity> {
   const payload = organizationId ? { ...data, organizationId } : data

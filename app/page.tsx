@@ -17,7 +17,7 @@ export default function Home() {
   const router = useRouter();
   const [active, setActive] = useState<MenuKey>("nutzung");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isAdmin, userProfile, hasOrganization } = useAuth();
+  const { userProfile, hasOrganization, canManageOrganization } = useAuth();
 
   useEffect(() => {
     if (userProfile && !hasOrganization) {
@@ -70,8 +70,8 @@ export default function Home() {
             Übersicht Nutzungen
           </button>
 
-          {/* Admin-only menu items */}
-          {isAdmin && (
+          {/* Fleet management menu items - global admins and org admins/owners */}
+          {canManageOrganization && (
             <>
               <button
                 onClick={() => setActive("uebersicht")}
@@ -179,7 +179,7 @@ export default function Home() {
                 Übersicht Nutzungen
               </button>
 
-              {isAdmin && (
+              {canManageOrganization && (
                 <>
                   <button
                     onClick={() => {
@@ -225,8 +225,8 @@ export default function Home() {
       <main className="flex-1 p-10 md:p-10 pt-20 md:pt-10">
         {active === "nutzung" && <CreateUsage />}
         {active === "uebersichtEintraege" && <UebersichtEintraege />}
-        {active === "uebersicht" && (isAdmin ? <FlottenUebersicht /> : <AccessDenied />)}
-        {active === "fahrzeug" && (isAdmin ? <FahrzeugErfassen /> : <AccessDenied />)}
+        {active === "uebersicht" && (canManageOrganization ? <FlottenUebersicht /> : <AccessDenied />)}
+        {active === "fahrzeug" && (canManageOrganization ? <FahrzeugErfassen /> : <AccessDenied />)}
       </main>
     </div>
   );

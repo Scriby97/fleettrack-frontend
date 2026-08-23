@@ -24,6 +24,7 @@ interface AuthContextType {
   organizationMemberships: OrganizationMembership[]
   organizationRole: OrganizationRole | null
   hasOrganization: boolean
+  canManageOrganization: boolean
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signUp: (email: string, password: string, metadata?: { fullName?: string, role?: string }) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
@@ -63,6 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const organization = organizationMemberships[0]?.organization ?? null
   const organizationRole = organizationMemberships[0]?.role ?? null
   const hasOrganization = organizationMemberships.length > 0
+  // Owner has all rights an org-admin has (role hierarchy owner > admin > employee)
+  const canManageOrganization = isAdmin || organizationRole === 'admin' || organizationRole === 'owner'
   const isResetPasswordRoute = pathname?.startsWith('/reset-password') ?? false
 
   // Function to fetch the organizations the current user is a member of
@@ -294,6 +297,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     organizationMemberships,
     organizationRole,
     hasOrganization,
+    canManageOrganization,
     signIn,
     signUp,
     signOut,

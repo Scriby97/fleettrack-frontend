@@ -64,7 +64,7 @@ export interface User {
 
 export interface InviteInfo {
   email: string
-  role: 'admin' | 'user'
+  role: OrganizationRole
   organization: Organization
   expiresAt: string
 }
@@ -73,7 +73,7 @@ export interface InviteEntity {
   id: string
   token: string
   email: string
-  role: 'admin' | 'user'
+  role: OrganizationRole
   expiresAt: string
   usedAt: string | null
   usedBy: string | null

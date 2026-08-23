@@ -42,7 +42,7 @@ export default function SuperAdminUsersPage() {
   const [allInvites, setAllInvites] = useState<InviteEntity[]>([])
   const [inviteOrgId, setInviteOrgId] = useState<string>('')
   const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRole, setInviteRole] = useState<'admin' | 'user'>('user')
+  const [inviteRole, setInviteRole] = useState<'admin' | 'employee'>('employee')
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [inviteSubmitting, setInviteSubmitting] = useState(false)
   const [createdInviteLink, setCreatedInviteLink] = useState<string | null>(null)
@@ -172,7 +172,7 @@ export default function SuperAdminUsersPage() {
       setAllInvites((prev) => [invite, ...prev])
       setCreatedInviteLink(inviteLinkForToken(invite.token))
       setInviteEmail('')
-      setInviteRole('user')
+      setInviteRole('employee')
       showToast('Einladung erstellt', 'success')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Fehler beim Erstellen der Einladung'
@@ -208,7 +208,7 @@ export default function SuperAdminUsersPage() {
     setShowInviteModal(false)
     setCreatedInviteLink(null)
     setInviteEmail('')
-    setInviteRole('user')
+    setInviteRole('employee')
   }
 
   const handleResetRequest = (user: User) => {
@@ -674,10 +674,10 @@ export default function SuperAdminUsersPage() {
                   </label>
                   <select
                     value={inviteRole}
-                    onChange={(event) => setInviteRole(event.target.value as 'admin' | 'user')}
+                    onChange={(event) => setInviteRole(event.target.value as 'admin' | 'employee')}
                     className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg dark:bg-zinc-700 dark:text-zinc-100"
                   >
-                    <option value="user">User</option>
+                    <option value="employee">Mitarbeiter</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>

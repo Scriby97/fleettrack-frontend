@@ -22,14 +22,14 @@ const STATUS_CLASSES: Record<InviteStatus, string> = {
 
 export default function UsersPage() {
   const router = useRouter()
-  const { loading: authLoading, isAdmin, isSuperAdmin, organization } = useAuth()
+  const { loading: authLoading, isAdmin, isSuperAdmin, canManageOrganization, organization } = useAuth()
 
   const [activeTab, setActiveTab] = useState<'invites' | 'users'>('invites')
   const [invites, setInvites] = useState<InviteEntity[]>([])
   const [loading, setLoading] = useState(true)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRole, setInviteRole] = useState<'admin' | 'user'>('user')
+  const [inviteRole, setInviteRole] = useState<'admin' | 'employee'>('employee')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [usersError, setUsersError] = useState<string | null>(null)
@@ -49,7 +49,7 @@ export default function UsersPage() {
   }, [])
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
+    if (!authLoading && !canManageOrganization) {
       router.push('/')
       return
     }
@@ -58,17 +58,19 @@ export default function UsersPage() {
       router.push('/super-admin/users')
       return
     }
-  }, [authLoading, isAdmin, isSuperAdmin, router])
+  }, [authLoading, canManageOrganization, isSuperAdmin, router])
 
   useEffect(() => {
-    if (authLoading || !isAdmin || isSuperAdmin) return
+    if (authLoading || !canManageOrganization || isSuperAdmin) return
 
     const fetchData = async () => {
       setLoading(true)
 
+      // The global "all users" list is only available to global administrators -
+      // org-level admins/owners only manage invites for their own organization.
       const [inviteResult, userResult] = await Promise.allSettled([
         getOrganizationInvites(),
-        getUsers(),
+        isAdmin ? getUsers() : Promise.resolve([]),
       ])
 
       if (inviteResult.status === 'fulfilled') {
@@ -93,7 +95,7 @@ export default function UsersPage() {
     }
 
     fetchData()
-  }, [authLoading, isAdmin, isSuperAdmin])
+  }, [authLoading, isAdmin, canManageOrganization, isSuperAdmin])
 
   const getInviteStatus = (invite: InviteEntity): InviteStatus => {
     if (invite.usedAt) return 'used'
@@ -123,7 +125,7 @@ export default function UsersPage() {
       setInvites((prev) => [invite, ...prev])
       setCreatedInviteLink(inviteLinkForToken(invite.token))
       setInviteEmail('')
-      setInviteRole('user')
+      setInviteRole('employee')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Fehler beim Erstellen der Einladung'
       setError(message)
@@ -157,7 +159,7 @@ export default function UsersPage() {
     setShowInviteModal(false)
     setCreatedInviteLink(null)
     setInviteEmail('')
-    setInviteRole('user')
+    setInviteRole('employee')
   }
 
   const sortedInvites = useMemo(() => {
@@ -214,7 +216,7 @@ export default function UsersPage() {
     )
   }
 
-  if (!isAdmin || isSuperAdmin) {
+  if (!canManageOrganization || isSuperAdmin) {
     return null
   }
 
@@ -255,16 +257,18 @@ export default function UsersPage() {
           >
             Einladungen
           </button>
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
-              activeTab === 'users'
-                ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
-                : 'border-zinc-200 text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-600'
-            }`}
-          >
-            Benutzer
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
+                activeTab === 'users'
+                  ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
+                  : 'border-zinc-200 text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-600'
+              }`}
+            >
+              Benutzer
+            </button>
+          )}
         </div>
 
         {activeTab === 'invites' && (
@@ -559,10 +563,10 @@ export default function UsersPage() {
                   </label>
                   <select
                     value={inviteRole}
-                    onChange={(event) => setInviteRole(event.target.value as 'admin' | 'user')}
+                    onChange={(event) => setInviteRole(event.target.value as 'admin' | 'employee')}
                     className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg dark:bg-zinc-700 dark:text-zinc-100"
                   >
-                    <option value="user">User</option>
+                    <option value="employee">Mitarbeiter</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
