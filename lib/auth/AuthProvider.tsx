@@ -16,8 +16,10 @@ interface AuthContextType {
   loading: boolean
   backendLoading: boolean
   backendRetryCount: number
+  // Globale Rolle "administrator" - ausschliesslich für Entwickler-Accounts,
+  // die organisationsübergreifend auf alle Daten zugreifen können. Es gibt
+  // keine separate "super_admin"-Stufe (mehr).
   isAdmin: boolean
-  isSuperAdmin: boolean
   userRole: string | null
   organizationId: string | null
   organization: Organization | null
@@ -58,8 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   supabaseUserRef.current = supabaseUser
 
   // Compute derived values
-  const isAdmin = userRole === 'admin' || userRole === 'super_admin'
-  const isSuperAdmin = userRole === 'super_admin'
+  const isAdmin = userRole === 'administrator'
   const organizationId = organizationMemberships[0]?.organizationId ?? null
   const organization = organizationMemberships[0]?.organization ?? null
   const organizationRole = organizationMemberships[0]?.role ?? null
@@ -290,7 +291,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     backendLoading,
     backendRetryCount,
     isAdmin,
-    isSuperAdmin,
     userRole,
     organizationId,
     organization,

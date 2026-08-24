@@ -53,7 +53,11 @@ export interface PendingInvite {
 export interface User {
   id: string
   email: string
-  role: 'super_admin' | 'admin' | 'user'
+  // Globale, funktionale Rolle - nur diese zwei Werte existieren serverseitig.
+  // "administrator" ist ausschliesslich für Entwickler-Accounts gedacht (kann
+  // organisationsübergreifend auf alle Daten zugreifen); es gibt keine
+  // separate "super_admin"-Stufe.
+  role: 'user' | 'administrator'
   organizationId: string | null
   organization: Organization | null
   organizationMemberships?: OrganizationMembership[]
@@ -105,7 +109,9 @@ export interface CreateOrganizationRequest {
   adminEmail: string
   adminFirstName?: string
   adminLastName?: string
-  adminRole?: 'admin' | 'super_admin'
+  // Organisationsrolle (nicht die globale User-Rolle!), die der eingeladene
+  // Erst-Admin in der NEUEN Organisation bekommt.
+  adminRole?: OrganizationRole
   subdomain?: string
   contactEmail?: string
 }

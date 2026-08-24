@@ -19,6 +19,7 @@ interface Report {
   endOperatingHours: number;
   fuel: number;
   usageDate?: string;
+  creatorId?: string;
   creatorFirstName?: string;
   creatorLastName?: string;
 }
@@ -35,12 +36,17 @@ interface ReportItemProps {
   report: Report;
   onEdit: (report: Report) => void;
   onDelete: (id: number | string) => void;
-  isAdmin: boolean;
-  isSuperAdmin?: boolean;
+  // Admin/Owner der Organisation dieser Nutzung, oder globaler Administrator -
+  // NICHT die globale isAdmin-Rolle allein (ein Org-Owner ohne globale
+  // Administrator-Rolle muss Nutzungen genauso bearbeiten/löschen dürfen).
+  // Steuert Löschen + Anzeige des Erstellers - nur Admin/Owner/globaler Admin.
+  canManage: boolean;
+  // canManage ODER der Eintrag stammt vom eingeloggten User selbst - ein
+  // Mitarbeiter darf seine eigenen Nutzungen bearbeiten, aber nicht löschen.
+  canEdit: boolean;
 }
 
-const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin, isSuperAdmin }) => {
-  const isAdmin_or_SuperAdmin = isAdmin || isSuperAdmin;
+const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, canEdit }) => {
   const creatorName = report.creatorFirstName || report.creatorLastName
     ? `${report.creatorFirstName || ''} ${report.creatorLastName || ''}`.trim()
     : null;
@@ -64,7 +70,7 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin, is
         <p>
           <span className="font-medium">Treibstoff:</span> {report.fuel} L
         </p>
-        {isAdmin_or_SuperAdmin && creatorName && (
+        {canManage && creatorName && (
           <p>
             <span className="font-medium">Erfasst von:</span> {creatorName}
           </p>
@@ -72,48 +78,52 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin, is
       </div>
     </div>
 
-    {/* Action Buttons - nur für Admins sichtbar */}
-    {isAdmin && (
+    {/* Action Buttons - Bearbeiten: Admin/Owner/globaler Admin oder eigener Eintrag; Löschen: nur Admin/Owner/globaler Admin */}
+    {(canEdit || canManage) && (
       <div className="flex gap-2 ml-4 flex-shrink-0">
-        <button
-          onClick={() => onEdit(report)}
-          className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
-          title="Bearbeiten"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        {canEdit && (
+          <button
+            onClick={() => onEdit(report)}
+            className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
+            title="Bearbeiten"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-            />
-          </svg>
-        </button>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+          </button>
+        )}
 
-        <button
-          onClick={() => onDelete(report.id)}
-          className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
-          title="Löschen"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        {canManage && (
+          <button
+            onClick={() => onDelete(report.id)}
+            className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
+            title="Löschen"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-        </button>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+          </button>
+        )}
       </div>
     )}
   </div>
@@ -121,8 +131,12 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, isAdmin, is
 };
 
 const UebersichtEintraege: FC = () => {
-  const { isAdmin, isSuperAdmin } = useAuth();
-  const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
+  const { isAdmin, userProfile } = useAuth();
+  const { organizations, selectedOrgId, setSelectedOrgId, canManageSelectedOrganization } = useOrganization();
+  // Ein Mitarbeiter darf zusaetzlich seine eigenen Nutzungen bearbeiten (aber
+  // nicht loeschen) - siehe assertCanEditUsage im Backend.
+  const canEditReport = (report: Report) =>
+    canManageSelectedOrganization || report.creatorId === userProfile?.id;
   const { toasts, showToast, removeToast } = useToast();
   const [reports, setReports] = useState<Report[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -228,8 +242,9 @@ const UebersichtEintraege: FC = () => {
                 endOperatingHours: updatedUsage.endOperatingHours,
                 fuel: updatedUsage.fuelLitersRefilled,
                 usageDate: updatedUsage.usageDate,
-                creatorFirstName: updatedUsage.creator?.firstName,
-                creatorLastName: updatedUsage.creator?.lastName,
+                creatorId: updatedUsage.creatorId ?? r.creatorId,
+                creatorFirstName: updatedUsage.creator?.firstName ?? r.creatorFirstName,
+                creatorLastName: updatedUsage.creator?.lastName ?? r.creatorLastName,
               }
             : r
         )
@@ -298,6 +313,7 @@ const UebersichtEintraege: FC = () => {
           endOperatingHours: typeof u.endOperatingHours === 'number' ? u.endOperatingHours : Number(u.endOperatingHours ?? 0),
           fuel: typeof u.fuelLitersRefilled === 'number' ? u.fuelLitersRefilled : Number(u.fuelLitersRefilled ?? 0),
           usageDate: u.usageDate,
+          creatorId: u.creatorId,
           creatorFirstName: u.creator?.firstName,
           creatorLastName: u.creator?.lastName,
         }));
@@ -328,7 +344,7 @@ const UebersichtEintraege: FC = () => {
           Übersicht Nutzungen
         </h1>
         <div className="flex flex-col gap-2 mt-2">
-          {isSuperAdmin && organizations.length > 0 && (
+          {isAdmin && organizations.length > 0 && (
             <div className="flex items-center gap-2">
               <label className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
                 Organization:
@@ -364,15 +380,17 @@ const UebersichtEintraege: FC = () => {
       </div>
 
       {/* Edit Modal */}
-      {editingReport && (
+      {editingReport && (() => {
+        const canEditEditingReport = canEditReport(editingReport);
+        return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-zinc-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
             <div className="flex justify-between items-center mb-4">
               <div>
                 <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                  Nutzung {isAdmin ? 'bearbeiten' : 'anzeigen'}
+                  Nutzung {canEditEditingReport ? 'bearbeiten' : 'anzeigen'}
                 </h2>
-                {(isAdmin || isSuperAdmin) && (editingReport.creatorFirstName || editingReport.creatorLastName) && (
+                {canEditEditingReport && (editingReport.creatorFirstName || editingReport.creatorLastName) && (
                   <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
                     Erfasst von: {editingReport.creatorFirstName} {editingReport.creatorLastName}
                   </p>
@@ -400,7 +418,7 @@ const UebersichtEintraege: FC = () => {
                   onChange={(e) => setEditForm((prev) => ({ ...prev, vehicleId: e.target.value }))}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                   required
-                  disabled={!isAdmin}
+                  disabled={!canEditEditingReport}
                 >
                   {vehicles.map((vehicle) => (
                     <option key={vehicle.id} value={vehicle.id}>
@@ -422,7 +440,7 @@ const UebersichtEintraege: FC = () => {
                   onChange={(e) => setEditForm((prev) => ({ ...prev, usageDate: e.target.value }))}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:invert"
                   required
-                  disabled={!isAdmin}
+                  disabled={!canEditEditingReport}
                 />
               </div>
 
@@ -440,7 +458,7 @@ const UebersichtEintraege: FC = () => {
                   min="0"
                   step="0.1"
                   required
-                  disabled={!isAdmin}
+                  disabled={!canEditEditingReport}
                 />
               </div>
 
@@ -458,7 +476,7 @@ const UebersichtEintraege: FC = () => {
                   min="0"
                   step="0.1"
                   required
-                  disabled={!isAdmin}
+                  disabled={!canEditEditingReport}
                 />
               </div>
 
@@ -475,7 +493,7 @@ const UebersichtEintraege: FC = () => {
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                   min="0"
                   step="0.1"
-                  disabled={!isAdmin}
+                  disabled={!canEditEditingReport}
                 />
               </div>
 
@@ -488,7 +506,7 @@ const UebersichtEintraege: FC = () => {
 
               {/* Buttons */}
               <div className="flex gap-3">
-                {isAdmin && (
+                {canEditEditingReport && (
                   <button
                     type="submit"
                     disabled={isSubmitting}
@@ -501,15 +519,16 @@ const UebersichtEintraege: FC = () => {
                   type="button"
                   onClick={handleCancelEdit}
                   disabled={isSubmitting}
-                  className={`${isAdmin ? '' : 'flex-1'} px-6 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50`}
+                  className={`${canEditEditingReport ? '' : 'flex-1'} px-6 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50`}
                 >
-                  {isAdmin ? 'Abbrechen' : 'Schließen'}
+                  {canEditEditingReport ? 'Abbrechen' : 'Schließen'}
                 </button>
               </div>
             </form>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {isLoading ? (
         <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
@@ -525,8 +544,8 @@ const UebersichtEintraege: FC = () => {
               report={report}
               onEdit={handleEdit}
               onDelete={(id) => setConfirmDeleteId(id)}
-              isAdmin={isAdmin}
-              isSuperAdmin={isSuperAdmin}
+              canManage={canManageSelectedOrganization}
+              canEdit={canEditReport(report)}
             />
           ))}
         </div>

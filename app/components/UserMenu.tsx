@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation'
 import type { FC } from 'react'
 
 const UserMenu: FC = () => {
-  const { supabaseUser, userProfile, signOut, isAdmin, isSuperAdmin, userRole, organization } = useAuth()
-  const { organizations, selectedOrgId, setSelectedOrgId, canManageSelectedOrganization } = useOrganization()
+  const { supabaseUser, userProfile, signOut, isAdmin, userRole, organization } = useAuth()
+  const { organizations, selectedOrgId, setSelectedOrgId, selectedOrganizationRole, canManageSelectedOrganization } = useOrganization()
   const router = useRouter()
 
   const handleSignOut = async () => {
@@ -23,8 +23,12 @@ const UserMenu: FC = () => {
     : userProfile?.name || supabaseUser.user_metadata?.fullName || supabaseUser.email
 
   const getRoleDisplay = () => {
-    if (isSuperAdmin) return '⭐ Super Admin'
-    if (isAdmin) return '👑 Administrator'
+    if (isAdmin) return '⭐ Administrator'
+    // Globale Rolle ist nur "Benutzer" - die eigentlich relevante Rolle ist die
+    // in der aktuell ausgewählten Organisation (owner/admin/employee).
+    if (selectedOrganizationRole === 'owner') return '👑 Eigentümer'
+    if (selectedOrganizationRole === 'admin') return '🛠️ Admin'
+    if (selectedOrganizationRole === 'employee') return '👤 Mitarbeiter'
     return '👤 Benutzer'
   }
 
@@ -83,13 +87,13 @@ const UserMenu: FC = () => {
         ⚙️ Einstellungen
       </button>
 
-      {isSuperAdmin && (
+      {isAdmin && (
         <>
           <button
-            onClick={() => router.push('/super-admin/users')}
+            onClick={() => router.push('/admin/all-users')}
             className="w-full px-4 py-2 text-sm bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-900 dark:text-blue-100 rounded-lg transition-colors text-left"
           >
-            👥 Super Admin Users
+            👥 Alle Benutzer
           </button>
           <button
             onClick={() => router.push('/admin/organizations')}
@@ -99,8 +103,8 @@ const UserMenu: FC = () => {
           </button>
         </>
       )}
-      
-      {canManageSelectedOrganization && !isSuperAdmin && (
+
+      {canManageSelectedOrganization && !isAdmin && (
         <button
           onClick={() => router.push('/admin/users')}
           className="w-full px-4 py-2 text-sm bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-900 dark:text-blue-100 rounded-lg transition-colors text-left"

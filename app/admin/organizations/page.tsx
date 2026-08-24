@@ -5,38 +5,38 @@ import { useAuth } from '@/lib/auth/AuthProvider'
 import { useRouter } from 'next/navigation'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { createOrganization, getAllOrganizations } from '@/lib/api/organizations'
-import { CreateOrganizationRequest, CreateOrganizationResponse, Organization } from '@/lib/types/user'
+import { CreateOrganizationRequest, CreateOrganizationResponse, Organization, OrganizationRole } from '@/lib/types/user'
 
-export default function SuperAdminOrganizationsPage() {
-  const { supabaseUser, isSuperAdmin, loading: authLoading } = useAuth()
+export default function AdminOrganizationsPage() {
+  const { supabaseUser, isAdmin, loading: authLoading } = useAuth()
   const router = useRouter()
-  
+
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createdResult, setCreatedResult] = useState<CreateOrganizationResponse | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
-  
+
   const [formData, setFormData] = useState<CreateOrganizationRequest>({
     name: '',
     adminEmail: '',
     adminFirstName: '',
     adminLastName: '',
-    adminRole: 'admin',
+    adminRole: 'owner',
     subdomain: '',
     contactEmail: '',
   })
 
   useEffect(() => {
-    if (!authLoading && !isSuperAdmin) {
+    if (!authLoading && !isAdmin) {
       router.push('/')
       return
     }
 
-    if (!authLoading && isSuperAdmin) {
+    if (!authLoading && isAdmin) {
       loadOrganizations()
     }
-  }, [authLoading, isSuperAdmin, router])
+  }, [authLoading, isAdmin, router])
 
   const loadOrganizations = async () => {
     try {
@@ -64,7 +64,7 @@ export default function SuperAdminOrganizationsPage() {
         adminEmail: '',
         adminFirstName: '',
         adminLastName: '',
-        adminRole: 'admin',
+        adminRole: 'owner',
         subdomain: '',
         contactEmail: '',
       })
@@ -114,7 +114,7 @@ export default function SuperAdminOrganizationsPage() {
     )
   }
 
-  if (!isSuperAdmin) {
+  if (!isAdmin) {
     return null
   }
 
@@ -324,15 +324,15 @@ export default function SuperAdminOrganizationsPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Admin Rolle
+                      Rolle in der Organisation
                     </label>
                     <select
                       value={formData.adminRole}
-                      onChange={e => setFormData({ ...formData, adminRole: e.target.value as 'admin' | 'super_admin' })}
+                      onChange={e => setFormData({ ...formData, adminRole: e.target.value as OrganizationRole })}
                       className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-white"
                     >
-                      <option value="admin">Admin (Standard)</option>
-                      <option value="super_admin">Super Admin (volle Rechte)</option>
+                      <option value="owner">Owner (Standard, volle Rechte inkl. Löschen)</option>
+                      <option value="admin">Admin (kann Organisation verwalten, aber nicht löschen)</option>
                     </select>
                   </div>
                 </fieldset>

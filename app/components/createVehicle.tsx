@@ -19,7 +19,7 @@ interface FormState {
 }
 
 const CreateVehicle: FC = () => {
-  const { isSuperAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
   const { toasts, showToast, removeToast } = useToast();
   const [formData, setFormData] = useState<FormState>({
@@ -86,7 +86,7 @@ const CreateVehicle: FC = () => {
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Fügen Sie ein neues Fahrzeug zur Flotte hinzu
         </p>
-        {isSuperAdmin && organizations.length > 0 && (
+        {isAdmin && organizations.length > 0 && (
           <div className="flex items-center gap-2">
             <label className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
               Organization:

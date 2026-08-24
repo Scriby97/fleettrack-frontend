@@ -32,7 +32,7 @@ const calculateHoursDifference = (start: string, end: string): number | null => 
 };
 
 const CreateUsage: FC = () => {
-  const { isSuperAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
   const { toasts, showToast, removeToast } = useToast();
   
@@ -233,7 +233,7 @@ const CreateUsage: FC = () => {
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
           Nutzung erfassen
         </h1>
-        {isSuperAdmin && organizations.length > 0 && (
+        {isAdmin && organizations.length > 0 && (
           <div className="flex items-center gap-2 mt-2">
             <label className="text-sm text-zinc-600 dark:text-zinc-400">
               Organization:

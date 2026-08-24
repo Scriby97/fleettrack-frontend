@@ -12,12 +12,13 @@ interface OrganizationContextType {
   selectedOrgId: string | null;
   setSelectedOrgId: (id: string | null) => void;
   // Rolle des Users in der AKTUELL AUSGEWÄHLTEN Organisation (nicht in der ersten
-  // Mitgliedschaft) - null für Super Admins (die keine eigene Mitgliedschaft
-  // brauchen) oder falls (noch) keine Organisation ausgewählt ist.
+  // Mitgliedschaft) - null für globale Administratoren (die keine eigene
+  // Mitgliedschaft brauchen) oder falls (noch) keine Organisation ausgewählt ist.
   selectedOrganizationRole: OrganizationRole | null;
-  // isAdmin (global) ODER admin/owner in der ausgewählten Organisation - für
-  // UI-Gating (Flottenübersicht, Fahrzeug erstellen, etc.), das auf die
-  // AKTUELL AUSGEWÄHLTE Organisation reagieren muss, nicht auf die erste Mitgliedschaft.
+  // isAdmin (global, Entwickler-Account) ODER admin/owner in der ausgewählten
+  // Organisation - für UI-Gating (Flottenübersicht, Fahrzeug erstellen, etc.),
+  // das auf die AKTUELL AUSGEWÄHLTE Organisation reagieren muss, nicht auf die
+  // erste Mitgliedschaft.
   canManageSelectedOrganization: boolean;
   isLoading: boolean;
   error: string | null;
@@ -26,7 +27,7 @@ interface OrganizationContextType {
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
-  const { isAdmin, isSuperAdmin, organizationId, organizationMemberships } = useAuth();
+  const { isAdmin, organizationId, organizationMemberships } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrgId, setSelectedOrgIdState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,9 +50,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Super Admins: alle Organisationen system-weit laden
+  // Administratoren (Entwickler-Accounts): alle Organisationen system-weit laden,
+  // unabhängig von eigenen Mitgliedschaften (Administratoren müssen keiner
+  // Organisation angehören, um auf sie zugreifen zu können).
   useEffect(() => {
-    if (!isSuperAdmin || hasLoadedRef.current) return;
+    if (!isAdmin || hasLoadedRef.current) return;
     hasLoadedRef.current = true;
 
     const load = async () => {
@@ -69,24 +72,24 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       }
     };
     load();
-  }, [isSuperAdmin]);
+  }, [isAdmin]);
 
   // Normale User: eigene Organisation(en) direkt aus den bereits geladenen
   // Memberships übernehmen - kein zusätzlicher API-Call nötig, und reagiert
   // automatisch, wenn der User eine weitere Organisation erstellt/annimmt.
   useEffect(() => {
-    if (isSuperAdmin) return;
+    if (isAdmin) return;
     const ownOrganizations = organizationMemberships
       .map((membership) => membership.organization)
       .filter((org): org is Organization => Boolean(org));
     setOrganizations(ownOrganizations);
-  }, [isSuperAdmin, organizationMemberships]);
+  }, [isAdmin, organizationMemberships]);
 
   // Normale User: Auswahl bestimmen/validieren - bevorzugt die zuletzt gewählte
   // (persistierte) Organisation, sonst die erste eigene Mitgliedschaft. Fällt
   // automatisch zurück, falls die bisherige Auswahl keine Mitgliedschaft mehr ist.
   useEffect(() => {
-    if (isSuperAdmin || organizations.length === 0) return;
+    if (isAdmin || organizations.length === 0) return;
 
     setSelectedOrgIdState((current) => {
       if (current && organizations.some((org) => org.id === current)) {
@@ -105,7 +108,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
       return organizationId ?? organizations[0].id;
     });
-  }, [isSuperAdmin, organizations, organizationId]);
+  }, [isAdmin, organizations, organizationId]);
 
   const selectedMembership = organizationMemberships.find(
     (membership) => membership.organizationId === selectedOrgId,

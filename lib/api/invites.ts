@@ -54,38 +54,41 @@ export async function createInvite(
   data: { email: string; role: 'admin' | 'employee' },
   organizationId?: string
 ): Promise<InviteEntity> {
+  // organizationId in the body disambiguates which org to invite to - only
+  // required if the user is admin/owner of more than one organization
+  // (or is a global administrator, who must always specify one).
   const payload = organizationId ? { ...data, organizationId } : data
 
-  // Include organizationId in the JSON body (required by backend for super_admin)
-  // Keep the X-Organization-Id header as well for backward compatibility.
   const response = await authenticatedFetch(buildApiUrl('/organizations/invites'), {
     method: 'POST',
-    headers: organizationId ? { 'X-Organization-Id': organizationId } : undefined,
     body: JSON.stringify(payload),
   })
-  
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Fehler beim Erstellen der Einladung' }))
     throw new Error(error.message || 'Fehler beim Erstellen der Einladung')
   }
-  
+
   return response.json()
 }
 
 /**
- * Get all invites for the authenticated user's organization (requires authentication)
- * organizationId is automatically taken from the authenticated user
+ * Get invites for the given organization (or the user's own organization(s) if
+ * omitted - only unambiguous when the user belongs to exactly one).
  */
 export async function getOrganizationInvites(organizationId?: string): Promise<InviteEntity[]> {
-  const response = await authenticatedFetch(buildApiUrl('/organizations/invites'), {
-    headers: organizationId ? { 'X-Organization-Id': organizationId } : undefined,
-  })
-  
+  const url = new URL(buildApiUrl('/organizations/invites'))
+  if (organizationId) {
+    url.searchParams.set('organizationId', organizationId)
+  }
+
+  const response = await authenticatedFetch(url.toString())
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Einladungen' }))
     throw new Error(error.message || 'Fehler beim Laden der Einladungen')
   }
-  
+
   return response.json()
 }
 
@@ -136,14 +139,16 @@ export async function declineInviteAsExistingUser(token: string): Promise<{ mess
 }
 
 /**
- * Delete an invite (requires authentication)
+ * Delete an invite (requires authentication). The backend checks the invite's
+ * organization against all organizations the user manages, so no explicit
+ * organizationId is needed here (kept as a param for signature symmetry with
+ * createInvite/getOrganizationInvites, in case that changes later).
  */
-export async function deleteInvite(inviteId: string, organizationId?: string): Promise<void> {
+export async function deleteInvite(inviteId: string, _organizationId?: string): Promise<void> {
   const response = await authenticatedFetch(buildApiUrl(`/organizations/invites/${inviteId}`), {
     method: 'DELETE',
-    headers: organizationId ? { 'X-Organization-Id': organizationId } : undefined,
   })
-  
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Fehler beim Löschen der Einladung' }))
     throw new Error(error.message || 'Fehler beim Löschen der Einladung')

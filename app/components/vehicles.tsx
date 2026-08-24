@@ -172,7 +172,7 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
 );
 
 const FlottenUebersicht: FC = () => {
-  const { isSuperAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
   const { toasts, showToast, removeToast } = useToast();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -390,7 +390,7 @@ const FlottenUebersicht: FC = () => {
           Flottenübersicht
         </h1>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
-          {isSuperAdmin && organizations.length > 0 && (
+          {isAdmin && organizations.length > 0 && (
             <div className="flex items-center gap-2">
               <label className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
                 Organization:

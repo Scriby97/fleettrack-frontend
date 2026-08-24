@@ -23,9 +23,9 @@ const STATUS_CLASSES: Record<InviteStatus, string> = {
   expired: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200',
 }
 
-export default function SuperAdminUsersPage() {
+export default function AdminAllUsersPage() {
   const router = useRouter()
-  const { loading: authLoading, isSuperAdmin } = useAuth()
+  const { loading: authLoading, isAdmin } = useAuth()
   const { toasts, showToast, removeToast } = useToast()
 
   const [activeTab, setActiveTab] = useState<'users' | 'invites'>('users')
@@ -56,12 +56,12 @@ export default function SuperAdminUsersPage() {
   }, [])
 
   useEffect(() => {
-    if (!authLoading && !isSuperAdmin) {
+    if (!authLoading && !isAdmin) {
       router.push('/')
       return
     }
 
-    if (!authLoading && isSuperAdmin) {
+    if (!authLoading && isAdmin) {
       const loadData = async () => {
         try {
           setLoading(true)
@@ -81,16 +81,17 @@ export default function SuperAdminUsersPage() {
 
       loadData()
     }
-  }, [authLoading, isSuperAdmin, router])
+  }, [authLoading, isAdmin, router])
 
   useEffect(() => {
-    if (authLoading || !isSuperAdmin || activeTab !== 'invites') return
+    if (authLoading || !isAdmin || activeTab !== 'invites') return
 
     const fetchInvites = async () => {
       try {
         setInvitesLoading(true)
         setInvitesError(null)
-        // For super-admin: backend returns invites for all organizations when no org header is provided
+        // Als Administrator: liefert der Backend alle Einladungen aller Organisationen,
+        // wenn keine organizationId angegeben wird.
         const data = await getOrganizationInvites()
         setAllInvites(Array.isArray(data) ? data : [])
       } catch (err) {
@@ -102,7 +103,7 @@ export default function SuperAdminUsersPage() {
     }
 
     fetchInvites()
-  }, [authLoading, activeTab, isSuperAdmin])
+  }, [authLoading, activeTab, isAdmin])
 
   const filteredUsers = useMemo(() => {
     let result = users
@@ -168,7 +169,7 @@ export default function SuperAdminUsersPage() {
     setInviteSubmitting(true)
     try {
       const invite = await createInvite({ email, role: inviteRole }, inviteOrgId)
-      // prepend to local cache of invites (server returns invites for all orgs to super-admin)
+      // prepend to local cache of invites (server returns invites for all orgs to administrators)
       setAllInvites((prev) => [invite, ...prev])
       setCreatedInviteLink(inviteLinkForToken(invite.token))
       setInviteEmail('')
@@ -239,7 +240,7 @@ export default function SuperAdminUsersPage() {
     )
   }
 
-  if (!isSuperAdmin) {
+  if (!isAdmin) {
     return null
   }
 
@@ -247,15 +248,15 @@ export default function SuperAdminUsersPage() {
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 p-4 sm:p-8">
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="max-w-6xl mx-auto space-y-6">
-        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: 'User Management' }]} />
+        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: 'Alle Benutzer' }]} />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-              Super Admin User Management
+              Alle Benutzer
             </h1>
             <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400">
-              Benutzer verwalten und Einladungen erstellen
+              Benutzer aller Organisationen verwalten und Einladungen erstellen
             </p>
           </div>
           {activeTab === 'invites' && (
@@ -355,7 +356,7 @@ export default function SuperAdminUsersPage() {
                           {user.email}
                         </td>
                         <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 capitalize">
-                          {user.role.replace('_', ' ')}
+                          {user.role}
                         </td>
                         <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
                           {user.organization?.name ?? '-'}
@@ -398,7 +399,7 @@ export default function SuperAdminUsersPage() {
                     </div>
                     <div className="text-sm text-zinc-600 dark:text-zinc-400 space-y-1">
                       <p className="capitalize">
-                        <span className="font-medium">Rolle:</span> {user.role.replace('_', ' ')}
+                        <span className="font-medium">Rolle:</span> {user.role}
                       </p>
                       <p>
                         <span className="font-medium">Organization:</span> {user.organization?.name ?? '-'}
@@ -447,8 +448,6 @@ export default function SuperAdminUsersPage() {
               </div>
             )}
 
-            {/* Show invites (all or filtered) */}
-
             {invitesLoading ? (
               <div className="py-8 text-center text-zinc-500 dark:text-zinc-400">Lade Einladungen...</div>
             ) : (
@@ -483,7 +482,7 @@ export default function SuperAdminUsersPage() {
                               <td className="px-4 py-3 text-zinc-900 dark:text-zinc-100 font-medium">
                                 {invite.email}
                               </td>
-                              <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400capitalize">
+                              <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 capitalize">
                                 {invite.role}
                               </td>
                               <td className="px-4 py-3">

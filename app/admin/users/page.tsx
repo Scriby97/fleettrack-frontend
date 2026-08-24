@@ -23,7 +23,7 @@ const STATUS_CLASSES: Record<InviteStatus, string> = {
 
 export default function UsersPage() {
   const router = useRouter()
-  const { loading: authLoading, isAdmin, isSuperAdmin } = useAuth()
+  const { loading: authLoading, isAdmin } = useAuth()
   const { organizations, selectedOrgId, canManageSelectedOrganization } = useOrganization()
   const selectedOrganization = organizations.find((org) => org.id === selectedOrgId)
 
@@ -57,14 +57,14 @@ export default function UsersPage() {
       return
     }
 
-    if (!authLoading && isSuperAdmin) {
-      router.push('/super-admin/users')
+    if (!authLoading && isAdmin) {
+      router.push('/admin/all-users')
       return
     }
-  }, [authLoading, canManageSelectedOrganization, isSuperAdmin, router])
+  }, [authLoading, canManageSelectedOrganization, isAdmin, router])
 
   useEffect(() => {
-    if (authLoading || !canManageSelectedOrganization || isSuperAdmin) return
+    if (authLoading || !canManageSelectedOrganization || isAdmin) return
 
     const fetchData = async () => {
       setLoading(true)
@@ -98,7 +98,7 @@ export default function UsersPage() {
     }
 
     fetchData()
-  }, [authLoading, isAdmin, canManageSelectedOrganization, isSuperAdmin, selectedOrgId])
+  }, [authLoading, isAdmin, canManageSelectedOrganization, selectedOrgId])
 
   const getInviteStatus = (invite: InviteEntity): InviteStatus => {
     if (invite.usedAt) return 'used'
@@ -219,7 +219,7 @@ export default function UsersPage() {
     )
   }
 
-  if (!canManageSelectedOrganization || isSuperAdmin) {
+  if (!canManageSelectedOrganization || isAdmin) {
     return null
   }
 
