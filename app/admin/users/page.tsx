@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { useAuth } from '@/lib/auth/AuthProvider'
+import { useOrganization } from '@/lib/contexts/OrganizationContext'
 import { createInvite, deleteInvite, getOrganizationInvites } from '@/lib/api/invites'
 import { getUsers, sendUserResetPassword } from '@/lib/api/users'
 import type { InviteEntity, InviteStatus, User } from '@/lib/types/user'
@@ -22,7 +23,9 @@ const STATUS_CLASSES: Record<InviteStatus, string> = {
 
 export default function UsersPage() {
   const router = useRouter()
-  const { loading: authLoading, isAdmin, isSuperAdmin, canManageOrganization, organization } = useAuth()
+  const { loading: authLoading, isAdmin, isSuperAdmin } = useAuth()
+  const { organizations, selectedOrgId, canManageSelectedOrganization } = useOrganization()
+  const selectedOrganization = organizations.find((org) => org.id === selectedOrgId)
 
   const [activeTab, setActiveTab] = useState<'invites' | 'users'>('invites')
   const [invites, setInvites] = useState<InviteEntity[]>([])
@@ -49,7 +52,7 @@ export default function UsersPage() {
   }, [])
 
   useEffect(() => {
-    if (!authLoading && !canManageOrganization) {
+    if (!authLoading && !canManageSelectedOrganization) {
       router.push('/')
       return
     }
@@ -58,10 +61,10 @@ export default function UsersPage() {
       router.push('/super-admin/users')
       return
     }
-  }, [authLoading, canManageOrganization, isSuperAdmin, router])
+  }, [authLoading, canManageSelectedOrganization, isSuperAdmin, router])
 
   useEffect(() => {
-    if (authLoading || !canManageOrganization || isSuperAdmin) return
+    if (authLoading || !canManageSelectedOrganization || isSuperAdmin) return
 
     const fetchData = async () => {
       setLoading(true)
@@ -69,7 +72,7 @@ export default function UsersPage() {
       // The global "all users" list is only available to global administrators -
       // org-level admins/owners only manage invites for their own organization.
       const [inviteResult, userResult] = await Promise.allSettled([
-        getOrganizationInvites(),
+        getOrganizationInvites(selectedOrgId ?? undefined),
         isAdmin ? getUsers() : Promise.resolve([]),
       ])
 
@@ -95,7 +98,7 @@ export default function UsersPage() {
     }
 
     fetchData()
-  }, [authLoading, isAdmin, canManageOrganization, isSuperAdmin])
+  }, [authLoading, isAdmin, canManageSelectedOrganization, isSuperAdmin, selectedOrgId])
 
   const getInviteStatus = (invite: InviteEntity): InviteStatus => {
     if (invite.usedAt) return 'used'
@@ -121,7 +124,7 @@ export default function UsersPage() {
 
     setSubmitting(true)
     try {
-      const invite = await createInvite({ email, role: inviteRole })
+      const invite = await createInvite({ email, role: inviteRole }, selectedOrgId ?? undefined)
       setInvites((prev) => [invite, ...prev])
       setCreatedInviteLink(inviteLinkForToken(invite.token))
       setInviteEmail('')
@@ -147,7 +150,7 @@ export default function UsersPage() {
 
   const handleDeleteInvite = async (inviteId: string) => {
     try {
-      await deleteInvite(inviteId)
+      await deleteInvite(inviteId, selectedOrgId ?? undefined)
       setInvites((prev) => prev.filter((invite) => invite.id !== inviteId))
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Fehler beim Loeschen der Einladung'
@@ -216,7 +219,7 @@ export default function UsersPage() {
     )
   }
 
-  if (!canManageOrganization || isSuperAdmin) {
+  if (!canManageSelectedOrganization || isSuperAdmin) {
     return null
   }
 
@@ -231,7 +234,7 @@ export default function UsersPage() {
               User Management
             </h1>
             <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400">
-              Organisation: {organization?.name}
+              Organisation: {selectedOrganization?.name}
             </p>
           </div>
           {activeTab === 'invites' && (

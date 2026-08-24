@@ -1,14 +1,24 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import { getAllOrganizations } from '@/lib/api/organizations';
-import type { Organization } from '@/lib/types/user';
+import type { Organization, OrganizationRole } from '@/lib/types/user';
 import { useAuth } from '@/lib/auth/AuthProvider';
+
+const SELECTED_ORG_STORAGE_KEY = 'fleettrack:selectedOrgId';
 
 interface OrganizationContextType {
   organizations: Organization[];
   selectedOrgId: string | null;
   setSelectedOrgId: (id: string | null) => void;
+  // Rolle des Users in der AKTUELL AUSGEWÄHLTEN Organisation (nicht in der ersten
+  // Mitgliedschaft) - null für Super Admins (die keine eigene Mitgliedschaft
+  // brauchen) oder falls (noch) keine Organisation ausgewählt ist.
+  selectedOrganizationRole: OrganizationRole | null;
+  // isAdmin (global) ODER admin/owner in der ausgewählten Organisation - für
+  // UI-Gating (Flottenübersicht, Fahrzeug erstellen, etc.), das auf die
+  // AKTUELL AUSGEWÄHLTE Organisation reagieren muss, nicht auf die erste Mitgliedschaft.
+  canManageSelectedOrganization: boolean;
   isLoading: boolean;
   error: string | null;
 }
@@ -16,44 +26,103 @@ interface OrganizationContextType {
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
-  const { isSuperAdmin, organizationId } = useAuth();
+  const { isAdmin, isSuperAdmin, organizationId, organizationMemberships } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+  const [selectedOrgId, setSelectedOrgIdState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Use a ref so loading once doesn't add itself to the effect dependency array
   const hasLoadedRef = useRef(false);
 
-  useEffect(() => {
-    if (isSuperAdmin && !hasLoadedRef.current) {
-      hasLoadedRef.current = true;
-      const load = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-          const orgs = await getAllOrganizations();
-          setOrganizations(orgs);
-          if (orgs.length > 0 && !selectedOrgId) {
-            setSelectedOrgId(orgs[0].id);
-          }
-        } catch (err) {
-          console.error('Fehler beim Laden der Organisationen:', err);
-          setError(err instanceof Error ? err.message : 'Fehler beim Laden der Organisationen');
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      load();
-    } else if (!isSuperAdmin && organizationId && !selectedOrgId) {
-      setSelectedOrgId(organizationId);
+  // Persist the user's choice so it survives reloads, and so the sidebar/menu
+  // switcher stays in sync with every component reading from this context.
+  const setSelectedOrgId = useCallback((id: string | null) => {
+    setSelectedOrgIdState(id);
+    try {
+      if (id) {
+        window.localStorage.setItem(SELECTED_ORG_STORAGE_KEY, id);
+      } else {
+        window.localStorage.removeItem(SELECTED_ORG_STORAGE_KEY);
+      }
+    } catch {
+      // localStorage nicht verfügbar (z.B. Private Mode) - Auswahl gilt dann nur für diese Sitzung
     }
-  }, [isSuperAdmin, organizationId, selectedOrgId]);
+  }, []);
+
+  // Super Admins: alle Organisationen system-weit laden
+  useEffect(() => {
+    if (!isSuperAdmin || hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+
+    const load = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const orgs = await getAllOrganizations();
+        setOrganizations(orgs);
+        setSelectedOrgIdState((current) => current ?? orgs[0]?.id ?? null);
+      } catch (err) {
+        console.error('Fehler beim Laden der Organisationen:', err);
+        setError(err instanceof Error ? err.message : 'Fehler beim Laden der Organisationen');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, [isSuperAdmin]);
+
+  // Normale User: eigene Organisation(en) direkt aus den bereits geladenen
+  // Memberships übernehmen - kein zusätzlicher API-Call nötig, und reagiert
+  // automatisch, wenn der User eine weitere Organisation erstellt/annimmt.
+  useEffect(() => {
+    if (isSuperAdmin) return;
+    const ownOrganizations = organizationMemberships
+      .map((membership) => membership.organization)
+      .filter((org): org is Organization => Boolean(org));
+    setOrganizations(ownOrganizations);
+  }, [isSuperAdmin, organizationMemberships]);
+
+  // Normale User: Auswahl bestimmen/validieren - bevorzugt die zuletzt gewählte
+  // (persistierte) Organisation, sonst die erste eigene Mitgliedschaft. Fällt
+  // automatisch zurück, falls die bisherige Auswahl keine Mitgliedschaft mehr ist.
+  useEffect(() => {
+    if (isSuperAdmin || organizations.length === 0) return;
+
+    setSelectedOrgIdState((current) => {
+      if (current && organizations.some((org) => org.id === current)) {
+        return current;
+      }
+
+      let stored: string | null = null;
+      try {
+        stored = window.localStorage.getItem(SELECTED_ORG_STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+      if (stored && organizations.some((org) => org.id === stored)) {
+        return stored;
+      }
+
+      return organizationId ?? organizations[0].id;
+    });
+  }, [isSuperAdmin, organizations, organizationId]);
+
+  const selectedMembership = organizationMemberships.find(
+    (membership) => membership.organizationId === selectedOrgId,
+  );
+  const selectedOrganizationRole = selectedMembership?.role ?? null;
+  const canManageSelectedOrganization =
+    isAdmin ||
+    selectedOrganizationRole === 'admin' ||
+    selectedOrganizationRole === 'owner';
 
   return (
     <OrganizationContext.Provider value={{
       organizations,
       selectedOrgId,
       setSelectedOrgId,
+      selectedOrganizationRole,
+      canManageSelectedOrganization,
       isLoading,
       error,
     }}>

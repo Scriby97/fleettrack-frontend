@@ -72,7 +72,7 @@ const CreateUsage: FC = () => {
     setLoadingOperatingHours(true);
     try {
       const url = new URL(buildApiUrl(`/vehicles/${vehicleId}/last-operating-hours`));
-      if (isSuperAdmin && selectedOrgId) {
+      if (selectedOrgId) {
         url.searchParams.set('organizationId', selectedOrgId);
       }
 
@@ -93,7 +93,7 @@ const CreateUsage: FC = () => {
     } finally {
       setLoadingOperatingHours(false);
     }
-  }, [isSuperAdmin, selectedOrgId]);
+  }, [selectedOrgId]);
 
   const handleVehicleChange = useCallback((vehicleId: string) => {
     currentVehicleIdRef.current = vehicleId;
@@ -151,15 +151,9 @@ const CreateUsage: FC = () => {
         usageDate: formData.usageDate,
       };
 
-      const headers: HeadersInit = {};
-      if (isSuperAdmin && selectedOrgId) {
-        headers['X-Organization-Id'] = selectedOrgId;
-      }
-
       const res = await authenticatedFetch(buildApiUrl('/usages'), {
         method: 'POST',
         body: JSON.stringify(payload),
-        headers,
       });
 
       if (!res.ok) {
@@ -196,7 +190,7 @@ const CreateUsage: FC = () => {
 
       try {
         const url = new URL(buildApiUrl('/vehicles'));
-        if (isSuperAdmin && selectedOrgId) {
+        if (selectedOrgId) {
           url.searchParams.set('organizationId', selectedOrgId);
         }
 
@@ -231,7 +225,7 @@ const CreateUsage: FC = () => {
     return () => {
       controller.abort();
     };
-  }, [fetchVehicleEndOperatingHours, selectedOrgId, isSuperAdmin]);
+  }, [fetchVehicleEndOperatingHours, selectedOrgId]);
 
   return (
     <section className="space-y-6">

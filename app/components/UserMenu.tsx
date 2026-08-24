@@ -1,11 +1,13 @@
 'use client'
 
 import { useAuth } from '@/lib/auth/AuthProvider'
+import { useOrganization } from '@/lib/contexts/OrganizationContext'
 import { useRouter } from 'next/navigation'
 import type { FC } from 'react'
 
 const UserMenu: FC = () => {
-  const { supabaseUser, userProfile, signOut, isAdmin, isSuperAdmin, userRole, organization, canManageOrganization } = useAuth()
+  const { supabaseUser, userProfile, signOut, isAdmin, isSuperAdmin, userRole, organization } = useAuth()
+  const { organizations, selectedOrgId, setSelectedOrgId, canManageSelectedOrganization } = useOrganization()
   const router = useRouter()
 
   const handleSignOut = async () => {
@@ -28,8 +30,26 @@ const UserMenu: FC = () => {
 
   return (
     <div className="space-y-3">
-      {/* Organization Info */}
-      {organization && (
+      {/* Organization Info / Switcher */}
+      {organizations.length > 1 ? (
+        <div className="pb-3 border-b border-zinc-200 dark:border-zinc-700">
+          <label htmlFor="org-switcher" className="block text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
+            Organization
+          </label>
+          <select
+            id="org-switcher"
+            value={selectedOrgId ?? ''}
+            onChange={(e) => setSelectedOrgId(e.target.value)}
+            className="w-full px-2 py-1.5 text-sm font-semibold border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500"
+          >
+            {organizations.map((org) => (
+              <option key={org.id} value={org.id}>
+                {org.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : organization ? (
         <div className="pb-3 border-b border-zinc-200 dark:border-zinc-700">
           <div className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
             Organization
@@ -38,7 +58,7 @@ const UserMenu: FC = () => {
             {organization.name}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* User Info */}
       <div className="text-sm">
@@ -80,7 +100,7 @@ const UserMenu: FC = () => {
         </>
       )}
       
-      {canManageOrganization && !isSuperAdmin && (
+      {canManageSelectedOrganization && !isSuperAdmin && (
         <button
           onClick={() => router.push('/admin/users')}
           className="w-full px-4 py-2 text-sm bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-900 dark:text-blue-100 rounded-lg transition-colors text-left"

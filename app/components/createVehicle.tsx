@@ -47,15 +47,11 @@ const CreateVehicle: FC = () => {
     setIsSubmitting(true);
 
     try {
-      const headers: HeadersInit = {};
-      if (isSuperAdmin && selectedOrgId) {
-        headers['X-Organization-Id'] = selectedOrgId;
-      }
+      const payload = selectedOrgId ? { ...formData, organizationId: selectedOrgId } : formData;
 
       const res = await authenticatedFetch(buildApiUrl('/vehicles'), {
         method: 'POST',
-        body: JSON.stringify(formData),
-        headers,
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {

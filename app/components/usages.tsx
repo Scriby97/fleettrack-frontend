@@ -279,9 +279,7 @@ const UebersichtEintraege: FC = () => {
 
       try {
         // Single optimized request to fetch usages with vehicle data
-        const usagesWithVehicles = await getUsagesWithVehicles(
-          isSuperAdmin ? selectedOrgId || undefined : undefined
-        );
+        const usagesWithVehicles = await getUsagesWithVehicles(selectedOrgId || undefined);
 
         // Extract unique vehicles from the response
         const vehicleMap = new Map<string, Vehicle>();
@@ -321,7 +319,7 @@ const UebersichtEintraege: FC = () => {
     return () => {
       controller.abort();
     };
-  }, [selectedOrgId, isSuperAdmin]);
+  }, [selectedOrgId]);
 
   return (
     <section className="space-y-4">

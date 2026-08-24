@@ -207,7 +207,7 @@ const FlottenUebersicht: FC = () => {
 
       try {
         const url = new URL(buildApiUrl('/vehicles/stats'));
-        if (isSuperAdmin && selectedOrgId) {
+        if (selectedOrgId) {
           url.searchParams.set('organizationId', selectedOrgId);
         }
 
@@ -275,7 +275,7 @@ const FlottenUebersicht: FC = () => {
     return () => {
       controller.abort();
     };
-  }, [selectedOrgId, isSuperAdmin]);
+  }, [selectedOrgId]);
 
   const handleEdit = (vehicle: Vehicle) => {
     setEditingVehicle(vehicle);
@@ -321,15 +321,9 @@ const FlottenUebersicht: FC = () => {
         notes: editForm.notes || undefined,
       };
 
-      const headers: HeadersInit = {};
-      if (isSuperAdmin && selectedOrgId) {
-        headers['X-Organization-Id'] = selectedOrgId;
-      }
-
       const res = await authenticatedFetch(buildApiUrl(`/vehicles/${editingVehicle.id}`), {
         method: 'PUT',
         body: JSON.stringify(payload),
-        headers,
       });
 
       if (!res.ok) {
@@ -370,14 +364,8 @@ const FlottenUebersicht: FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const headers: HeadersInit = {};
-      if (isSuperAdmin && selectedOrgId) {
-        headers['X-Organization-Id'] = selectedOrgId;
-      }
-
       const res = await authenticatedFetch(buildApiUrl(`/vehicles/${id}`), {
         method: 'DELETE',
-        headers,
       });
 
       if (!res.ok) {

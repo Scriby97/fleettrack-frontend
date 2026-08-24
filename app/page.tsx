@@ -8,6 +8,7 @@ import FlottenUebersicht from "./components/vehicles";
 import FahrzeugErfassen from "./components/createVehicle";
 import UserMenu from "./components/UserMenu";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { useOrganization } from "@/lib/contexts/OrganizationContext";
 import { InstallPrompt } from "./components/InstallPrompt";
 import { useRouter } from "next/navigation";
 
@@ -17,7 +18,10 @@ export default function Home() {
   const router = useRouter();
   const [active, setActive] = useState<MenuKey>("nutzung");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { userProfile, hasOrganization, canManageOrganization } = useAuth();
+  const { userProfile, hasOrganization } = useAuth();
+  // Reagiert auf die im Menü AUSGEWÄHLTE Organisation, nicht nur auf die erste
+  // Mitgliedschaft - wichtig, sobald man zwischen mehreren Organisationen wechselt.
+  const { canManageSelectedOrganization: canManageOrganization } = useOrganization();
 
   useEffect(() => {
     if (userProfile && !hasOrganization) {
