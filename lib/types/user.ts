@@ -90,8 +90,10 @@ export interface SelfServiceOrganizationRequest {
 }
 
 export interface SelfServiceOrganizationResponse {
-  organization: Organization
-  subscription: OrganizationSubscription
+  // null when checkoutUrl is set: for a paid tier, the organization isn't created
+  // yet - it only gets created once the Stripe payment succeeds (webhook).
+  organization: Organization | null
+  subscription: OrganizationSubscription | null
   checkoutUrl: string | null
 }
 
