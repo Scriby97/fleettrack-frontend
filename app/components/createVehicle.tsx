@@ -55,8 +55,8 @@ const CreateVehicle: FC = () => {
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`API-Fehler ${res.status}: ${text}`);
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.message || `API-Fehler ${res.status}`);
       }
 
       await res.json();
