@@ -234,6 +234,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setSupabaseUser(session?.user ?? null)
 
+      // Ein reiner Token-Refresh (z.B. nach Rueckkehr aus einem gedrosselten
+      // Hintergrund-Tab) oder ein Metadaten-Update aendert weder den User noch
+      // dessen Rolle/Organisation - ein voller Re-Fetch von /auth/me samt
+      // globalem Spinner ist hier unnoetig und kann direkt nach einem
+      // Tab-Wechsel (Netzwerk "wacht" gerade erst wieder auf) in den
+      // Session-Timeout von authenticatedFetch laufen.
+      if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        return
+      }
+
       if (session?.user) {
         if (isResetPasswordRoute) {
           setLoading(false)
