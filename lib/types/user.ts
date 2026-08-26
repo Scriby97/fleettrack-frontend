@@ -21,6 +21,23 @@ export interface OrganizationMembership {
   joinedAt: string
 }
 
+// Mitgliederliste inkl. verknüpftem User (Backend liefert
+// OrganizationMemberEntity mit relations: ['user']) - für die
+// Mitglieder-Verwaltung (Rolle ändern, Owner-Übergabe) im User-Management.
+export interface OrganizationMemberDetail {
+  id: string
+  userId: string
+  organizationId: string
+  role: OrganizationRole
+  joinedAt: string
+  user: {
+    id: string
+    email: string
+    firstName?: string
+    lastName?: string
+  }
+}
+
 export interface SubscriptionLimits {
   maxVehicles: number | null
   maxMembers: number | null

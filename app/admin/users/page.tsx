@@ -7,7 +7,8 @@ import { useAuth } from '@/lib/auth/AuthProvider'
 import { useOrganization } from '@/lib/contexts/OrganizationContext'
 import { createInvite, deleteInvite, getOrganizationInvites } from '@/lib/api/invites'
 import { getUsers, sendUserResetPassword } from '@/lib/api/users'
-import type { InviteEntity, InviteStatus, User } from '@/lib/types/user'
+import { getOrganizationMembers, updateMemberRole, transferOwnership } from '@/lib/api/organizationMembers'
+import type { InviteEntity, InviteStatus, OrganizationMemberDetail, User } from '@/lib/types/user'
 
 const STATUS_LABELS: Record<InviteStatus, string> = {
   pending: 'Ausstehend',
@@ -23,11 +24,12 @@ const STATUS_CLASSES: Record<InviteStatus, string> = {
 
 export default function UsersPage() {
   const router = useRouter()
-  const { loading: authLoading, isAdmin } = useAuth()
-  const { organizations, selectedOrgId, canManageSelectedOrganization } = useOrganization()
+  const { loading: authLoading, isAdmin, userProfile, refreshOrganizations } = useAuth()
+  const { organizations, selectedOrgId, canManageSelectedOrganization, selectedOrganizationRole } = useOrganization()
   const selectedOrganization = organizations.find((org) => org.id === selectedOrgId)
+  const isOwner = selectedOrganizationRole === 'owner'
 
-  const [activeTab, setActiveTab] = useState<'invites' | 'users'>('invites')
+  const [activeTab, setActiveTab] = useState<'invites' | 'members' | 'users'>('invites')
   const [invites, setInvites] = useState<InviteEntity[]>([])
   const [loading, setLoading] = useState(true)
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -44,6 +46,12 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [confirmUser, setConfirmUser] = useState<User | null>(null)
   const [submittingId, setSubmittingId] = useState<string | null>(null)
+
+  const [members, setMembers] = useState<OrganizationMemberDetail[]>([])
+  const [membersError, setMembersError] = useState<string | null>(null)
+  const [memberActionId, setMemberActionId] = useState<string | null>(null)
+  const [confirmDemoteMember, setConfirmDemoteMember] = useState<OrganizationMemberDetail | null>(null)
+  const [confirmTransferMember, setConfirmTransferMember] = useState<OrganizationMemberDetail | null>(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -70,10 +78,12 @@ export default function UsersPage() {
       setLoading(true)
 
       // The global "all users" list is only available to global administrators -
-      // org-level admins/owners only manage invites for their own organization.
-      const [inviteResult, userResult] = await Promise.allSettled([
+      // org-level admins/owners only manage invites and members for their own
+      // organization.
+      const [inviteResult, userResult, memberResult] = await Promise.allSettled([
         getOrganizationInvites(selectedOrgId ?? undefined),
         isAdmin ? getUsers() : Promise.resolve([]),
+        selectedOrgId ? getOrganizationMembers(selectedOrgId) : Promise.resolve([]),
       ])
 
       if (inviteResult.status === 'fulfilled') {
@@ -94,11 +104,87 @@ export default function UsersPage() {
         setUsersError(message)
       }
 
+      if (memberResult.status === 'fulfilled') {
+        setMembers(memberResult.value)
+      } else {
+        const message = memberResult.reason instanceof Error
+          ? memberResult.reason.message
+          : 'Fehler beim Laden der Mitglieder'
+        setMembersError(message)
+      }
+
       setLoading(false)
     }
 
     fetchData()
   }, [authLoading, isAdmin, canManageSelectedOrganization, selectedOrgId])
+
+  const refetchMembers = async () => {
+    if (!selectedOrgId) return
+    try {
+      const result = await getOrganizationMembers(selectedOrgId)
+      setMembers(result)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Fehler beim Laden der Mitglieder'
+      setMembersError(message)
+    }
+  }
+
+  const getMemberDisplayName = (member: OrganizationMemberDetail) => {
+    const name = `${member.user.firstName ?? ''} ${member.user.lastName ?? ''}`.trim()
+    return name || member.user.email
+  }
+
+  const handlePromoteToAdmin = async (member: OrganizationMemberDetail) => {
+    setMembersError(null)
+    setMemberActionId(member.id)
+    try {
+      await updateMemberRole(member.organizationId, member.id, 'admin')
+      await refetchMembers()
+      await refreshOrganizations()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Fehler beim Befördern zum Admin'
+      setMembersError(message)
+    } finally {
+      setMemberActionId(null)
+    }
+  }
+
+  const handleDemoteToEmployee = async () => {
+    if (!confirmDemoteMember) return
+    const member = confirmDemoteMember
+    setMembersError(null)
+    setMemberActionId(member.id)
+    try {
+      await updateMemberRole(member.organizationId, member.id, 'employee')
+      setConfirmDemoteMember(null)
+      await refetchMembers()
+      await refreshOrganizations()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Fehler beim Zurückstufen'
+      setMembersError(message)
+    } finally {
+      setMemberActionId(null)
+    }
+  }
+
+  const handleTransferOwnership = async () => {
+    if (!confirmTransferMember) return
+    const member = confirmTransferMember
+    setMembersError(null)
+    setMemberActionId(member.id)
+    try {
+      await transferOwnership(member.organizationId, member.id)
+      setConfirmTransferMember(null)
+      await refetchMembers()
+      await refreshOrganizations()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Fehler beim Übertragen der Owner-Rolle'
+      setMembersError(message)
+    } finally {
+      setMemberActionId(null)
+    }
+  }
 
   const getInviteStatus = (invite: InviteEntity): InviteStatus => {
     if (invite.usedAt) return 'used'
@@ -260,6 +346,16 @@ export default function UsersPage() {
           >
             Einladungen
           </button>
+          <button
+            onClick={() => setActiveTab('members')}
+            className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
+              activeTab === 'members'
+                ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
+                : 'border-zinc-200 text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-600'
+            }`}
+          >
+            Mitglieder
+          </button>
           {isAdmin && (
             <button
               onClick={() => setActiveTab('users')}
@@ -403,6 +499,158 @@ export default function UsersPage() {
                               className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
                             >
                               Loeschen
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'members' && (
+          <>
+            {membersError && (
+              <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
+                <p className="text-sm text-red-800 dark:text-red-200">{membersError}</p>
+              </div>
+            )}
+
+            <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Mitglieder</h2>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">{members.length}</span>
+              </div>
+
+              {/* Desktop Tabelle */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-medium">Name</th>
+                      <th className="px-4 py-3 text-left font-medium">Email</th>
+                      <th className="px-4 py-3 text-left font-medium">Rolle</th>
+                      <th className="px-4 py-3 text-left font-medium">Aktionen</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                    {members.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-6 text-center text-zinc-500 dark:text-zinc-400">
+                          Keine Mitglieder gefunden.
+                        </td>
+                      </tr>
+                    ) : (
+                      members.map((member) => {
+                        const isSelf = member.userId === userProfile?.id
+                        const isBusy = memberActionId === member.id
+
+                        return (
+                          <tr key={member.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
+                            <td className="px-4 py-3 text-zinc-900 dark:text-zinc-100 font-medium">
+                              {getMemberDisplayName(member)}{isSelf && <span className="text-zinc-500 dark:text-zinc-400 font-normal"> (Du)</span>}
+                            </td>
+                            <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                              {member.user.email}
+                            </td>
+                            <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 capitalize">
+                              {member.role}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-wrap gap-2">
+                                {member.role === 'employee' && (
+                                  <button
+                                    onClick={() => handlePromoteToAdmin(member)}
+                                    disabled={isBusy}
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                                  >
+                                    {isBusy ? 'Bitte warten...' : 'Zum Admin befördern'}
+                                  </button>
+                                )}
+                                {member.role === 'admin' && isOwner && (
+                                  <button
+                                    onClick={() => setConfirmDemoteMember(member)}
+                                    disabled={isBusy}
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600 disabled:opacity-50"
+                                  >
+                                    Zum Mitarbeiter zurückstufen
+                                  </button>
+                                )}
+                                {member.role !== 'owner' && isOwner && !isSelf && (
+                                  <button
+                                    onClick={() => setConfirmTransferMember(member)}
+                                    disabled={isBusy}
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+                                  >
+                                    Owner-Rolle übertragen
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Kacheln */}
+              <div className="md:hidden space-y-3">
+                {members.length === 0 ? (
+                  <div className="py-6 text-center text-zinc-500 dark:text-zinc-400">
+                    Keine Mitglieder gefunden.
+                  </div>
+                ) : (
+                  members.map((member) => {
+                    const isSelf = member.userId === userProfile?.id
+                    const isBusy = memberActionId === member.id
+
+                    return (
+                      <div
+                        key={member.id}
+                        className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-3"
+                      >
+                        <div>
+                          <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                            {getMemberDisplayName(member)}{isSelf && <span className="text-zinc-500 dark:text-zinc-400 font-normal"> (Du)</span>}
+                          </p>
+                          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 break-all">
+                            {member.user.email}
+                          </p>
+                        </div>
+                        <div className="text-sm text-zinc-600 dark:text-zinc-400 capitalize">
+                          <span className="font-medium">Rolle:</span> {member.role}
+                        </div>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {member.role === 'employee' && (
+                            <button
+                              onClick={() => handlePromoteToAdmin(member)}
+                              disabled={isBusy}
+                              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                            >
+                              {isBusy ? 'Bitte warten...' : 'Zum Admin befördern'}
+                            </button>
+                          )}
+                          {member.role === 'admin' && isOwner && (
+                            <button
+                              onClick={() => setConfirmDemoteMember(member)}
+                              disabled={isBusy}
+                              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600 disabled:opacity-50"
+                            >
+                              Zum Mitarbeiter zurückstufen
+                            </button>
+                          )}
+                          {member.role !== 'owner' && isOwner && !isSelf && (
+                            <button
+                              onClick={() => setConfirmTransferMember(member)}
+                              disabled={isBusy}
+                              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+                            >
+                              Owner-Rolle übertragen
                             </button>
                           )}
                         </div>
@@ -645,6 +893,71 @@ export default function UsersPage() {
                   disabled={submittingId === confirmUser.id}
                 >
                   {submittingId === confirmUser.id ? 'Sende...' : 'Reset senden'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDemoteMember && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-sm">
+            <div className="p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                Admin zurückstufen
+              </h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                <span className="font-medium">{getMemberDisplayName(confirmDemoteMember)}</span> wird
+                zurück zum Mitarbeiter gestuft und verliert damit Admin-Rechte. Fortfahren?
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setConfirmDemoteMember(null)}
+                  className="px-4 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                  disabled={memberActionId === confirmDemoteMember.id}
+                >
+                  Abbrechen
+                </button>
+                <button
+                  onClick={handleDemoteToEmployee}
+                  className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                  disabled={memberActionId === confirmDemoteMember.id}
+                >
+                  {memberActionId === confirmDemoteMember.id ? 'Bitte warten...' : 'Zurückstufen'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmTransferMember && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-sm">
+            <div className="p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                Owner-Rolle übertragen
+              </h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                Möchtest du deine Owner-Rolle an{' '}
+                <span className="font-medium">{getMemberDisplayName(confirmTransferMember)}</span>{' '}
+                übertragen? Du wirst danach selbst Admin dieser Organisation.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setConfirmTransferMember(null)}
+                  className="px-4 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                  disabled={memberActionId === confirmTransferMember.id}
+                >
+                  Abbrechen
+                </button>
+                <button
+                  onClick={handleTransferOwnership}
+                  className="px-4 py-2 text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-700"
+                  disabled={memberActionId === confirmTransferMember.id}
+                >
+                  {memberActionId === confirmTransferMember.id ? 'Bitte warten...' : 'Übertragen'}
                 </button>
               </div>
             </div>
