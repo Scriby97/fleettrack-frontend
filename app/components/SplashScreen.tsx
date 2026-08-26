@@ -35,13 +35,21 @@ export function SplashScreen({
     <div className="fixed inset-0 bg-gradient-to-br from-zinc-50 via-white to-zinc-100 dark:from-zinc-950 dark:via-black dark:to-zinc-900 z-50 flex items-center justify-center">
       <div className="flex flex-col items-center gap-8 px-4">
         {/* Logo */}
-        <div className="flex items-center gap-3 animate-fade-in">
-          <Image 
-            src="/fleettrack-logo.svg" 
-            alt="FleetTrack Logo" 
-            width={80} 
-            height={80} 
-            className="dark:invert"
+        <div className="flex items-center gap-4 animate-fade-in">
+          <Image
+            src="/fleettrack-logo-light.svg"
+            alt="FleetTrack Logo"
+            width={56}
+            height={56}
+            className="dark:hidden"
+            priority
+          />
+          <Image
+            src="/fleettrack-logo-dark.svg"
+            alt="FleetTrack Logo"
+            width={56}
+            height={56}
+            className="hidden dark:block"
             priority
           />
           <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">
