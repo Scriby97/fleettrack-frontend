@@ -232,15 +232,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Skip ALL events during initial load – initAuth handles them
       if (!initAuthCompletedRef.current) return
 
+      const previousUserId = supabaseUserRef.current?.id ?? null
+      const nextUserId = session?.user?.id ?? null
+
       setSupabaseUser(session?.user ?? null)
 
-      // Ein reiner Token-Refresh (z.B. nach Rueckkehr aus einem gedrosselten
-      // Hintergrund-Tab) oder ein Metadaten-Update aendert weder den User noch
-      // dessen Rolle/Organisation - ein voller Re-Fetch von /auth/me samt
-      // globalem Spinner ist hier unnoetig und kann direkt nach einem
-      // Tab-Wechsel (Netzwerk "wacht" gerade erst wieder auf) in den
-      // Session-Timeout von authenticatedFetch laufen.
-      if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+      // Manche Events (Token-Refresh nach Rueckkehr aus einem gedrosselten
+      // Hintergrund-Tab, Metadaten-Updates, Supabases interne
+      // _recoverAndRefresh-Events, ...) melden denselben User erneut, ohne
+      // dass sich an Rolle/Organisation etwas geaendert hat. Wir pruefen
+      // deshalb bewusst die tatsaechliche User-ID statt uns auf den
+      // Event-Namen zu verlassen (Supabase feuert dafuer je nach Ausloeser
+      // unterschiedliche, teils interne Events) - ein voller Re-Fetch von
+      // /auth/me samt globalem Spinner ist nur noetig, wenn sich die
+      // Identitaet wirklich aendert. Das vermeidet auch, dass ein
+      // zusaetzlicher getSession()-Aufruf direkt nach einem Tab-Wechsel (wenn
+      // das Netzwerk gerade erst wieder aufwacht) in den Session-Timeout von
+      // authenticatedFetch laeuft.
+      if (previousUserId === nextUserId) {
         return
       }
 
