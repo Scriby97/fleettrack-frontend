@@ -4,11 +4,13 @@ import { useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/AuthProvider'
+import { useOrganization } from '@/lib/contexts/OrganizationContext'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { supabaseUser, loading: authLoading } = useAuth()
+  const { supabaseUser, loading: authLoading, isAdmin } = useAuth()
+  const { canManageSelectedOrganization } = useOrganization()
 
   useEffect(() => {
     if (!authLoading && !supabaseUser) {
@@ -58,6 +60,42 @@ export default function SettingsPage() {
               Hell, dunkel oder Systemstandard waehlen.
             </p>
           </Link>
+
+          {canManageSelectedOrganization && !isAdmin && (
+            <Link
+              href="/admin/users"
+              className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+            >
+              <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">User Management</div>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                Einladungen verwalten und Mitgliederrollen aendern.
+              </p>
+            </Link>
+          )}
+
+          {isAdmin && (
+            <Link
+              href="/admin/all-users"
+              className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+            >
+              <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Alle Benutzer</div>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                Benutzer und Einladungen ueber alle Organisationen hinweg verwalten.
+              </p>
+            </Link>
+          )}
+
+          {isAdmin && (
+            <Link
+              href="/admin/organizations"
+              className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+            >
+              <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Organizations</div>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                Organisationen anlegen und verwalten.
+              </p>
+            </Link>
+          )}
 
           <Link
             href="/onboarding/create-organization"
