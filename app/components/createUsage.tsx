@@ -31,6 +31,38 @@ const calculateHoursDifference = (start: string, end: string): number | null => 
   return endHours - startHours;
 };
 
+// Zwischenspeicherung der Formular-Eingaben, damit ein Fahrer offline erfasste
+// Werte nicht verliert, wenn er die App schliesst und erst spaeter (mit
+// Empfang) zur Erfassung zurueckkehrt. Wird nach erfolgreichem Speichern der
+// Nutzung wieder auf den Standardzustand zurueckgesetzt (siehe handleSubmit).
+// Pro Organisation getrennt, damit Fahrer/Admins mit mehreren Organisationen
+// keinen falsch zugeordneten Entwurf vorfinden.
+function getDraftStorageKey(organizationId: string): string {
+  return `fleettrack:createUsageDraft:${organizationId}`;
+}
+
+function loadDraft(organizationId: string): Partial<FormState> | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(getDraftStorageKey(organizationId));
+    return raw ? (JSON.parse(raw) as Partial<FormState>) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Netzwerkfehler (fetch() schlaegt fehl bzw. laeuft in den 20s-Timeout) lassen
+// sich nicht sauber von "Server down" unterscheiden, sind in der Praxis bei
+// dieser App aber praktisch immer fehlender/schlechter Empfang - navigator
+// .onLine allein reicht nicht, da es bei schwachem Empfang oft faelschlich
+// "online" meldet.
+function isLikelyOfflineError(err: unknown): boolean {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
+  if (err instanceof TypeError) return true;
+  if (err instanceof DOMException && (err.name === 'TimeoutError' || err.name === 'AbortError')) return true;
+  return false;
+}
+
 const CreateUsage: FC = () => {
   const { isAdmin } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
@@ -59,6 +91,55 @@ const CreateUsage: FC = () => {
   // Keep a ref of the current vehicleId so the vehicles-fetching effect can check
   // if the currently selected vehicle is still valid without being in its dep array.
   const currentVehicleIdRef = useRef<string>('');
+  // Verhindert, dass die Start-Betriebsstunden eines wiederhergestellten Entwurfs
+  // beim ersten Laden der Fahrzeuge sofort durch den automatischen "letzte
+  // Betriebsstunden"-Fetch ueberschrieben werden (siehe Vehicles-Fetch-Effekt).
+  const skipInitialFetchRef = useRef<boolean>(false);
+  // Fuer welche Organisation formData gerade den geladenen Entwurf enthaelt -
+  // wird zusammen mit formData im selben Batch gesetzt (siehe Restore-Effekt),
+  // damit der Persistierungs-Effekt formData nie unter der falschen bzw. noch
+  // nicht wiederhergestellten Organisation abspeichert.
+  const [activeDraftOrgId, setActiveDraftOrgId] = useState<string | null>(null);
+
+  // Entwurf laden, sobald (und jedes Mal wenn) die ausgewaehlte Organisation
+  // bekannt ist bzw. wechselt.
+  useEffect(() => {
+    if (!selectedOrgId) return;
+
+    const draft = loadDraft(selectedOrgId);
+    currentVehicleIdRef.current = draft?.vehicleId ?? '';
+    skipInitialFetchRef.current = Boolean(draft?.vehicleId);
+
+    setFormData({
+      vehicleId: draft?.vehicleId ?? '',
+      startOperatingHours: draft?.startOperatingHours ?? '',
+      endOperatingHours: draft?.endOperatingHours ?? '',
+      fuel: draft?.fuel ?? '',
+      usageDate: draft?.usageDate ?? getTodayDate(),
+    });
+    setCalculatedHours(
+      draft ? calculateHoursDifference(draft.startOperatingHours ?? '', draft.endOperatingHours ?? '') : null
+    );
+    setActiveDraftOrgId(selectedOrgId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedOrgId]);
+
+  // Formular-Eingaben laufend zwischenspeichern (auch waehrend der Eingabe,
+  // nicht erst beim Verlassen der Seite) - nach erfolgreichem Speichern wird
+  // formData in handleSubmit auf den Standardzustand zurueckgesetzt, wodurch
+  // hier automatisch auch der zwischengespeicherte Entwurf "geleert" wird.
+  // Schreibt erst, sobald der Entwurf fuer die aktuelle Organisation wirklich
+  // geladen wurde (activeDraftOrgId === selectedOrgId), sonst wuerde hier ein
+  // noch nicht wiederhergestellter (leerer) Zwischenstand einen vorhandenen
+  // Entwurf ueberschreiben.
+  useEffect(() => {
+    if (!selectedOrgId || activeDraftOrgId !== selectedOrgId) return;
+    try {
+      window.localStorage.setItem(getDraftStorageKey(selectedOrgId), JSON.stringify(formData));
+    } catch {
+      // localStorage nicht verfuegbar (z.B. Private Mode) - Entwurf wird dann nicht zwischengespeichert
+    }
+  }, [formData, selectedOrgId, activeDraftOrgId]);
 
   const updateCalculatedHours = useCallback(() => {
     const hours = calculateHoursDifference(formData.startOperatingHours, formData.endOperatingHours);
@@ -168,8 +249,19 @@ const CreateUsage: FC = () => {
       showToast('Nutzung erfolgreich gespeichert', 'success');
     } catch (err) {
       console.error('Fehler beim Speichern der Nutzung:', err);
-      setError(err instanceof Error ? err.message : 'Fehler beim Speichern des Eintrags');
-      showToast('Fehler beim Speichern der Nutzung', 'error');
+
+      if (isLikelyOfflineError(err)) {
+        // Eingaben bewusst NICHT zuruecksetzen - sie bleiben im Formular und
+        // werden (siehe Persistierungs-Effekt) weiterhin zwischengespeichert,
+        // damit der Fahrer es spaeter mit Empfang erneut versuchen kann, ohne
+        // alles nochmals eingeben zu muessen.
+        const message = 'Keine Verbindung zum Server. Die Nutzung konnte nicht gespeichert werden. Deine Eingaben bleiben erhalten - bitte versuche es erneut, sobald du wieder online bist.';
+        setError(message);
+        showToast(message, 'error');
+      } else {
+        setError(err instanceof Error ? err.message : 'Fehler beim Speichern des Eintrags');
+        showToast('Fehler beim Speichern der Nutzung', 'error');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -201,11 +293,16 @@ const CreateUsage: FC = () => {
           setVehicles(data);
           const currentValid = data.find((v: Vehicle) => v.id === currentVehicleIdRef.current);
           const selectedVehicleId = currentValid ? currentVehicleIdRef.current : data[0]?.id ?? '';
+          // Nur beim allerersten Laden (und nur, wenn das wiederhergestellte
+          // Fahrzeug noch existiert) die bereits vorhandenen Start-Betriebsstunden
+          // aus dem Entwurf behalten statt sie sofort vom Server zu ueberschreiben.
+          const keepRestoredValue = skipInitialFetchRef.current && Boolean(currentValid);
+          skipInitialFetchRef.current = false;
 
           setFormData((prev) => ({ ...prev, vehicleId: selectedVehicleId }));
           currentVehicleIdRef.current = selectedVehicleId;
 
-          if (selectedVehicleId) {
+          if (selectedVehicleId && !keepRestoredValue) {
             fetchVehicleEndOperatingHours(selectedVehicleId);
           }
         } else {
