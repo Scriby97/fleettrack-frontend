@@ -61,6 +61,16 @@ export default function SettingsPage() {
             </p>
           </Link>
 
+          <Link
+            href="/settings/reminders"
+            className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+          >
+            <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Erinnerung</div>
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              Tägliche Benachrichtigung zum Erfassen deiner Nutzung einrichten.
+            </p>
+          </Link>
+
           {canManageSelectedOrganization && !isAdmin && (
             <Link
               href="/admin/users"
