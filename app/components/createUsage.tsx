@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef, type FC, type FormEvent } from 'react';
+import { useTranslations } from 'next-intl';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
 import { useAuth } from '@/lib/auth/AuthProvider';
@@ -67,7 +68,9 @@ const CreateUsage: FC = () => {
   const { isAdmin } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
   const { toasts, showToast, removeToast } = useToast();
-  
+  const t = useTranslations('createUsage');
+  const tCommon = useTranslations('common');
+
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
@@ -198,7 +201,7 @@ const CreateUsage: FC = () => {
     const parsedEnd = parseFloat(newValues.endOperatingHours);
     if (!Number.isNaN(parsedStart) && !Number.isNaN(parsedEnd)) {
       if (parsedEnd <= parsedStart) {
-        setTimeError('End-Betriebsstunden müssen größer als Start-Betriebsstunden sein');
+        setTimeError(t('endHoursValidation'));
       } else {
         setTimeError(null);
       }
@@ -213,13 +216,13 @@ const CreateUsage: FC = () => {
     setIsSubmitting(true);
 
     try {
-      if (!formData.vehicleId) throw new Error('Bitte ein Fahrzeug auswählen');
-      if (!formData.startOperatingHours || !formData.endOperatingHours) throw new Error('Start- und End-Betriebsstunden sind erforderlich');
+      if (!formData.vehicleId) throw new Error(t('selectVehicleError'));
+      if (!formData.startOperatingHours || !formData.endOperatingHours) throw new Error(t('hoursRequiredError'));
 
       const parsedStart = parseFloat(formData.startOperatingHours);
       const parsedEnd = parseFloat(formData.endOperatingHours);
-      if (Number.isNaN(parsedStart) || Number.isNaN(parsedEnd)) throw new Error('Ungültiges Zahlenformat');
-      if (parsedEnd <= parsedStart) throw new Error('End-Betriebsstunden müssen größer als Start-Betriebsstunden sein');
+      if (Number.isNaN(parsedStart) || Number.isNaN(parsedEnd)) throw new Error(t('invalidNumberError'));
+      if (parsedEnd <= parsedStart) throw new Error(t('endMustBeGreaterError'));
 
       const parsedFuel = formData.fuel.trim() === '' ? NaN : parseFloat(formData.fuel);
       const fuelLitersRefilled = Number.isNaN(parsedFuel) ? 0 : parsedFuel;
@@ -246,7 +249,7 @@ const CreateUsage: FC = () => {
 
       setFormData({ vehicleId: vehicles[0]?.id ?? '', startOperatingHours: '', endOperatingHours: '', fuel: '', usageDate: getTodayDate() });
       setCalculatedHours(null);
-      showToast('Nutzung erfolgreich gespeichert', 'success');
+      showToast(t('saveSuccess'), 'success');
     } catch (err) {
       console.error('Fehler beim Speichern der Nutzung:', err);
 
@@ -255,12 +258,12 @@ const CreateUsage: FC = () => {
         // werden (siehe Persistierungs-Effekt) weiterhin zwischengespeichert,
         // damit der Fahrer es spaeter mit Empfang erneut versuchen kann, ohne
         // alles nochmals eingeben zu muessen.
-        const message = 'Keine Verbindung zum Server. Die Nutzung konnte nicht gespeichert werden. Deine Eingaben bleiben erhalten - bitte versuche es erneut, sobald du wieder online bist.';
+        const message = t('offlineErrorMessage');
         setError(message);
         showToast(message, 'error');
       } else {
-        setError(err instanceof Error ? err.message : 'Fehler beim Speichern des Eintrags');
-        showToast('Fehler beim Speichern der Nutzung', 'error');
+        setError(err instanceof Error ? err.message : t('saveErrorGeneric'));
+        showToast(t('saveErrorToast'), 'error');
       }
     } finally {
       setIsSubmitting(false);
@@ -311,7 +314,7 @@ const CreateUsage: FC = () => {
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         console.error('Fehler beim Laden der Fahrzeuge:', err);
-        setVehiclesError('Fehler beim Laden der Fahrzeuge');
+        setVehiclesError(t('vehiclesLoadError'));
       } finally {
         setVehiclesLoading(false);
       }
@@ -328,12 +331,12 @@ const CreateUsage: FC = () => {
     <section className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-          Nutzung erfassen
+          {t('title')}
         </h1>
         {isAdmin && organizations.length > 0 && (
           <div className="flex items-center gap-2 mt-2">
             <label className="text-sm text-zinc-600 dark:text-zinc-400">
-              Organization:
+              {tCommon('organizationLabel')}:
             </label>
             <select
               value={selectedOrgId || ''}
@@ -361,7 +364,7 @@ const CreateUsage: FC = () => {
 
         <div className="space-y-2">
           <label htmlFor="vehicle" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Fahrzeug
+              {t('vehicleLabel')}
             </label>
             <select
               id="vehicle"
@@ -370,11 +373,11 @@ const CreateUsage: FC = () => {
               className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
             >
               {vehiclesLoading ? (
-                <option value="" disabled>Lade Fahrzeuge...</option>
+                <option value="" disabled>{t('loadingVehicles')}</option>
               ) : vehiclesError ? (
                 <option value="" disabled>{vehiclesError}</option>
               ) : vehicles.length === 0 ? (
-                <option value="" disabled>Keine Fahrzeuge verfügbar</option>
+                <option value="" disabled>{t('noVehiclesAvailable')}</option>
               ) : (
                 vehicles.map((vehicle) => (
                   <option key={vehicle.id} value={vehicle.id}>
@@ -388,7 +391,7 @@ const CreateUsage: FC = () => {
         {/* Erfassungsdatum */}
         <div className="space-y-2">
           <label htmlFor="usageDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Erfassungsdatum
+            {t('usageDateLabel')}
           </label>
           <input
             id="usageDate"
@@ -403,8 +406,8 @@ const CreateUsage: FC = () => {
         {/* Start-Betriebsstunden */}
         <div className="space-y-2">
           <label htmlFor="startOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Start-Betriebsstunden
-            {loadingOperatingHours && <span className="ml-2 text-xs text-zinc-500">(wird geladen...)</span>}
+            {t('startHoursLabel')}
+            {loadingOperatingHours && <span className="ml-2 text-xs text-zinc-500">{t('loadingHours')}</span>}
           </label>
           <input
             id="startOperatingHours"
@@ -422,7 +425,7 @@ const CreateUsage: FC = () => {
         {/* End-Betriebsstunden */}
         <div className="space-y-2">
           <label htmlFor="endOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            End-Betriebsstunden
+            {t('endHoursLabel')}
           </label>
           <input
             id="endOperatingHours"
@@ -443,7 +446,7 @@ const CreateUsage: FC = () => {
         {calculatedHours !== null && (
           <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4">
             <p className="text-sm text-blue-900 dark:text-blue-100">
-              Gesamtdauer: <span className="font-semibold">{calculatedHours.toFixed(1)} Stunden</span>
+              <span className="font-semibold">{t('totalDuration', { hours: calculatedHours.toFixed(1) })}</span>
             </p>
           </div>
         )}
@@ -451,7 +454,7 @@ const CreateUsage: FC = () => {
         {/* Treibstoff */}
         <div className="space-y-2">
           <label htmlFor="fuel" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Treibstoff (L, optional)
+            {t('fuelLabel')}
           </label>
           <input
             id="fuel"
@@ -470,7 +473,7 @@ const CreateUsage: FC = () => {
           disabled={isSubmitting || !!timeError}
           className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
         >
-          {isSubmitting ? 'Wird gespeichert...' : 'Nutzung speichern'}
+          {isSubmitting ? t('submitting') : t('submitButton')}
         </button>
       </form>
       <ToastContainer toasts={toasts} onRemove={removeToast} />

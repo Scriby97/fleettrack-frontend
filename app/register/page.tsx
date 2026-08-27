@@ -3,11 +3,14 @@
 import { useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth/AuthProvider'
 
 export default function RegisterPage() {
   const router = useRouter()
   const { signUp } = useAuth()
+  const t = useTranslations('register')
+  const tCommon = useTranslations('common')
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -21,12 +24,12 @@ export default function RegisterPage() {
     setError(null)
 
     if (password !== confirmPassword) {
-      setError('Passwörter stimmen nicht überein.')
+      setError(t('passwordMismatchError'))
       return
     }
 
     if (password.length < 6) {
-      setError('Passwort muss mindestens 6 Zeichen lang sein.')
+      setError(t('passwordTooShortError'))
       return
     }
 
@@ -45,7 +48,7 @@ export default function RegisterPage() {
       router.push('/login?registered=1')
       router.refresh()
     } catch {
-      setError('Ein unerwarteter Fehler ist aufgetreten.')
+      setError(tCommon('unexpectedError'))
     } finally {
       setLoading(false)
     }
@@ -55,9 +58,9 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 px-4 py-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">Registrieren</h1>
+          <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">{t('title')}</h1>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Erstelle dein FleetTrack-Konto.
+            {t('subtitle')}
           </p>
         </div>
 
@@ -65,7 +68,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="fullName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Name
+                {t('nameLabel')}
               </label>
               <input
                 id="fullName"
@@ -80,7 +83,7 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                E-Mail
+                {t('emailLabel')}
               </label>
               <input
                 id="email"
@@ -95,7 +98,7 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Passwort
+                {t('passwordLabel')}
               </label>
               <input
                 id="password"
@@ -111,7 +114,7 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Passwort bestätigen
+                {t('confirmPasswordLabel')}
               </label>
               <input
                 id="confirmPassword"
@@ -136,14 +139,14 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Bitte warten...' : 'Konto erstellen'}
+              {loading ? t('submitting') : t('submitButton')}
             </button>
           </form>
 
           <p className="mt-5 text-sm text-center text-zinc-600 dark:text-zinc-400">
-            Bereits ein Konto?{' '}
+            {t('alreadyHaveAccount')}{' '}
             <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-              Zum Login
+              {t('loginLink')}
             </Link>
           </p>
         </div>

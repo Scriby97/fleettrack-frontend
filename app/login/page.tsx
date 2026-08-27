@@ -4,12 +4,15 @@ import { useEffect, useState, type FC, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth/AuthProvider'
 
 const LoginPage: FC = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { signIn } = useAuth()
+  const t = useTranslations('login')
+  const tCommon = useTranslations('common')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -39,12 +42,12 @@ const LoginPage: FC = () => {
     }
 
     if (registered === '1') {
-      setInfoMessage('Registrierung erfolgreich. Du kannst dich jetzt anmelden.')
+      setInfoMessage(t('registeredSuccessMessage'))
       return
     }
 
     setInfoMessage(null)
-  }, [searchParams])
+  }, [searchParams, t])
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -60,7 +63,7 @@ const LoginPage: FC = () => {
         router.refresh()
       }
     } catch (err) {
-      setError('Ein unerwarteter Fehler ist aufgetreten')
+      setError(tCommon('unexpectedError'))
     } finally {
       setLoading(false)
     }
@@ -72,7 +75,7 @@ const LoginPage: FC = () => {
         <div className="max-w-md w-full text-center">
           <div className="bg-white dark:bg-zinc-800 shadow-lg rounded-lg p-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-zinc-600 dark:text-zinc-400">Weiterleitung...</p>
+            <p className="mt-4 text-zinc-600 dark:text-zinc-400">{t('redirecting')}</p>
           </div>
         </div>
       </div>
@@ -84,10 +87,10 @@ const LoginPage: FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-            FleetTrack
+            {t('title')}
           </h2>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Bei deinem Konto anmelden
+            {t('subtitle')}
           </p>
         </div>
 
@@ -104,7 +107,7 @@ const LoginPage: FC = () => {
                 htmlFor="email"
                 className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2"
               >
-                E-Mail
+                {t('emailLabel')}
               </label>
               <input
                 id="email"
@@ -122,7 +125,7 @@ const LoginPage: FC = () => {
                 htmlFor="password"
                 className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2"
               >
-                Passwort
+                {t('passwordLabel')}
               </label>
               <input
                 id="password"
@@ -147,7 +150,7 @@ const LoginPage: FC = () => {
               disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Bitte warten...' : 'Anmelden'}
+              {loading ? t('submitting') : t('submitButton')}
             </button>
           </form>
 
@@ -156,13 +159,13 @@ const LoginPage: FC = () => {
               href="/register"
               className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
             >
-              Registrieren
+              {t('registerLink')}
             </Link>
             <Link
               href="/reset-password"
               className="text-sm text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
             >
-              Passwort vergessen?
+              {t('forgotPasswordLink')}
             </Link>
           </div>
         </div>

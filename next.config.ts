@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 import { execSync } from "child_process";
+import createNextIntlPlugin from "next-intl/plugin";
+
+const withNextIntl = createNextIntlPlugin();
 
 function getBuildVersion(): string {
   // Vercel sets this automatically at build time, no git repo needed there
@@ -34,4 +37,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

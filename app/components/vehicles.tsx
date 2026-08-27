@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, type FC, type FormEvent } from 'react';
+import { useTranslations } from 'next-intl';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
 import { useAuth } from '@/lib/auth/AuthProvider';
@@ -88,41 +89,45 @@ interface VehicleItemProps {
   stats?: { hours: number; fuelLiters: number } | null;
 }
 
-const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = null }) => (
+const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = null }) => {
+  const t = useTranslations('fleetOverview');
+  const tCommon = useTranslations('common');
+
+  return (
   <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 hover:shadow-md transition-shadow flex justify-between items-start">
     <div className="flex-1">
       <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
         {vehicle.name}
         {vehicle.isRetired && (
-          <span className="ml-2 text-sm font-normal text-red-600 dark:text-red-400">(Ausrangiert)</span>
+          <span className="ml-2 text-sm font-normal text-red-600 dark:text-red-400">({t('retiredLabel')})</span>
         )}
       </h3>
       <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-        <div>Kennzeichen: <span className="font-medium">{vehicle.plate}</span></div>
+        <div>{t('plateLabel')}: <span className="font-medium">{vehicle.plate}</span></div>
         {vehicle.snowsatNumber && (
-          <div>SNOWsat-Nr: <span className="font-medium">{vehicle.snowsatNumber}</span></div>
+          <div>{t('snowsatLabel')}: <span className="font-medium">{vehicle.snowsatNumber}</span></div>
         )}
         {vehicle.location && (
-          <div>Ort: <span className="font-medium">{vehicle.location}</span></div>
+          <div>{t('locationLabel')}: <span className="font-medium">{vehicle.location}</span></div>
         )}
         {vehicle.vehicleType && (
-          <div>Typ: <span className="font-medium">{vehicle.vehicleType}</span></div>
+          <div>{t('typeLabel')}: <span className="font-medium">{vehicle.vehicleType}</span></div>
         )}
         {vehicle.fuelType && (
-          <div>Treibstoff: <span className="font-medium">{vehicle.fuelType}</span></div>
+          <div>{t('fuelTypeLabel')}: <span className="font-medium">{vehicle.fuelType}</span></div>
         )}
         {vehicle.notes && (
-          <div>Bemerkung: <span className="font-medium">{vehicle.notes}</span></div>
+          <div>{t('notesLabel')}: <span className="font-medium">{vehicle.notes}</span></div>
         )}
       </div>
       <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
         <div>
-          Arbeitsstunden:{' '}
+          {t('workingHoursLabel')}:{' '}
           <span className="font-medium">
             {typeof stats?.hours === 'number' ? stats.hours.toFixed(2) : '—'}
           </span>
         </div>
-        <div>Total getankt: <span className="font-medium">{stats?.fuelLiters ?? '—'} L</span></div>
+        <div>{t('totalFueledLabel')}: <span className="font-medium">{stats?.fuelLiters ?? '—'} L</span></div>
       </div>
     </div>
 
@@ -131,7 +136,7 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
       <button
         onClick={() => onEdit(vehicle)}
         className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
-        title="Bearbeiten"
+        title={tCommon('edit')}
       >
         <svg
           className="w-5 h-5"
@@ -151,7 +156,7 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
       <button
         onClick={() => onDelete(vehicle.id)}
         className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
-        title="Löschen"
+        title={tCommon('delete')}
       >
         <svg
           className="w-5 h-5"
@@ -169,12 +174,15 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
       </button>
     </div>
   </div>
-);
+  );
+};
 
 const FlottenUebersicht: FC = () => {
   const { isAdmin } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
   const { toasts, showToast, removeToast } = useToast();
+  const t = useTranslations('fleetOverview');
+  const tCommon = useTranslations('common');
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [statsMap, setStatsMap] = useState<Record<string, { hours: number; fuelLiters: number }>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -223,7 +231,7 @@ const FlottenUebersicht: FC = () => {
           // Expect items like { id|vehicleId, name, plate, totalHours, totalFuelLiters }
           statsData.forEach((s: StatsArrayItem) => {
             const id = String(s.vehicleId ?? s.id ?? s.vehicle ?? '');
-            const name = s.name ?? s.vehicleName ?? s.vehicle ?? `Fahrzeug ${id}`;
+            const name = s.name ?? s.vehicleName ?? s.vehicle ?? t('vehicleFallbackName', { id });
             const plate = s.plate ?? s.kennzeichen ?? s.registration ?? '';
             const snowsatNumber = s.snowsatNumber ?? s.SNOWsatNumber ?? s.snowsat ?? undefined;
             const isRetired = Boolean(s.isRetired);
@@ -241,7 +249,7 @@ const FlottenUebersicht: FC = () => {
           // object mapping: { vehicleId: { hours, fuelLiters, name?, plate? }, ... }
           Object.entries(statsData as Record<string, StatsObjectValue>).forEach(([k, obj]) => {
             const id = String(k);
-            const name = obj.name ?? obj.vehicleName ?? `Fahrzeug ${id}`;
+            const name = obj.name ?? obj.vehicleName ?? t('vehicleFallbackName', { id });
             const plate = obj.plate ?? obj.kennzeichen ?? '';
             const snowsatNumber = obj.snowsatNumber ?? obj.SNOWsatNumber ?? obj.snowsat ?? undefined;
             const isRetired = Boolean(obj.isRetired);
@@ -264,7 +272,7 @@ const FlottenUebersicht: FC = () => {
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         console.error('Fehler beim Laden der Fahrzeug-Stats:', err);
-        setError('Fehler beim Laden der Fahrzeuge');
+        setError(t('statsLoadError'));
       } finally {
         setIsLoading(false);
       }
@@ -275,6 +283,7 @@ const FlottenUebersicht: FC = () => {
     return () => {
       controller.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOrgId]);
 
   const handleEdit = (vehicle: Vehicle) => {
@@ -352,11 +361,11 @@ const FlottenUebersicht: FC = () => {
       );
 
       handleCancelEdit();
-      showToast('Fahrzeug erfolgreich aktualisiert', 'success');
+      showToast(t('updateSuccess'), 'success');
     } catch (err) {
       console.error('Fehler beim Aktualisieren des Fahrzeugs:', err);
-      setError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren');
-      showToast('Fehler beim Aktualisieren des Fahrzeugs', 'error');
+      setError(err instanceof Error ? err.message : t('updateErrorGeneric'));
+      showToast(t('updateErrorToast'), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -369,14 +378,14 @@ const FlottenUebersicht: FC = () => {
       });
 
       if (!res.ok) {
-        throw new Error(`Fehler beim Löschen: ${res.status}`);
+        throw new Error(t('deleteErrorGeneric', { status: res.status }));
       }
 
       setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== id));
-      showToast('Fahrzeug erfolgreich gelöscht', 'success');
+      showToast(t('deleteSuccess'), 'success');
     } catch (err) {
       console.error('Fehler beim Löschen des Fahrzeugs:', err);
-      showToast('Fehler beim Löschen des Fahrzeugs', 'error');
+      showToast(t('deleteErrorToast'), 'error');
     }
   };
 
@@ -387,13 +396,13 @@ const FlottenUebersicht: FC = () => {
     <section className="space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-          Flottenübersicht
+          {t('title')}
         </h1>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
           {isAdmin && organizations.length > 0 && (
             <div className="flex items-center gap-2">
               <label className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
-                Organization:
+                {tCommon('organizationLabel')}:
               </label>
               <select
                 value={selectedOrgId || ''}
@@ -409,7 +418,7 @@ const FlottenUebersicht: FC = () => {
             </div>
           )}
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {vehicles.length} Fahrzeuge in der Flotte
+            {t('vehiclesInFleetCount', { count: vehicles.length })}
           </p>
         </div>
       </div>
@@ -420,7 +429,7 @@ const FlottenUebersicht: FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-                Gesamt getankter Treibstoff
+                {t('totalFuelLabel')}
               </p>
               <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                 {totalFuel.toFixed(2)} L
@@ -443,7 +452,7 @@ const FlottenUebersicht: FC = () => {
           <div className="bg-white dark:bg-zinc-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                Fahrzeug bearbeiten
+                {t('editModalTitle')}
               </h2>
               <button
                 onClick={handleCancelEdit}
@@ -459,7 +468,7 @@ const FlottenUebersicht: FC = () => {
               {/* Fahrzeugname */}
               <div className="space-y-2">
                 <label htmlFor="edit-name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Fahrzeugname
+                  {t('vehicleNameLabel')}
                 </label>
                 <input
                   id="edit-name"
@@ -474,7 +483,7 @@ const FlottenUebersicht: FC = () => {
               {/* Kennzeichen */}
               <div className="space-y-2">
                 <label htmlFor="edit-plate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Kennzeichen
+                  {t('plateLabel')}
                 </label>
                 <input
                   id="edit-plate"
@@ -489,7 +498,7 @@ const FlottenUebersicht: FC = () => {
               {/* SNOWsat-Nummer */}
               <div className="space-y-2">
                 <label htmlFor="edit-snowsatNumber" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  SNOWsat-Nummer (optional)
+                  {t('snowsatNumberFieldLabel')}
                 </label>
                 <input
                   id="edit-snowsatNumber"
@@ -503,14 +512,14 @@ const FlottenUebersicht: FC = () => {
               {/* Ort */}
               <div className="space-y-2">
                 <label htmlFor="edit-location" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Ort
+                  {t('locationLabel')}
                 </label>
                 <input
                   id="edit-location"
                   type="text"
                   value={editForm.location}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, location: e.target.value }))}
-                  placeholder="z.B. SLG"
+                  placeholder={t('locationPlaceholder')}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
@@ -518,7 +527,7 @@ const FlottenUebersicht: FC = () => {
               {/* Typ */}
               <div className="space-y-2">
                 <label htmlFor="edit-vehicleType" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Typ
+                  {t('typeLabel')}
                 </label>
                 <select
                   id="edit-vehicleType"
@@ -526,17 +535,17 @@ const FlottenUebersicht: FC = () => {
                   onChange={(e) => setEditForm((prev) => ({ ...prev, vehicleType: e.target.value }))}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                 >
-                  <option value="">Bitte wählen</option>
-                  <option value="Pistenfahrzeug">Pistenfahrzeug</option>
-                  <option value="Skidoo">Skidoo</option>
-                  <option value="Quad">Quad</option>
+                  <option value="">{t('pleaseSelect')}</option>
+                  <option value="Pistenfahrzeug">{t('vehicleTypeGroomer')}</option>
+                  <option value="Skidoo">{t('vehicleTypeSkidoo')}</option>
+                  <option value="Quad">{t('vehicleTypeQuad')}</option>
                 </select>
               </div>
 
               {/* Treibstoff */}
               <div className="space-y-2">
                 <label htmlFor="edit-fuelType" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Treibstoff
+                  {t('fuelTypeLabel')}
                 </label>
                 <select
                   id="edit-fuelType"
@@ -544,22 +553,22 @@ const FlottenUebersicht: FC = () => {
                   onChange={(e) => setEditForm((prev) => ({ ...prev, fuelType: e.target.value }))}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                 >
-                  <option value="">Bitte wählen</option>
-                  <option value="Diesel">Diesel</option>
-                  <option value="Benzin">Benzin</option>
+                  <option value="">{t('pleaseSelect')}</option>
+                  <option value="Diesel">{t('fuelTypeDiesel')}</option>
+                  <option value="Benzin">{t('fuelTypeGasoline')}</option>
                 </select>
               </div>
 
               {/* Bemerkung */}
               <div className="space-y-2">
                 <label htmlFor="edit-notes" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Bemerkung
+                  {t('notesLabel')}
                 </label>
                 <textarea
                   id="edit-notes"
                   value={editForm.notes}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Optionale Bemerkungen zum Fahrzeug"
+                  placeholder={t('notesPlaceholder')}
                   rows={3}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                 />
@@ -579,7 +588,7 @@ const FlottenUebersicht: FC = () => {
                   disabled={isSubmitting}
                   className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
                 >
-                  {isSubmitting ? 'Wird gespeichert...' : 'Änderungen speichern'}
+                  {isSubmitting ? t('saving') : t('saveChanges')}
                 </button>
                 <button
                   type="button"
@@ -587,7 +596,7 @@ const FlottenUebersicht: FC = () => {
                   disabled={isSubmitting}
                   className="px-6 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
                 >
-                  Abbrechen
+                  {tCommon('cancel')}
                 </button>
               </div>
             </form>
@@ -597,7 +606,7 @@ const FlottenUebersicht: FC = () => {
 
       {isLoading && (
         <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
-          <p className="text-zinc-600 dark:text-zinc-400">Lade Fahrzeuge...</p>
+          <p className="text-zinc-600 dark:text-zinc-400">{t('loadingVehicles')}</p>
         </div>
       )}
 
@@ -622,15 +631,17 @@ const FlottenUebersicht: FC = () => {
       ) : (
         <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-8 text-center">
           <p className="text-zinc-600 dark:text-zinc-400">
-            Keine Fahrzeuge vorhanden
+            {t('noVehiclesFound')}
           </p>
         </div>
       )}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       {confirmDeleteId !== null && (
         <ConfirmDialog
-          title="Fahrzeug löschen"
-          message={`Möchten Sie das Fahrzeug wirklich löschen?`}
+          title={t('confirmDeleteTitle')}
+          message={t('confirmDeleteMessage')}
+          confirmLabel={tCommon('delete')}
+          cancelLabel={tCommon('cancel')}
           onConfirm={() => { handleDelete(confirmDeleteId); setConfirmDeleteId(null); }}
           onCancel={() => setConfirmDeleteId(null)}
         />

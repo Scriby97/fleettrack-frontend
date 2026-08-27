@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, type FC } from 'react';
+import { useTranslations } from 'next-intl';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -12,6 +13,8 @@ interface ToastProps {
 }
 
 export const Toast: FC<ToastProps> = ({ message, type, onClose, duration = 3000 }) => {
+  const t = useTranslations('common');
+
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
@@ -73,7 +76,7 @@ export const Toast: FC<ToastProps> = ({ message, type, onClose, duration = 3000 
       <button
         onClick={onClose}
         className="ml-2 flex-shrink-0 hover:opacity-70 transition-opacity"
-        aria-label="Schließen"
+        aria-label={t('close')}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

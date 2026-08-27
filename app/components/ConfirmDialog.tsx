@@ -3,10 +3,13 @@
 import { useEffect, type FC } from 'react';
 
 interface ConfirmDialogProps {
-  title?: string;
+  // Kein deutscher Default mehr - Aufrufer muessen die Labels immer explizit
+  // (uebersetzt) uebergeben, damit ein vergessener Aufruf nicht still auf
+  // Deutsch zurueckfaellt, egal welche Sprache der User eingestellt hat.
+  title: string;
   message: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
+  confirmLabel: string;
+  cancelLabel: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -16,10 +19,10 @@ interface ConfirmDialogProps {
  * Replaces the native window.confirm() for a consistent, keyboard-navigable UX.
  */
 export const ConfirmDialog: FC<ConfirmDialogProps> = ({
-  title = 'Bestätigung',
+  title,
   message,
-  confirmLabel = 'Löschen',
-  cancelLabel = 'Abbrechen',
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   onCancel,
 }) => {

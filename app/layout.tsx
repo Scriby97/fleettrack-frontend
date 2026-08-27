@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
 import { OrganizationProvider } from "@/lib/contexts/OrganizationContext";
@@ -50,28 +52,33 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="de">
+    <html lang={locale}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ServiceWorkerRegistration />
-        <ThemeManager />
-        <ApiLoadingProvider>
-          <ApiLoadingOverlay />
-          <AuthProvider>
-            <OrganizationProvider>
-              <BackendLoadingWrapper>
-                {children}
-              </BackendLoadingWrapper>
-            </OrganizationProvider>
-          </AuthProvider>
-        </ApiLoadingProvider>
+        <NextIntlClientProvider messages={messages}>
+          <ServiceWorkerRegistration />
+          <ThemeManager />
+          <ApiLoadingProvider>
+            <ApiLoadingOverlay />
+            <AuthProvider>
+              <OrganizationProvider>
+                <BackendLoadingWrapper>
+                  {children}
+                </BackendLoadingWrapper>
+              </OrganizationProvider>
+            </AuthProvider>
+          </ApiLoadingProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

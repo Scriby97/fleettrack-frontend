@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import CreateUsage from "./components/createUsage";
 import UebersichtEintraege from "./components/usages";
 import FlottenUebersicht from "./components/vehicles";
@@ -16,6 +17,7 @@ type MenuKey = "nutzung" | "uebersichtEintraege" | "uebersicht" | "fahrzeug";
 
 export default function Home() {
   const router = useRouter();
+  const t = useTranslations("nav");
   const [active, setActive] = useState<MenuKey>("nutzung");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { userProfile, hasOrganization } = useAuth();
@@ -34,7 +36,7 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-zinc-600 dark:text-zinc-400">Weiterleitung zur Organisationseinrichtung...</p>
+          <p className="mt-4 text-zinc-600 dark:text-zinc-400">{t("redirectingToOnboarding")}</p>
         </div>
       </div>
     );
@@ -87,7 +89,7 @@ export default function Home() {
                     : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
                 }
               >
-                Flottenübersicht
+                {t("fleetOverview")}
               </button>
 
               <button
@@ -99,7 +101,7 @@ export default function Home() {
                     : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
                 }
               >
-                Fahrzeug erfassen
+                {t("createVehicle")}
               </button>
             </>
           )}
@@ -124,7 +126,7 @@ export default function Home() {
           <button 
             onClick={() => setMobileMenuOpen(true)}
             className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md transition-colors"
-            aria-label="Menü öffnen"
+            aria-label={t("openMenu")}
             aria-expanded={mobileMenuOpen}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,7 +144,7 @@ export default function Home() {
             <button 
               onClick={() => setMobileMenuOpen(false)}
               className="absolute top-4 right-4 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md transition-colors"
-              aria-label="Menü schließen"
+              aria-label={t("closeMenu")}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -168,7 +170,7 @@ export default function Home() {
                     : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
                 }
               >
-                Nutzung erfassen
+                {t("createUsage")}
               </button>
 
               <button
@@ -183,7 +185,7 @@ export default function Home() {
                     : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
                 }
               >
-                Übersicht Nutzungen
+                {t("usagesOverview")}
               </button>
 
               {canManageOrganization && (
@@ -240,15 +242,16 @@ export default function Home() {
 }
 
 function AccessDenied() {
+  const t = useTranslations("nav");
   return (
     <div className="flex items-center justify-center h-full">
       <div className="text-center space-y-4">
         <div className="text-6xl">🔒</div>
         <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-          Zugriff verweigert
+          {t("accessDeniedTitle")}
         </h2>
         <p className="text-zinc-600 dark:text-zinc-400">
-          Diese Funktion ist nur für Administratoren verfügbar.
+          {t("accessDeniedBody")}
         </p>
       </div>
     </div>

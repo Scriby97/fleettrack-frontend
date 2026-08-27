@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type FC, type FormEvent } from 'react';
+import { useTranslations } from 'next-intl';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { buildApiUrl } from '@/lib/api/url';
 import { useAuth } from '@/lib/auth/AuthProvider';
@@ -22,6 +23,8 @@ const CreateVehicle: FC = () => {
   const { isAdmin } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
   const { toasts, showToast, removeToast } = useToast();
+  const t = useTranslations('createVehicle');
+  const tCommon = useTranslations('common');
   const [formData, setFormData] = useState<FormState>({
     name: '',
     plate: '',
@@ -40,7 +43,7 @@ const CreateVehicle: FC = () => {
 
     // Validate first, before setting isSubmitting
     if (!formData.name.trim() || !formData.plate.trim() || !formData.snowsatNumber.trim()) {
-      setError('Alle Felder sind erforderlich');
+      setError(t('allFieldsRequiredError'));
       return;
     }
 
@@ -62,11 +65,11 @@ const CreateVehicle: FC = () => {
       await res.json();
 
       setFormData({ name: '', plate: '', snowsatNumber: '', location: '', vehicleType: '', fuelType: '', notes: '' });
-      showToast('Fahrzeug erfolgreich erfasst', 'success');
+      showToast(t('addSuccess'), 'success');
     } catch (err) {
       console.error('Fehler beim Erstellen des Fahrzeugs:', err);
-      setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten');
-      showToast('Fehler beim Erstellen des Fahrzeugs', 'error');
+      setError(err instanceof Error ? err.message : t('genericError'));
+      showToast(t('addErrorToast'), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -81,15 +84,15 @@ const CreateVehicle: FC = () => {
     <section className="space-y-6">
       <div className="space-y-3">
         <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-          Fahrzeug erfassen
+          {t('title')}
         </h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Fügen Sie ein neues Fahrzeug zur Flotte hinzu
+          {t('subtitle')}
         </p>
         {isAdmin && organizations.length > 0 && (
           <div className="flex items-center gap-2">
             <label className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
-              Organization:
+              {tCommon('organizationLabel')}:
             </label>
             <select
               value={selectedOrgId || ''}
@@ -117,14 +120,14 @@ const CreateVehicle: FC = () => {
         {/* Bezeichnung */}
         <div className="space-y-2">
           <label htmlFor="name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Fahrzeugbezeichnung
+            {t('nameLabel')}
           </label>
           <input
             id="name"
             type="text"
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
-            placeholder="z.B. Prinoth Leitwolf W"
+            placeholder={t('namePlaceholder')}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
             required
           />
@@ -133,14 +136,14 @@ const CreateVehicle: FC = () => {
         {/* Kennzeichen */}
         <div className="space-y-2">
           <label htmlFor="plate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Kennzeichen
+            {t('plateLabel')}
           </label>
           <input
             id="plate"
             type="text"
             value={formData.plate}
             onChange={(e) => handleChange('plate', e.target.value)}
-            placeholder="z.B. BE 123456"
+            placeholder={t('platePlaceholder')}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
             required
           />
@@ -149,14 +152,14 @@ const CreateVehicle: FC = () => {
         {/* SNOWsat-Nummer */}
         <div className="space-y-2">
           <label htmlFor="snowsatNumber" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            SNOWsat-Nummer
+            {t('snowsatLabel')}
           </label>
           <input
             id="snowsatNumber"
             type="text"
             value={formData.snowsatNumber}
             onChange={(e) => handleChange('snowsatNumber', e.target.value)}
-            placeholder="z.B. SLG_01"
+            placeholder={t('snowsatPlaceholder')}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
             required
           />
@@ -165,14 +168,14 @@ const CreateVehicle: FC = () => {
         {/* Ort */}
         <div className="space-y-2">
           <label htmlFor="location" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Ort
+            {t('locationLabel')}
           </label>
           <input
             id="location"
             type="text"
             value={formData.location}
             onChange={(e) => handleChange('location', e.target.value)}
-            placeholder="z.B. SLG"
+            placeholder={t('locationPlaceholder')}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
           />
         </div>
@@ -180,7 +183,7 @@ const CreateVehicle: FC = () => {
         {/* Typ */}
         <div className="space-y-2">
           <label htmlFor="vehicleType" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Typ
+            {t('typeLabel')}
           </label>
           <select
             id="vehicleType"
@@ -188,17 +191,17 @@ const CreateVehicle: FC = () => {
             onChange={(e) => handleChange('vehicleType', e.target.value)}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
           >
-            <option value="">Bitte wählen</option>
-            <option value="Pistenfahrzeug">Pistenfahrzeug</option>
-            <option value="Skidoo">Skidoo</option>
-            <option value="Quad">Quad</option>
+            <option value="">{t('pleaseSelect')}</option>
+            <option value="Pistenfahrzeug">{t('vehicleTypeGroomer')}</option>
+            <option value="Skidoo">{t('vehicleTypeSkidoo')}</option>
+            <option value="Quad">{t('vehicleTypeQuad')}</option>
           </select>
         </div>
 
         {/* Treibstoff */}
         <div className="space-y-2">
           <label htmlFor="fuelType" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Treibstoff
+            {t('fuelTypeLabel')}
           </label>
           <select
             id="fuelType"
@@ -206,22 +209,22 @@ const CreateVehicle: FC = () => {
             onChange={(e) => handleChange('fuelType', e.target.value)}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
           >
-            <option value="">Bitte wählen</option>
-            <option value="Diesel">Diesel</option>
-            <option value="Benzin">Benzin</option>
+            <option value="">{t('pleaseSelect')}</option>
+            <option value="Diesel">{t('fuelTypeDiesel')}</option>
+            <option value="Benzin">{t('fuelTypeGasoline')}</option>
           </select>
         </div>
 
         {/* Bemerkung */}
         <div className="space-y-2">
           <label htmlFor="notes" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Bemerkung
+            {t('notesLabel')}
           </label>
           <textarea
             id="notes"
             value={formData.notes}
             onChange={(e) => handleChange('notes', e.target.value)}
-            placeholder="Optionale Bemerkungen zum Fahrzeug"
+            placeholder={t('notesPlaceholder')}
             rows={3}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
           />
@@ -233,7 +236,7 @@ const CreateVehicle: FC = () => {
           disabled={isSubmitting}
           className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
         >
-          {isSubmitting ? 'Wird hinzugefügt...' : 'Fahrzeug hinzufügen'}
+          {isSubmitting ? t('submitting') : t('submitButton')}
         </button>
       </form>
       <ToastContainer toasts={toasts} onRemove={removeToast} />

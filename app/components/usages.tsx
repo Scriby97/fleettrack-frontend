@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, type FC, type FormEvent } from 'react';
+import { useTranslations } from 'next-intl';
+import { useDateLocale } from '@/lib/i18n/formatDate';
 import CalendarView from './CalendarView';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
@@ -47,6 +49,9 @@ interface ReportItemProps {
 }
 
 const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, canEdit }) => {
+  const t = useTranslations('usagesOverview');
+  const tCommon = useTranslations('common');
+  const dateLocale = useDateLocale();
   const creatorName = report.creatorFirstName || report.creatorLastName
     ? `${report.creatorFirstName || ''} ${report.creatorLastName || ''}`.trim()
     : null;
@@ -60,19 +65,19 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, 
       <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
         {report.usageDate && (
           <p>
-            <span className="font-medium">Erfassungsdatum:</span> {new Date(report.usageDate).toLocaleDateString('de-DE')}
+            <span className="font-medium">{t('usageDateLabel')}:</span> {new Date(report.usageDate).toLocaleDateString(dateLocale)}
           </p>
         )}
         <p>
-          <span className="font-medium">Betriebsstunden:</span> {report.startOperatingHours.toFixed(1)} h — {report.endOperatingHours.toFixed(1)} h{' '}
-          <span className="font-medium">({(report.endOperatingHours - report.startOperatingHours).toFixed(1)} h Differenz)</span>
+          <span className="font-medium">{t('startEndLabel')}</span> {report.startOperatingHours.toFixed(1)} h — {report.endOperatingHours.toFixed(1)} h{' '}
+          <span className="font-medium">({(report.endOperatingHours - report.startOperatingHours).toFixed(1)} h {t('diffSuffix')})</span>
         </p>
         <p>
-          <span className="font-medium">Treibstoff:</span> {report.fuel} L
+          <span className="font-medium">{t('fuelSummaryLabel')}</span> {report.fuel} L
         </p>
         {canManage && creatorName && (
           <p>
-            <span className="font-medium">Erfasst von:</span> {creatorName}
+            <span className="font-medium">{t('createdByLabel')}</span> {creatorName}
           </p>
         )}
       </div>
@@ -85,7 +90,7 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, 
           <button
             onClick={() => onEdit(report)}
             className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
-            title="Bearbeiten"
+            title={tCommon('edit')}
           >
             <svg
               className="w-5 h-5"
@@ -107,7 +112,7 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, 
           <button
             onClick={() => onDelete(report.id)}
             className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
-            title="Löschen"
+            title={tCommon('delete')}
           >
             <svg
               className="w-5 h-5"
@@ -133,6 +138,8 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, 
 const UebersichtEintraege: FC = () => {
   const { isAdmin, userProfile } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId, canManageSelectedOrganization } = useOrganization();
+  const t = useTranslations('usagesOverview');
+  const tCommon = useTranslations('common');
   // Ein Mitarbeiter darf zusaetzlich seine eigenen Nutzungen bearbeiten (aber
   // nicht loeschen) - siehe assertCanEditUsage im Backend.
   const canEditReport = (report: Report) =>
@@ -237,7 +244,7 @@ const UebersichtEintraege: FC = () => {
             ? {
                 id: updatedUsage.id,
                 vehicleId: updatedUsage.vehicleId,
-                vehicle: vehicleMap.get(String(updatedUsage.vehicleId))?.name ?? 'Unbekannt',
+                vehicle: vehicleMap.get(String(updatedUsage.vehicleId))?.name ?? t('unknownVehicle'),
                 startOperatingHours: updatedUsage.startOperatingHours,
                 endOperatingHours: updatedUsage.endOperatingHours,
                 fuel: updatedUsage.fuelLitersRefilled,
@@ -251,11 +258,11 @@ const UebersichtEintraege: FC = () => {
       );
 
       handleCancelEdit();
-      showToast('Nutzung erfolgreich aktualisiert', 'success');
+      showToast(t('updateSuccess'), 'success');
     } catch (err) {
       console.error('Fehler beim Aktualisieren der Nutzung:', err);
-      setError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren');
-      showToast('Fehler beim Aktualisieren der Nutzung', 'error');
+      setError(err instanceof Error ? err.message : t('updateErrorGeneric'));
+      showToast(t('updateErrorToast'), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -268,14 +275,14 @@ const UebersichtEintraege: FC = () => {
       });
 
       if (!res.ok) {
-        throw new Error(`Fehler beim Löschen: ${res.status}`);
+        throw new Error(t('deleteErrorGeneric', { status: res.status }));
       }
 
       setReports((prev) => prev.filter((report) => report.id !== id));
-      showToast('Nutzung erfolgreich gelöscht', 'success');
+      showToast(t('deleteSuccess'), 'success');
     } catch (err) {
       console.error('Fehler beim Löschen der Nutzung:', err);
-      showToast('Fehler beim Löschen der Nutzung', 'error');
+      showToast(t('deleteErrorToast'), 'error');
     }
   };
 
@@ -308,7 +315,7 @@ const UebersichtEintraege: FC = () => {
         const mapped: Report[] = usagesWithVehicles.map((u) => ({
           id: u.id,
           vehicleId: u.vehicleId,
-          vehicle: u.vehicle?.name ?? String(u.vehicleId ?? 'Unbekannt'),
+          vehicle: u.vehicle?.name ?? String(u.vehicleId ?? t('unknownVehicle')),
           startOperatingHours: typeof u.startOperatingHours === 'number' ? u.startOperatingHours : Number(u.startOperatingHours ?? 0),
           endOperatingHours: typeof u.endOperatingHours === 'number' ? u.endOperatingHours : Number(u.endOperatingHours ?? 0),
           fuel: typeof u.fuelLitersRefilled === 'number' ? u.fuelLitersRefilled : Number(u.fuelLitersRefilled ?? 0),
@@ -324,7 +331,7 @@ const UebersichtEintraege: FC = () => {
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         console.error('Fehler beim Laden der Nutzungen:', err);
-        setError('Fehler beim Laden der Nutzungen');
+        setError(t('loadError'));
       } finally {
         setIsLoading(false);
       }
@@ -335,19 +342,20 @@ const UebersichtEintraege: FC = () => {
     return () => {
       controller.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOrgId]);
 
   return (
     <section className="space-y-4">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-          Übersicht Nutzungen
+          {t('title')}
         </h1>
         <div className="flex flex-col gap-2 mt-2">
           {isAdmin && organizations.length > 0 && (
             <div className="flex items-center gap-2">
               <label className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
-                Organization:
+                {tCommon('organizationLabel')}:
               </label>
               <select
                 value={selectedOrgId || ''}
@@ -364,11 +372,11 @@ const UebersichtEintraege: FC = () => {
           )}
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              {isLoading ? 'Lade Nutzungen...' : `${reports.length} Nutzungen gefunden`}
+              {isLoading ? t('loadingUsages') : t('usagesFoundCount', { count: reports.length })}
             </p>
             <div className="flex gap-2">
-              <button onClick={() => setView('list')} className={`px-2 sm:px-3 py-1 text-sm rounded ${view === 'list' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}`}>Liste</button>
-              <button onClick={() => setView('calendar')} className={`px-2 sm:px-3 py-1 text-sm rounded ${view === 'calendar' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}`}>Kalender</button>
+              <button onClick={() => setView('list')} className={`px-2 sm:px-3 py-1 text-sm rounded ${view === 'list' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}`}>{t('listView')}</button>
+              <button onClick={() => setView('calendar')} className={`px-2 sm:px-3 py-1 text-sm rounded ${view === 'calendar' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}`}>{t('calendarView')}</button>
             </div>
           </div>
         </div>
@@ -388,11 +396,11 @@ const UebersichtEintraege: FC = () => {
             <div className="flex justify-between items-center mb-4">
               <div>
                 <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                  Nutzung {canEditEditingReport ? 'bearbeiten' : 'anzeigen'}
+                  {canEditEditingReport ? t('editUsage') : t('viewUsage')}
                 </h2>
                 {canEditEditingReport && (editingReport.creatorFirstName || editingReport.creatorLastName) && (
                   <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-                    Erfasst von: {editingReport.creatorFirstName} {editingReport.creatorLastName}
+                    {t('createdBy', { name: `${editingReport.creatorFirstName ?? ''} ${editingReport.creatorLastName ?? ''}`.trim() })}
                   </p>
                 )}
               </div>
@@ -410,7 +418,7 @@ const UebersichtEintraege: FC = () => {
               {/* Fahrzeug */}
               <div className="space-y-2">
                 <label htmlFor="edit-vehicle" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Fahrzeug
+                  {t('vehicleField')}
                 </label>
                 <select
                   id="edit-vehicle"
@@ -431,7 +439,7 @@ const UebersichtEintraege: FC = () => {
               {/* Erfassungsdatum */}
               <div className="space-y-2">
                 <label htmlFor="edit-usageDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Erfassungsdatum
+                  {t('usageDateLabel')}
                 </label>
                 <input
                   id="edit-usageDate"
@@ -447,7 +455,7 @@ const UebersichtEintraege: FC = () => {
               {/* Start-Betriebsstunden */}
               <div className="space-y-2">
                 <label htmlFor="edit-startOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Start-Betriebsstunden
+                  {t('startHoursLabel')}
                 </label>
                 <input
                   id="edit-startOperatingHours"
@@ -465,7 +473,7 @@ const UebersichtEintraege: FC = () => {
               {/* End-Betriebsstunden */}
               <div className="space-y-2">
                 <label htmlFor="edit-endOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  End-Betriebsstunden
+                  {t('endHoursLabel')}
                 </label>
                 <input
                   id="edit-endOperatingHours"
@@ -483,7 +491,7 @@ const UebersichtEintraege: FC = () => {
               {/* Treibstoff */}
               <div className="space-y-2">
                 <label htmlFor="edit-fuel" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Treibstoff (L)
+                  {t('fuelLabel')}
                 </label>
                 <input
                   id="edit-fuel"
@@ -512,7 +520,7 @@ const UebersichtEintraege: FC = () => {
                     disabled={isSubmitting}
                     className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
                   >
-                    {isSubmitting ? 'Wird gespeichert...' : 'Änderungen speichern'}
+                    {isSubmitting ? t('saving') : t('saveChanges')}
                   </button>
                 )}
                 <button
@@ -521,7 +529,7 @@ const UebersichtEintraege: FC = () => {
                   disabled={isSubmitting}
                   className={`${canEditEditingReport ? '' : 'flex-1'} px-6 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50`}
                 >
-                  {canEditEditingReport ? 'Abbrechen' : 'Schließen'}
+                  {canEditEditingReport ? tCommon('cancel') : tCommon('close')}
                 </button>
               </div>
             </form>
@@ -532,7 +540,7 @@ const UebersichtEintraege: FC = () => {
 
       {isLoading ? (
         <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
-          <p className="text-zinc-600 dark:text-zinc-400">Lade Nutzungen…</p>
+          <p className="text-zinc-600 dark:text-zinc-400">{t('loadingUsagesEllipsis')}</p>
         </div>
       ) : view === 'calendar' ? (
         <CalendarView events={calendarEvents} onEventClick={handleEventClick} />
@@ -551,14 +559,16 @@ const UebersichtEintraege: FC = () => {
         </div>
       ) : (
         <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-8 text-center">
-          <p className="text-zinc-600 dark:text-zinc-400">Keine Nutzungen vorhanden</p>
+          <p className="text-zinc-600 dark:text-zinc-400">{t('noUsagesFound')}</p>
         </div>
       )}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       {confirmDeleteId !== null && (
         <ConfirmDialog
-          title="Nutzung löschen"
-          message="Möchten Sie diesen Eintrag wirklich löschen?"
+          title={t('confirmDeleteTitle')}
+          message={t('confirmDeleteMessage')}
+          confirmLabel={tCommon('delete')}
+          cancelLabel={tCommon('cancel')}
           onConfirm={() => { handleDelete(confirmDeleteId); setConfirmDeleteId(null); }}
           onCancel={() => setConfirmDeleteId(null)}
         />
