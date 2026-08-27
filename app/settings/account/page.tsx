@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { updatePassword } from '@/lib/api/auth'
 import { useToast } from '@/lib/hooks/useToast'
@@ -13,6 +14,8 @@ export default function SettingsAccountPage() {
   const { supabaseUser, loading: authLoading, signOut } = useAuth()
   const { toasts, showToast, removeToast } = useToast()
   const [signingOut, setSigningOut] = useState(false)
+  const t = useTranslations('settingsAccount')
+  const tSettings = useTranslations('settings')
 
   const [formData, setFormData] = useState({
     newPassword: '',
@@ -32,12 +35,12 @@ export default function SettingsAccountPage() {
     setError(null)
 
     if (formData.newPassword.length < 6) {
-      setError('Passwort muss mindestens 6 Zeichen lang sein')
+      setError(t('passwordTooShortError'))
       return
     }
 
     if (formData.newPassword !== formData.confirmPassword) {
-      setError('Passwoerter stimmen nicht ueberein')
+      setError(t('passwordMismatchError'))
       return
     }
 
@@ -45,10 +48,10 @@ export default function SettingsAccountPage() {
 
     try {
       await updatePassword(formData.newPassword)
-      showToast('Passwort aktualisiert', 'success')
+      showToast(t('updateSuccess'), 'success')
       setFormData({ newPassword: '', confirmPassword: '' })
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Aktualisieren des Passworts'
+      const message = err instanceof Error ? err.message : t('updateErrorGeneric')
       setError(message)
       showToast(message, 'error')
     } finally {
@@ -78,23 +81,23 @@ export default function SettingsAccountPage() {
         <Breadcrumbs
           items={[
             { label: 'Dashboard', href: '/' },
-            { label: 'Einstellungen', href: '/settings' },
-            { label: 'Account' },
+            { label: tSettings('title'), href: '/settings' },
+            { label: t('title') },
           ]}
         />
 
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-            Account
+            {t('title')}
           </h1>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Verwalte deinen Zugang und dein Passwort.
+            {t('subtitle')}
           </p>
         </div>
 
         <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-6 space-y-6">
           <section className="space-y-2">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Angemeldet</h2>
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('loggedInLabel')}</h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               {supabaseUser?.email}
             </p>
@@ -103,10 +106,10 @@ export default function SettingsAccountPage() {
           <section className="border-t border-zinc-200 dark:border-zinc-700 pt-6 space-y-4">
             <div>
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                Passwort aendern
+                {t('changePasswordTitle')}
               </h2>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Verwende mindestens 6 Zeichen.
+                {t('changePasswordSubtitle')}
               </p>
             </div>
 
@@ -116,7 +119,7 @@ export default function SettingsAccountPage() {
                   htmlFor="newPassword"
                   className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2"
                 >
-                  Neues Passwort
+                  {t('newPasswordLabel')}
                 </label>
                 <input
                   id="newPassword"
@@ -134,7 +137,7 @@ export default function SettingsAccountPage() {
                   htmlFor="confirmPassword"
                   className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2"
                 >
-                  Passwort wiederholen
+                  {t('repeatPasswordLabel')}
                 </label>
                 <input
                   id="confirmPassword"
@@ -158,16 +161,16 @@ export default function SettingsAccountPage() {
                 disabled={submitting}
                 className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? 'Bitte warten...' : 'Passwort aendern'}
+                {submitting ? t('submitting') : t('submitButton')}
               </button>
             </form>
           </section>
 
           <section className="border-t border-zinc-200 dark:border-zinc-700 pt-6 space-y-3">
             <div>
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Sitzung</h2>
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('sessionTitle')}</h2>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Auf diesem Gerät abmelden.
+                {t('sessionSubtitle')}
               </p>
             </div>
             <button
@@ -175,7 +178,7 @@ export default function SettingsAccountPage() {
               disabled={signingOut}
               className="px-5 py-2.5 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-900 dark:text-zinc-100 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {signingOut ? 'Wird abgemeldet...' : 'Abmelden'}
+              {signingOut ? t('signingOut') : t('signOutButton')}
             </button>
           </section>
         </div>

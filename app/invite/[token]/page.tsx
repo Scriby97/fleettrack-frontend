@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { getInviteByToken, acceptInvite } from '@/lib/api/invites'
 import type { InviteInfo } from '@/lib/types/user'
 
@@ -9,7 +10,8 @@ export default function InvitePage() {
   const params = useParams()
   const router = useRouter()
   const token = params.token as string
-  
+  const t = useTranslations('invite')
+
   const [invite, setInvite] = useState<InviteInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -32,13 +34,14 @@ export default function InvitePage() {
         setInvite(data)
         setFormData(prev => ({ ...prev, email: data.email }))
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Ungültiger oder abgelaufener Einladungs-Link')
+        setError(err instanceof Error ? err.message : t('invalidLinkError'))
       } finally {
         setLoading(false)
       }
     }
 
     fetchInvite()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,17 +49,17 @@ export default function InvitePage() {
     setError(null)
     
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwörter stimmen nicht überein')
+      setError(t('passwordMismatchError'))
       return
     }
-    
+
     if (formData.password.length < 6) {
-      setError('Passwort muss mindestens 6 Zeichen lang sein')
+      setError(t('passwordTooShortError'))
       return
     }
-    
+
     setSubmitting(true)
-    
+
     try {
       await acceptInvite({
         token,
@@ -65,11 +68,11 @@ export default function InvitePage() {
         firstName: formData.firstName,
         lastName: formData.lastName,
       })
-      
+
       // Redirect to login page after successful registration
-      router.push('/login?message=Konto erfolgreich erstellt! Bitte melde dich an.')
+      router.push(`/login?message=${encodeURIComponent(t('accountCreatedRedirectMessage'))}`)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Fehler beim Annehmen der Einladung'
+      const errorMessage = err instanceof Error ? err.message : t('genericError')
       setError(errorMessage)
       // Check if the error is an UnauthorizedException
       if (errorMessage.toLowerCase().includes('unauthorized') || errorMessage.toLowerCase().includes('not authenticated') || errorMessage.toLowerCase().includes('nicht autorisiert') || errorMessage.toLowerCase().includes('nicht angemeldet')) {
@@ -84,7 +87,7 @@ export default function InvitePage() {
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-zinc-600 dark:text-zinc-400">Einladung wird geladen...</p>
+          <p className="mt-4 text-zinc-600 dark:text-zinc-400">{t('loadingText')}</p>
         </div>
       </div>
     )
@@ -100,13 +103,13 @@ export default function InvitePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Ungültige Einladung</h2>
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">{t('invalidInviteTitle')}</h2>
             <p className="text-zinc-600 dark:text-zinc-400 mb-6">{error}</p>
             <button
               onClick={() => router.push('/login')}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Zum Login
+              {t('loginButton')}
             </button>
           </div>
         </div>
@@ -119,10 +122,10 @@ export default function InvitePage() {
       <div className="w-full max-w-md space-y-6 sm:space-y-8">
         <div className="text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-            Beitreten: {invite?.organization.name}
+            {t('joinTitle', { organization: invite?.organization.name ?? '' })}
           </h2>
           <p className="mt-2 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
-            Du wurdest eingeladen als <span className="font-semibold">{invite?.role}</span>
+            {t('invitedAsText')} <span className="font-semibold">{invite?.role}</span>
           </p>
         </div>
 
@@ -135,10 +138,10 @@ export default function InvitePage() {
               </svg>
               <div>
                 <p className="text-sm text-blue-900 dark:text-blue-100">
-                  <strong>E-Mail:</strong> {invite?.email}
+                  <strong>{t('emailLabel')}:</strong> {invite?.email}
                 </p>
                 <p className="text-sm text-blue-900 dark:text-blue-100 mt-1">
-                  <strong>Läuft ab:</strong> {invite && new Date(invite.expiresAt).toLocaleDateString()}
+                  <strong>{t('expiresLabel')}</strong> {invite && new Date(invite.expiresAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -147,7 +150,7 @@ export default function InvitePage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                E-Mail
+                {t('emailLabel')}
               </label>
               <input
                 id="email"
@@ -162,7 +165,7 @@ export default function InvitePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Vorname
+                  {t('firstNameLabel')}
                 </label>
                 <input
                   id="firstName"
@@ -176,7 +179,7 @@ export default function InvitePage() {
 
               <div>
                 <label htmlFor="lastName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Nachname
+                  {t('lastNameLabel')}
                 </label>
                 <input
                   id="lastName"
@@ -191,7 +194,7 @@ export default function InvitePage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Passwort
+                {t('passwordLabel')}
               </label>
               <input
                 id="password"
@@ -206,7 +209,7 @@ export default function InvitePage() {
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Passwort bestätigen
+                {t('confirmPasswordLabel')}
               </label>
               <input
                 id="confirmPassword"
@@ -231,7 +234,7 @@ export default function InvitePage() {
               onClick={isUnauthorized ? () => router.push('/login') : undefined}
               className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isUnauthorized ? 'Zum Login' : (submitting ? 'Konto wird erstellt...' : 'Einladung annehmen & Konto erstellen')}
+              {isUnauthorized ? t('loginButton') : (submitting ? t('submitCreating') : t('submitButton'))}
             </button>
           </form>
         </div>

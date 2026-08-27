@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FC, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 
 type PageStatus = 'loading' | 'ready' | 'success' | 'error'
@@ -9,6 +10,7 @@ type PageStatus = 'loading' | 'ready' | 'success' | 'error'
 const ResetPasswordPage: FC = () => {
   const router = useRouter()
   const supabase = createClient()
+  const t = useTranslations('resetPassword')
   const [status, setStatus] = useState<PageStatus>('loading')
   const [message, setMessage] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -29,7 +31,7 @@ const ResetPasswordPage: FC = () => {
       const errorParam = searchParams.get('error')
 
       if (errorDescription || errorParam) {
-        setMessage(decodeURIComponent(errorDescription ?? errorParam ?? 'Ungültiger Link'))
+        setMessage(decodeURIComponent(errorDescription ?? errorParam ?? t('invalidLinkError')))
         setStatus('error')
         return
       }
@@ -54,7 +56,7 @@ const ResetPasswordPage: FC = () => {
 
       if (accessToken && refreshToken) {
         if (type && type !== 'recovery') {
-          setMessage('Ungueltiger Wiederherstellungs-Link')
+          setMessage(t('invalidRecoveryLinkError'))
           setStatus('error')
           return
         }
@@ -81,11 +83,12 @@ const ResetPasswordPage: FC = () => {
         return
       }
 
-      setMessage('Kein gueltiger Wiederherstellungs-Link. Bitte fordere einen neuen Link an.')
+      setMessage(t('noValidLinkError'))
       setStatus('error')
     }
 
     initRecovery()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -93,12 +96,12 @@ const ResetPasswordPage: FC = () => {
     setMessage(null)
 
     if (formData.password.length < 6) {
-      setMessage('Passwort muss mindestens 6 Zeichen lang sein')
+      setMessage(t('passwordTooShortError'))
       return
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setMessage('Passwoerter stimmen nicht ueberein')
+      setMessage(t('passwordMismatchError'))
       return
     }
 
@@ -130,7 +133,7 @@ const ResetPasswordPage: FC = () => {
         <div className="max-w-md w-full text-center">
           <div className="bg-white dark:bg-zinc-800 shadow-lg rounded-lg p-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-zinc-600 dark:text-zinc-400">Wiederherstellung wird vorbereitet...</p>
+            <p className="mt-4 text-zinc-600 dark:text-zinc-400">{t('preparingRecovery')}</p>
           </div>
         </div>
       </div>
@@ -147,13 +150,13 @@ const ResetPasswordPage: FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Reset fehlgeschlagen</h2>
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">{t('resetFailedTitle')}</h2>
             <p className="text-zinc-600 dark:text-zinc-400 mb-6">{message}</p>
             <button
               onClick={handleGoToLogin}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Zum Login
+              {t('goToLoginButton')}
             </button>
           </div>
         </div>
@@ -171,15 +174,15 @@ const ResetPasswordPage: FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Passwort aktualisiert</h2>
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">{t('passwordUpdatedTitle')}</h2>
             <p className="text-zinc-600 dark:text-zinc-400 mb-6">
-              Dein Passwort wurde erfolgreich geaendert. Du kannst dich jetzt anmelden.
+              {t('passwordUpdatedBody')}
             </p>
             <button
               onClick={handleGoToLogin}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Zum Login
+              {t('goToLoginButton')}
             </button>
           </div>
         </div>
@@ -191,9 +194,9 @@ const ResetPasswordPage: FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">Neues Passwort</h2>
+          <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">{t('newPasswordTitle')}</h2>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Vergib ein neues Passwort fuer dein Konto
+            {t('newPasswordSubtitle')}
           </p>
         </div>
 
@@ -204,7 +207,7 @@ const ResetPasswordPage: FC = () => {
                 htmlFor="password"
                 className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2"
               >
-                Neues Passwort
+                {t('newPasswordLabel')}
               </label>
               <input
                 id="password"
@@ -222,7 +225,7 @@ const ResetPasswordPage: FC = () => {
                 htmlFor="confirmPassword"
                 className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2"
               >
-                Passwort bestaetigen
+                {t('confirmPasswordLabel')}
               </label>
               <input
                 id="confirmPassword"
@@ -246,7 +249,7 @@ const ResetPasswordPage: FC = () => {
               disabled={submitting}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Bitte warten...' : 'Passwort aktualisieren'}
+              {submitting ? t('submitting') : t('submitButton')}
             </button>
           </form>
         </div>

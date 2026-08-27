@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth/AuthProvider'
 
 const POLL_INTERVAL_MS = 1500
@@ -10,6 +11,7 @@ const MAX_POLLS = 6
 export default function CreateOrganizationSuccessPage() {
   const router = useRouter()
   const { refreshOrganizations } = useAuth()
+  const t = useTranslations('onboardingCreateOrgSuccess')
   const [pollCount, setPollCount] = useState(0)
   const finishedRef = useRef(false)
 
@@ -50,10 +52,9 @@ export default function CreateOrganizationSuccessPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Zahlung erfolgreich</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">{t('title')}</h1>
         <p className="text-zinc-600 dark:text-zinc-400 mb-6">
-          Deine Organisation wird aktiviert{pollCount > 0 && pollCount < MAX_POLLS ? '...' : '.'} Das kann einen
-          Moment dauern.
+          {pollCount > 0 && pollCount < MAX_POLLS ? t('bodyInProgress') : t('bodyDone')}
         </p>
 
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-6" />
@@ -62,7 +63,7 @@ export default function CreateOrganizationSuccessPage() {
           onClick={handleContinue}
           className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
         >
-          Weiter zu FleetTrack
+          {t('continueButton')}
         </button>
       </div>
     </div>

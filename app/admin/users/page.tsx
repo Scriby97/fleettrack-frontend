@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useOrganization } from '@/lib/contexts/OrganizationContext'
@@ -9,18 +10,7 @@ import { createInvite, deleteInvite, getOrganizationInvites } from '@/lib/api/in
 import { getUsers, sendUserResetPassword } from '@/lib/api/users'
 import { getOrganizationMembers, updateMemberRole, transferOwnership } from '@/lib/api/organizationMembers'
 import type { InviteEntity, InviteStatus, OrganizationMemberDetail, User } from '@/lib/types/user'
-
-const STATUS_LABELS: Record<InviteStatus, string> = {
-  pending: 'Ausstehend',
-  used: 'Eingeloest',
-  expired: 'Abgelaufen',
-}
-
-const STATUS_CLASSES: Record<InviteStatus, string> = {
-  pending: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200',
-  used: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200',
-  expired: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200',
-}
+import { useDateLocale } from '@/lib/i18n/formatDate'
 
 export default function UsersPage() {
   const router = useRouter()
@@ -28,6 +18,23 @@ export default function UsersPage() {
   const { organizations, selectedOrgId, canManageSelectedOrganization, selectedOrganizationRole } = useOrganization()
   const selectedOrganization = organizations.find((org) => org.id === selectedOrgId)
   const isOwner = selectedOrganizationRole === 'owner'
+  const t = useTranslations('userManagement')
+  const tInv = useTranslations('inviteManagement')
+  const tMember = useTranslations('memberManagement')
+  const tCommon = useTranslations('common')
+  const dateLocale = useDateLocale()
+
+  const STATUS_LABELS: Record<InviteStatus, string> = {
+    pending: tInv('pendingStatus'),
+    used: tInv('usedStatus'),
+    expired: tInv('expiredStatus'),
+  }
+
+  const STATUS_CLASSES: Record<InviteStatus, string> = {
+    pending: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200',
+    used: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200',
+    expired: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200',
+  }
 
   const [activeTab, setActiveTab] = useState<'invites' | 'members' | 'users'>('invites')
   const [invites, setInvites] = useState<InviteEntity[]>([])
@@ -91,7 +98,7 @@ export default function UsersPage() {
       } else {
         const message = inviteResult.reason instanceof Error
           ? inviteResult.reason.message
-          : 'Fehler beim Laden der Einladungen'
+          : t('loadInvitesError')
         setError(message)
       }
 
@@ -100,7 +107,7 @@ export default function UsersPage() {
       } else {
         const message = userResult.reason instanceof Error
           ? userResult.reason.message
-          : 'Fehler beim Laden der Benutzer'
+          : t('loadUsersError')
         setUsersError(message)
       }
 
@@ -109,7 +116,7 @@ export default function UsersPage() {
       } else {
         const message = memberResult.reason instanceof Error
           ? memberResult.reason.message
-          : 'Fehler beim Laden der Mitglieder'
+          : t('loadMembersError')
         setMembersError(message)
       }
 
@@ -117,6 +124,7 @@ export default function UsersPage() {
     }
 
     fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, isAdmin, canManageSelectedOrganization, selectedOrgId])
 
   const refetchMembers = async () => {
@@ -125,7 +133,7 @@ export default function UsersPage() {
       const result = await getOrganizationMembers(selectedOrgId)
       setMembers(result)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Laden der Mitglieder'
+      const message = err instanceof Error ? err.message : tMember('loadErrorGeneric')
       setMembersError(message)
     }
   }
@@ -143,7 +151,7 @@ export default function UsersPage() {
       await refetchMembers()
       await refreshOrganizations()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Befördern zum Admin'
+      const message = err instanceof Error ? err.message : tMember('promoteErrorGeneric')
       setMembersError(message)
     } finally {
       setMemberActionId(null)
@@ -161,7 +169,7 @@ export default function UsersPage() {
       await refetchMembers()
       await refreshOrganizations()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Zurückstufen'
+      const message = err instanceof Error ? err.message : tMember('demoteErrorGeneric')
       setMembersError(message)
     } finally {
       setMemberActionId(null)
@@ -179,7 +187,7 @@ export default function UsersPage() {
       await refetchMembers()
       await refreshOrganizations()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Übertragen der Owner-Rolle'
+      const message = err instanceof Error ? err.message : tMember('transferErrorGeneric')
       setMembersError(message)
     } finally {
       setMemberActionId(null)
@@ -204,7 +212,7 @@ export default function UsersPage() {
 
     const email = inviteEmail.trim()
     if (!email) {
-      setError('Bitte eine Email-Adresse eingeben')
+      setError(tInv('emailRequiredError'))
       return
     }
 
@@ -216,7 +224,7 @@ export default function UsersPage() {
       setInviteEmail('')
       setInviteRole('employee')
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Erstellen der Einladung'
+      const message = err instanceof Error ? err.message : tInv('createErrorGeneric')
       setError(message)
     } finally {
       setSubmitting(false)
@@ -229,7 +237,7 @@ export default function UsersPage() {
       setCopiedId(id)
       setTimeout(() => setCopiedId(null), 2000)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Kopieren'
+      const message = err instanceof Error ? err.message : tInv('copyErrorGeneric')
       setError(message)
     }
   }
@@ -239,7 +247,7 @@ export default function UsersPage() {
       await deleteInvite(inviteId, selectedOrgId ?? undefined)
       setInvites((prev) => prev.filter((invite) => invite.id !== inviteId))
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Loeschen der Einladung'
+      const message = err instanceof Error ? err.message : tInv('deleteErrorGeneric')
       setError(message)
     }
   }
@@ -287,10 +295,10 @@ export default function UsersPage() {
 
     try {
       await sendUserResetPassword(confirmUser.id)
-      setResetNotice(`Reset Email gesendet an ${confirmUser.email}`)
+      setResetNotice(t('resetSuccessNotice', { email: confirmUser.email }))
       setConfirmUser(null)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Senden der Reset-Email'
+      const message = err instanceof Error ? err.message : t('loadUsersError')
       setUsersError(message)
     } finally {
       setSubmittingId(null)
@@ -312,15 +320,15 @@ export default function UsersPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 p-4 sm:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: 'User Management' }]} />
+        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: t('title') }]} />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-              User Management
+              {t('title')}
             </h1>
             <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400">
-              Organisation: {selectedOrganization?.name}
+              {t('organizationLabel', { name: selectedOrganization?.name ?? '' })}
             </p>
           </div>
           {activeTab === 'invites' && (
@@ -329,7 +337,7 @@ export default function UsersPage() {
                 onClick={() => setShowInviteModal(true)}
                 className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
               >
-                + Einladung erstellen
+                {tInv('createButton')}
               </button>
             </div>
           )}
@@ -344,7 +352,7 @@ export default function UsersPage() {
                 : 'border-zinc-200 text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-600'
             }`}
           >
-            Einladungen
+            {tInv('tabLabel')}
           </button>
           <button
             onClick={() => setActiveTab('members')}
@@ -354,7 +362,7 @@ export default function UsersPage() {
                 : 'border-zinc-200 text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-600'
             }`}
           >
-            Mitglieder
+            {tMember('tabLabel')}
           </button>
           {isAdmin && (
             <button
@@ -365,7 +373,7 @@ export default function UsersPage() {
                   : 'border-zinc-200 text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-600'
               }`}
             >
-              Benutzer
+              {t('usersTabLabel')}
             </button>
           )}
         </div>
@@ -380,7 +388,7 @@ export default function UsersPage() {
 
             <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Einladungen</h2>
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{tInv('sectionTitle')}</h2>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{sortedInvites.length}</span>
               </div>
 
@@ -389,18 +397,18 @@ export default function UsersPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                     <tr>
-                      <th className="px-4 py-3 text-left font-medium">Email</th>
-                      <th className="px-4 py-3 text-left font-medium">Rolle</th>
-                      <th className="px-4 py-3 text-left font-medium">Status</th>
-                      <th className="px-4 py-3 text-left font-medium">Ablauf</th>
-                      <th className="px-4 py-3 text-left font-medium">Aktionen</th>
+                      <th className="px-4 py-3 text-left font-medium">{tInv('emailHeader')}</th>
+                      <th className="px-4 py-3 text-left font-medium">{tInv('roleHeader')}</th>
+                      <th className="px-4 py-3 text-left font-medium">{tInv('statusHeader')}</th>
+                      <th className="px-4 py-3 text-left font-medium">{tInv('expiryHeader')}</th>
+                      <th className="px-4 py-3 text-left font-medium">{tInv('actionsHeader')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
                     {sortedInvites.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-4 py-6 text-center text-zinc-500 dark:text-zinc-400">
-                          Keine Einladungen gefunden.
+                          {tInv('noInvitesFound')}
                         </td>
                       </tr>
                     ) : (
@@ -423,7 +431,7 @@ export default function UsersPage() {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
-                              {new Date(invite.expiresAt).toLocaleDateString('de-DE')}
+                              {new Date(invite.expiresAt).toLocaleDateString(dateLocale)}
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex flex-wrap gap-2">
@@ -432,14 +440,14 @@ export default function UsersPage() {
                                   disabled={isCopyDisabled}
                                   className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                                 >
-                                  {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
+                                  {copiedId === invite.id ? tInv('copiedLabel') : tInv('copyLinkButton')}
                                 </button>
                                 {status === 'pending' && (
                                   <button
                                     onClick={() => handleDeleteInvite(invite.id)}
                                     className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
                                   >
-                                    Loeschen
+                                    {tInv('deleteButton')}
                                   </button>
                                 )}
                               </div>
@@ -456,7 +464,7 @@ export default function UsersPage() {
               <div className="md:hidden space-y-3">
                 {sortedInvites.length === 0 ? (
                   <div className="py-6 text-center text-zinc-500 dark:text-zinc-400">
-                    Keine Einladungen gefunden.
+                    {tInv('noInvitesFound')}
                   </div>
                 ) : (
                   sortedInvites.map((invite) => {
@@ -475,7 +483,7 @@ export default function UsersPage() {
                               {invite.email}
                             </p>
                             <p className="text-sm text-zinc-600 dark:text-zinc-400 capitalize mt-1">
-                              Rolle: {invite.role}
+                              {tInv('roleColumnLabel')} {invite.role}
                             </p>
                           </div>
                           <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${STATUS_CLASSES[status]}`}>
@@ -483,7 +491,7 @@ export default function UsersPage() {
                           </span>
                         </div>
                         <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                          <span className="font-medium">Ablauf:</span> {new Date(invite.expiresAt).toLocaleDateString('de-DE')}
+                          <span className="font-medium">{tInv('expiryColumnLabel')}</span> {new Date(invite.expiresAt).toLocaleDateString(dateLocale)}
                         </div>
                         <div className="flex flex-wrap gap-2 pt-1">
                           <button
@@ -491,14 +499,14 @@ export default function UsersPage() {
                             disabled={isCopyDisabled}
                             className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                           >
-                            {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
+                            {copiedId === invite.id ? tInv('copiedLabel') : tInv('copyLinkButton')}
                           </button>
                           {status === 'pending' && (
                             <button
                               onClick={() => handleDeleteInvite(invite.id)}
                               className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
                             >
-                              Loeschen
+                              {tInv('deleteButton')}
                             </button>
                           )}
                         </div>
@@ -521,7 +529,7 @@ export default function UsersPage() {
 
             <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Mitglieder</h2>
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{tMember('sectionTitle')}</h2>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{members.length}</span>
               </div>
 
@@ -530,17 +538,17 @@ export default function UsersPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                     <tr>
-                      <th className="px-4 py-3 text-left font-medium">Name</th>
-                      <th className="px-4 py-3 text-left font-medium">Email</th>
-                      <th className="px-4 py-3 text-left font-medium">Rolle</th>
-                      <th className="px-4 py-3 text-left font-medium">Aktionen</th>
+                      <th className="px-4 py-3 text-left font-medium">{tMember('nameHeader')}</th>
+                      <th className="px-4 py-3 text-left font-medium">{tMember('emailHeader')}</th>
+                      <th className="px-4 py-3 text-left font-medium">{tMember('roleHeader')}</th>
+                      <th className="px-4 py-3 text-left font-medium">{tMember('actionsHeader')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
                     {members.length === 0 ? (
                       <tr>
                         <td colSpan={4} className="px-4 py-6 text-center text-zinc-500 dark:text-zinc-400">
-                          Keine Mitglieder gefunden.
+                          {tMember('noMembersFound')}
                         </td>
                       </tr>
                     ) : (
@@ -551,7 +559,7 @@ export default function UsersPage() {
                         return (
                           <tr key={member.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
                             <td className="px-4 py-3 text-zinc-900 dark:text-zinc-100 font-medium">
-                              {getMemberDisplayName(member)}{isSelf && <span className="text-zinc-500 dark:text-zinc-400 font-normal"> (Du)</span>}
+                              {getMemberDisplayName(member)}{isSelf && <span className="text-zinc-500 dark:text-zinc-400 font-normal">{tMember('youSuffix')}</span>}
                             </td>
                             <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
                               {member.user.email}
@@ -567,7 +575,7 @@ export default function UsersPage() {
                                     disabled={isBusy}
                                     className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                                   >
-                                    {isBusy ? 'Bitte warten...' : 'Zum Admin befördern'}
+                                    {isBusy ? tMember('waitingLabel') : tMember('promoteButton')}
                                   </button>
                                 )}
                                 {member.role === 'admin' && isOwner && (
@@ -576,7 +584,7 @@ export default function UsersPage() {
                                     disabled={isBusy}
                                     className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600 disabled:opacity-50"
                                   >
-                                    Zum Mitarbeiter zurückstufen
+                                    {tMember('demoteButton')}
                                   </button>
                                 )}
                                 {member.role !== 'owner' && isOwner && !isSelf && (
@@ -585,7 +593,7 @@ export default function UsersPage() {
                                     disabled={isBusy}
                                     className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
                                   >
-                                    Owner-Rolle übertragen
+                                    {tMember('transferButton')}
                                   </button>
                                 )}
                               </div>
@@ -602,7 +610,7 @@ export default function UsersPage() {
               <div className="md:hidden space-y-3">
                 {members.length === 0 ? (
                   <div className="py-6 text-center text-zinc-500 dark:text-zinc-400">
-                    Keine Mitglieder gefunden.
+                    {tMember('noMembersFound')}
                   </div>
                 ) : (
                   members.map((member) => {
@@ -616,14 +624,14 @@ export default function UsersPage() {
                       >
                         <div>
                           <p className="font-semibold text-zinc-900 dark:text-zinc-100">
-                            {getMemberDisplayName(member)}{isSelf && <span className="text-zinc-500 dark:text-zinc-400 font-normal"> (Du)</span>}
+                            {getMemberDisplayName(member)}{isSelf && <span className="text-zinc-500 dark:text-zinc-400 font-normal">{tMember('youSuffix')}</span>}
                           </p>
                           <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 break-all">
                             {member.user.email}
                           </p>
                         </div>
                         <div className="text-sm text-zinc-600 dark:text-zinc-400 capitalize">
-                          <span className="font-medium">Rolle:</span> {member.role}
+                          <span className="font-medium">{tMember('roleHeader')}:</span> {member.role}
                         </div>
                         <div className="flex flex-wrap gap-2 pt-1">
                           {member.role === 'employee' && (
@@ -632,7 +640,7 @@ export default function UsersPage() {
                               disabled={isBusy}
                               className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                             >
-                              {isBusy ? 'Bitte warten...' : 'Zum Admin befördern'}
+                              {isBusy ? tMember('waitingLabel') : tMember('promoteButton')}
                             </button>
                           )}
                           {member.role === 'admin' && isOwner && (
@@ -641,7 +649,7 @@ export default function UsersPage() {
                               disabled={isBusy}
                               className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600 disabled:opacity-50"
                             >
-                              Zum Mitarbeiter zurückstufen
+                              {tMember('demoteButton')}
                             </button>
                           )}
                           {member.role !== 'owner' && isOwner && !isSelf && (
@@ -650,7 +658,7 @@ export default function UsersPage() {
                               disabled={isBusy}
                               className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
                             >
-                              Owner-Rolle übertragen
+                              {tMember('transferButton')}
                             </button>
                           )}
                         </div>
@@ -680,13 +688,13 @@ export default function UsersPage() {
             <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4 sm:p-6 space-y-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2 min-w-0">
-                  <h2 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-50">Benutzer</h2>
+                  <h2 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('usersTabLabel')}</h2>
                   <span className="text-xs text-zinc-500 dark:text-zinc-400">{filteredUsers.length}</span>
                 </div>
                 <input
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Suche..."
+                  placeholder={t('searchPlaceholder')}
                   className="w-full sm:w-64 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg text-xs sm:text-sm dark:bg-zinc-700 dark:text-zinc-100"
                 />
               </div>
@@ -696,17 +704,17 @@ export default function UsersPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                     <tr>
-                      <th className="px-4 py-3 text-left font-medium">Name</th>
-                      <th className="px-4 py-3 text-left font-medium">Email</th>
-                      <th className="px-4 py-3 text-left font-medium">Rolle</th>
-                      <th className="px-4 py-3 text-left font-medium">Aktionen</th>
+                      <th className="px-4 py-3 text-left font-medium">{tMember('nameHeader')}</th>
+                      <th className="px-4 py-3 text-left font-medium">{tMember('emailHeader')}</th>
+                      <th className="px-4 py-3 text-left font-medium">{tMember('roleHeader')}</th>
+                      <th className="px-4 py-3 text-left font-medium">{tMember('actionsHeader')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
                     {filteredUsers.length === 0 ? (
                       <tr>
                         <td colSpan={4} className="px-4 py-6 text-center text-zinc-500 dark:text-zinc-400">
-                          Keine Benutzer gefunden.
+                          {t('noUsersFound')}
                         </td>
                       </tr>
                     ) : (
@@ -727,7 +735,7 @@ export default function UsersPage() {
                               className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                               disabled={submittingId === user.id}
                             >
-                              {submittingId === user.id ? 'Sende...' : 'Passwort-Reset senden'}
+                              {submittingId === user.id ? t('sendingLabel') : t('resetPasswordButton')}
                             </button>
                           </td>
                         </tr>
@@ -741,7 +749,7 @@ export default function UsersPage() {
               <div className="md:hidden space-y-3">
                 {filteredUsers.length === 0 ? (
                   <div className="py-6 text-center text-zinc-500 dark:text-zinc-400">
-                    Keine Benutzer gefunden.
+                    {t('noUsersFound')}
                   </div>
                 ) : (
                   filteredUsers.map((user) => (
@@ -758,7 +766,7 @@ export default function UsersPage() {
                         </p>
                       </div>
                       <div className="text-sm text-zinc-600 dark:text-zinc-400 capitalize">
-                        <span className="font-medium">Rolle:</span> {user.role.replace('_', ' ')}
+                        <span className="font-medium">{tMember('roleHeader')}:</span> {user.role.replace('_', ' ')}
                       </div>
                       <div className="pt-1">
                         <button
@@ -766,7 +774,7 @@ export default function UsersPage() {
                           className="w-full px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                           disabled={submittingId === user.id}
                         >
-                          {submittingId === user.id ? 'Sende...' : 'Passwort-Reset senden'}
+                          {submittingId === user.id ? t('sendingLabel') : t('resetPasswordButton')}
                         </button>
                       </div>
                     </div>
@@ -783,7 +791,7 @@ export default function UsersPage() {
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-sm sm:max-w-lg">
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                Neue Einladung
+                {tInv('modalTitle')}
               </h2>
               <button
                 onClick={handleCloseModal}
@@ -797,7 +805,7 @@ export default function UsersPage() {
               <form onSubmit={handleCreateInvite} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    Email
+                    {tInv('emailLabel')}
                   </label>
                   <input
                     type="email"
@@ -810,15 +818,15 @@ export default function UsersPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    Rolle
+                    {tInv('roleLabel')}
                   </label>
                   <select
                     value={inviteRole}
                     onChange={(event) => setInviteRole(event.target.value as 'admin' | 'employee')}
                     className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg dark:bg-zinc-700 dark:text-zinc-100"
                   >
-                    <option value="employee">Mitarbeiter</option>
-                    <option value="admin">Admin</option>
+                    <option value="employee">{tInv('employeeOption')}</option>
+                    <option value="admin">{tInv('adminOption')}</option>
                   </select>
                 </div>
 
@@ -827,14 +835,14 @@ export default function UsersPage() {
                   disabled={submitting}
                   className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
                 >
-                  {submitting ? 'Erstelle...' : 'Einladung erstellen'}
+                  {submitting ? tInv('creatingLabel') : tInv('createSubmitButton')}
                 </button>
               </form>
 
               {createdInviteLink && (
                 <div className="mt-6 space-y-3">
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Invite Link
+                    {tInv('inviteLinkLabel')}
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -849,7 +857,7 @@ export default function UsersPage() {
                       onClick={() => handleCopyLink(createdInviteLink, 'created')}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                      {copiedId === 'created' ? 'Kopiert' : 'Copy'}
+                      {copiedId === 'created' ? tInv('copiedLabel') : tInv('copyLinkButton')}
                     </button>
                   </div>
                 </div>
@@ -861,7 +869,7 @@ export default function UsersPage() {
                   onClick={handleCloseModal}
                   className="w-full px-4 py-2 bg-zinc-900 dark:bg-zinc-700 text-white rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-600 transition-colors"
                 >
-                  Done
+                  {tInv('doneButton')}
                 </button>
               </div>
             </div>
@@ -874,10 +882,10 @@ export default function UsersPage() {
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-sm">
             <div className="p-6 space-y-4">
               <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                Reset Email senden
+                {t('resetPasswordModalTitle')}
               </h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Reset Email an <span className="font-medium">{confirmUser.email}</span> senden?
+                {t('resetPasswordModalMessage', { email: confirmUser.email })}
               </p>
               <div className="flex gap-3 justify-end">
                 <button
@@ -885,14 +893,14 @@ export default function UsersPage() {
                   className="px-4 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                   disabled={submittingId === confirmUser.id}
                 >
-                  Abbrechen
+                  {tCommon('cancel')}
                 </button>
                 <button
                   onClick={handleConfirmReset}
                   className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
                   disabled={submittingId === confirmUser.id}
                 >
-                  {submittingId === confirmUser.id ? 'Sende...' : 'Reset senden'}
+                  {submittingId === confirmUser.id ? t('sendingLabel') : t('resetSendButton')}
                 </button>
               </div>
             </div>
@@ -905,11 +913,10 @@ export default function UsersPage() {
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-sm">
             <div className="p-6 space-y-4">
               <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                Admin zurückstufen
+                {tMember('demoteConfirmTitle')}
               </h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                <span className="font-medium">{getMemberDisplayName(confirmDemoteMember)}</span> wird
-                zurück zum Mitarbeiter gestuft und verliert damit Admin-Rechte. Fortfahren?
+                {tMember('demoteConfirmMessage', { name: getMemberDisplayName(confirmDemoteMember) })}
               </p>
               <div className="flex gap-3 justify-end">
                 <button
@@ -917,14 +924,14 @@ export default function UsersPage() {
                   className="px-4 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                   disabled={memberActionId === confirmDemoteMember.id}
                 >
-                  Abbrechen
+                  {tCommon('cancel')}
                 </button>
                 <button
                   onClick={handleDemoteToEmployee}
                   className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
                   disabled={memberActionId === confirmDemoteMember.id}
                 >
-                  {memberActionId === confirmDemoteMember.id ? 'Bitte warten...' : 'Zurückstufen'}
+                  {memberActionId === confirmDemoteMember.id ? tMember('waitingLabel') : tMember('demoteConfirmButton')}
                 </button>
               </div>
             </div>
@@ -937,12 +944,10 @@ export default function UsersPage() {
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-sm">
             <div className="p-6 space-y-4">
               <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                Owner-Rolle übertragen
+                {tMember('transferConfirmTitle')}
               </h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Möchtest du deine Owner-Rolle an{' '}
-                <span className="font-medium">{getMemberDisplayName(confirmTransferMember)}</span>{' '}
-                übertragen? Du wirst danach selbst Admin dieser Organisation.
+                {tMember('transferConfirmMessage', { name: getMemberDisplayName(confirmTransferMember) })}
               </p>
               <div className="flex gap-3 justify-end">
                 <button
@@ -950,14 +955,14 @@ export default function UsersPage() {
                   className="px-4 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                   disabled={memberActionId === confirmTransferMember.id}
                 >
-                  Abbrechen
+                  {tCommon('cancel')}
                 </button>
                 <button
                   onClick={handleTransferOwnership}
                   className="px-4 py-2 text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-700"
                   disabled={memberActionId === confirmTransferMember.id}
                 >
-                  {memberActionId === confirmTransferMember.id ? 'Bitte warten...' : 'Übertragen'}
+                  {memberActionId === confirmTransferMember.id ? tMember('waitingLabel') : tMember('transferConfirmButton')}
                 </button>
               </div>
             </div>

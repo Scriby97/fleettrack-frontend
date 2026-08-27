@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useToast } from '@/lib/hooks/useToast'
 import { ToastContainer } from '@/app/components/Toast'
@@ -30,6 +31,8 @@ export default function SettingsRemindersPage() {
   const router = useRouter()
   const { supabaseUser, loading: authLoading } = useAuth()
   const { toasts, showToast, removeToast } = useToast()
+  const t = useTranslations('settingsReminders')
+  const tSettings = useTranslations('settings')
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -61,7 +64,7 @@ export default function SettingsRemindersPage() {
         setEnabled(settings.enabled)
         setTime(settings.reminderTime)
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Fehler beim Laden der Erinnerung'
+        const message = err instanceof Error ? err.message : t('loadError')
         showToast(message, 'error')
       } finally {
         setLoading(false)
@@ -74,15 +77,13 @@ export default function SettingsRemindersPage() {
 
   const ensurePushSubscription = async () => {
     if (Notification.permission === 'denied') {
-      throw new Error(
-        'Benachrichtigungen sind für diese Seite blockiert. Bitte in den Browser-Einstellungen erlauben.'
-      )
+      throw new Error(t('permissionBlockedError'))
     }
 
     if (Notification.permission !== 'granted') {
       const permission = await Notification.requestPermission()
       if (permission !== 'granted') {
-        throw new Error('Ohne Erlaubnis für Benachrichtigungen kann keine Erinnerung gesendet werden.')
+        throw new Error(t('permissionDeniedError'))
       }
     }
 
@@ -92,7 +93,7 @@ export default function SettingsRemindersPage() {
     if (!subscription) {
       const publicKey = await getVapidPublicKey()
       if (!publicKey) {
-        throw new Error('Push-Benachrichtigungen sind serverseitig nicht konfiguriert.')
+        throw new Error(t('notConfiguredError'))
       }
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -110,9 +111,9 @@ export default function SettingsRemindersPage() {
         await ensurePushSubscription()
       }
       await updateReminderSettings(enabled, time)
-      showToast('Erinnerung gespeichert', 'success')
+      showToast(t('saveSuccess'), 'success')
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Speichern der Erinnerung'
+      const message = err instanceof Error ? err.message : t('saveErrorGeneric')
       showToast(message, 'error')
       if (enabled) {
         // Aktivieren ist fehlgeschlagen (z.B. Berechtigung verweigert) - Toggle
@@ -139,17 +140,17 @@ export default function SettingsRemindersPage() {
         <Breadcrumbs
           items={[
             { label: 'Dashboard', href: '/' },
-            { label: 'Einstellungen', href: '/settings' },
-            { label: 'Erinnerung' },
+            { label: tSettings('title'), href: '/settings' },
+            { label: tSettings('remindersTitle') },
           ]}
         />
 
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-            Erfassungserinnerung
+            {t('title')}
           </h1>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Erhalte täglich eine Benachrichtigung, falls du deine Nutzung noch nicht erfasst hast.
+            {t('subtitle')}
           </p>
         </div>
 
@@ -157,9 +158,7 @@ export default function SettingsRemindersPage() {
           {!supported ? (
             <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4">
               <p className="text-sm text-blue-900 dark:text-blue-100">
-                Dein Browser unterstützt hier keine Benachrichtigungen. Auf dem iPhone funktioniert das nur,
-                wenn FleetTrack über &quot;Zum Home-Bildschirm&quot; als App installiert wurde - öffne die App
-                dann von dort statt über Safari.
+                {t('unsupportedMessage')}
               </p>
             </div>
           ) : (
@@ -167,17 +166,17 @@ export default function SettingsRemindersPage() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                    Tägliche Erinnerung aktivieren
+                    {t('enableLabel')}
                   </div>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                    Kommt nur, wenn du in den letzten 4 Stunden noch nichts erfasst hast.
+                    {t('enableHint')}
                   </p>
                 </div>
                 <button
                   type="button"
                   role="switch"
                   aria-checked={enabled}
-                  aria-label="Tägliche Erinnerung aktivieren"
+                  aria-label={t('enableLabel')}
                   onClick={() => setEnabled((prev) => !prev)}
                   className={`relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full transition-colors ${
                     enabled ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-600'
@@ -193,7 +192,7 @@ export default function SettingsRemindersPage() {
 
               <div>
                 <label htmlFor="reminderTime" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Uhrzeit
+                  {t('timeLabel')}
                 </label>
                 <input
                   id="reminderTime"
@@ -210,7 +209,7 @@ export default function SettingsRemindersPage() {
                 disabled={saving}
                 className="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? 'Wird gespeichert...' : 'Speichern'}
+                {saving ? t('saving') : t('saveButton')}
               </button>
             </>
           )}

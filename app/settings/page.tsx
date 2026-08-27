@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useOrganization } from '@/lib/contexts/OrganizationContext'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
@@ -11,6 +12,7 @@ export default function SettingsPage() {
   const router = useRouter()
   const { supabaseUser, loading: authLoading, isAdmin } = useAuth()
   const { canManageSelectedOrganization } = useOrganization()
+  const t = useTranslations('settings')
 
   useEffect(() => {
     if (!authLoading && !supabaseUser) {
@@ -29,14 +31,14 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 px-4 py-8">
       <div className="max-w-4xl mx-auto space-y-6">
-        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: 'Einstellungen' }]} />
+        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: t('title') }]} />
 
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-            Einstellungen
+            {t('title')}
           </h1>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Waehl aus, was du bearbeiten moechtest.
+            {t('subtitle')}
           </p>
         </div>
 
@@ -45,9 +47,9 @@ export default function SettingsPage() {
             href="/settings/account"
             className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
           >
-            <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Account</div>
+            <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('accountTitle')}</div>
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              Passwort aendern und Kontodetails ansehen.
+              {t('accountDescription')}
             </p>
           </Link>
 
@@ -55,9 +57,9 @@ export default function SettingsPage() {
             href="/settings/appearance"
             className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
           >
-            <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Ansicht</div>
+            <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('appearanceTitle')}</div>
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              Hell, dunkel oder Systemstandard waehlen.
+              {t('appearanceDescription')}
             </p>
           </Link>
 
@@ -65,9 +67,9 @@ export default function SettingsPage() {
             href="/settings/reminders"
             className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
           >
-            <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Erinnerung</div>
+            <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('remindersTitle')}</div>
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              Tägliche Benachrichtigung zum Erfassen deiner Nutzung einrichten.
+              {t('remindersDescription')}
             </p>
           </Link>
 
@@ -76,9 +78,9 @@ export default function SettingsPage() {
               href="/admin/users"
               className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
             >
-              <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">User Management</div>
+              <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('userManagementTitle')}</div>
               <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                Einladungen verwalten und Mitgliederrollen aendern.
+                {t('userManagementDescription')}
               </p>
             </Link>
           )}
@@ -88,9 +90,9 @@ export default function SettingsPage() {
               href="/admin/all-users"
               className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
             >
-              <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Alle Benutzer</div>
+              <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('allUsersTitle')}</div>
               <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                Benutzer und Einladungen ueber alle Organisationen hinweg verwalten.
+                {t('allUsersDescription')}
               </p>
             </Link>
           )}
@@ -100,9 +102,9 @@ export default function SettingsPage() {
               href="/admin/organizations"
               className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
             >
-              <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Organizations</div>
+              <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('organizationsTitle')}</div>
               <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                Organisationen anlegen und verwalten.
+                {t('organizationsDescription')}
               </p>
             </Link>
           )}
@@ -111,9 +113,9 @@ export default function SettingsPage() {
             href="/onboarding/create-organization"
             className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
           >
-            <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Organisation erstellen</div>
+            <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('createOrgTitle')}</div>
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              Eine neue Organisation anlegen und automatisch Owner werden.
+              {t('createOrgDescription')}
             </p>
           </Link>
         </div>

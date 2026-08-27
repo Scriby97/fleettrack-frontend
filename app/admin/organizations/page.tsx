@@ -3,16 +3,21 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useRouter } from 'next/navigation'
+import { useTranslations, useLocale } from 'next-intl'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { createOrganization, getAllOrganizations } from '@/lib/api/organizations'
 import { CreateOrganizationRequest, CreateOrganizationResponse, Organization, OrganizationRole } from '@/lib/types/user'
 import { useToast } from '@/lib/hooks/useToast'
 import { ToastContainer } from '@/app/components/Toast'
+import { useDateLocale } from '@/lib/i18n/formatDate'
 
 export default function AdminOrganizationsPage() {
   const { supabaseUser, isAdmin, loading: authLoading } = useAuth()
   const router = useRouter()
   const { toasts, showToast, removeToast } = useToast()
+  const t = useTranslations('adminOrganizations')
+  const tCommon = useTranslations('common')
+  const dateLocale = useDateLocale()
 
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,7 +53,7 @@ export default function AdminOrganizationsPage() {
       setOrganizations(data)
     } catch (error) {
       console.error('Failed to load organizations:', error)
-      showToast('Fehler beim Laden der Organizations', 'error')
+      showToast(t('loadError'), 'error')
     } finally {
       setLoading(false)
     }
@@ -76,7 +81,7 @@ export default function AdminOrganizationsPage() {
       loadOrganizations()
     } catch (error: unknown) {
       console.error('Fehler beim Erstellen der Organisation:', error)
-      showToast('Fehler beim Erstellen der Organization: ' + (error instanceof Error ? error.message : 'Unbekannter Fehler'), 'error')
+      showToast(t('createErrorPrefix') + (error instanceof Error ? error.message : t('unknownError')), 'error')
     }
   }
 
@@ -87,20 +92,19 @@ export default function AdminOrganizationsPage() {
       setTimeout(() => setCopiedId(null), 2000)
     } catch (error) {
       console.error('Failed to copy to clipboard:', error)
-      showToast('Fehler beim Kopieren', 'error')
+      showToast(t('copyError'), 'error')
     }
   }
 
   const handleCreateEmailDraft = (result: CreateOrganizationResponse) => {
-    const subject = encodeURIComponent(`Einladung zu ${result.organization.name}`)
+    const subject = encodeURIComponent(t('emailSubject', { orgName: result.organization.name }))
     const body = encodeURIComponent(
-      `Hallo,\n\n` +
-      `Sie wurden als Administrator für die Organization "${result.organization.name}" eingeladen.\n\n` +
-      `Bitte klicken Sie auf den folgenden Link, um Ihr Konto zu erstellen:\n` +
+      `${t('emailGreeting')}\n\n` +
+      `${t('emailInvitedLine', { orgName: result.organization.name })}\n\n` +
+      `${t('emailLinkIntro')}\n` +
       `${result.invite.link}\n\n` +
-      `Der Link ist gültig bis ${new Date(result.invite.expiresAt).toLocaleString('de-DE')}.\n\n` +
-      `Mit freundlichen Grüßen\n` +
-      `FleetTrack Team`
+      `${t('emailExpiryLine', { expiry: new Date(result.invite.expiresAt).toLocaleString(dateLocale) })}\n\n` +
+      `${t('emailSignoff')}`
     )
     window.location.href = `mailto:${result.invite.email}?subject=${subject}&body=${body}`
   }
@@ -125,23 +129,23 @@ export default function AdminOrganizationsPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: 'Organizations' }]} />
+        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: t('title') }]} />
 
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white">
-              Organizations
+              {t('title')}
             </h1>
             <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-              Verwalten Sie alle Organizations
+              {t('subtitle')}
             </p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
-            + Neue Organization
+            {t('createButton')}
           </button>
         </div>
 
@@ -153,19 +157,19 @@ export default function AdminOrganizationsPage() {
               <thead className="bg-zinc-100 dark:bg-zinc-700">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
-                    Name
+                    {t('nameHeader')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
-                    Subdomain
+                    {t('subdomainHeader')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
-                    Kontakt-Email
+                    {t('contactEmailHeader')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
-                    Status
+                    {t('statusHeader')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
-                    Erstellt
+                    {t('createdHeader')}
                   </th>
                 </tr>
               </thead>
@@ -173,7 +177,7 @@ export default function AdminOrganizationsPage() {
                 {organizations.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-8 text-center text-zinc-500 dark:text-zinc-400">
-                      Keine Organizations vorhanden.
+                      {t('noOrgsFound')}
                     </td>
                   </tr>
                 ) : (
@@ -194,11 +198,11 @@ export default function AdminOrganizationsPage() {
                             ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
                             : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
                         }`}>
-                          {org.isActive ? 'Aktiv' : 'Inaktiv'}
+                          {org.isActive ? t('activeLabel') : t('inactiveLabel')}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-400">
-                        {new Date(org.createdAt).toLocaleDateString('de-DE')}
+                        {new Date(org.createdAt).toLocaleDateString(dateLocale)}
                       </td>
                     </tr>
                   ))
@@ -211,7 +215,7 @@ export default function AdminOrganizationsPage() {
           <div className="md:hidden divide-y divide-zinc-200 dark:divide-zinc-700">
             {organizations.length === 0 ? (
               <div className="px-4 py-8 text-center text-zinc-500 dark:text-zinc-400">
-                Keine Organizations vorhanden.
+                {t('noOrgsFound')}
               </div>
             ) : (
               organizations.map(org => (
@@ -225,13 +229,13 @@ export default function AdminOrganizationsPage() {
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
                         : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
                     }`}>
-                      {org.isActive ? 'Aktiv' : 'Inaktiv'}
+                      {org.isActive ? t('activeLabel') : t('inactiveLabel')}
                     </span>
                   </div>
                   <div className="text-sm text-zinc-600 dark:text-zinc-400 space-y-1">
-                    <p><span className="font-medium">Subdomain:</span> {org.subdomain || '-'}</p>
-                    <p className="break-all"><span className="font-medium">Kontakt-Email:</span> {org.contactEmail || '-'}</p>
-                    <p><span className="font-medium">Erstellt:</span> {new Date(org.createdAt).toLocaleDateString('de-DE')}</p>
+                    <p><span className="font-medium">{t('subdomainHeader')}:</span> {org.subdomain || '-'}</p>
+                    <p className="break-all"><span className="font-medium">{t('contactEmailHeader')}:</span> {org.contactEmail || '-'}</p>
+                    <p><span className="font-medium">{t('createdLabel')}</span> {new Date(org.createdAt).toLocaleDateString(dateLocale)}</p>
                   </div>
                 </div>
               ))
@@ -247,12 +251,12 @@ export default function AdminOrganizationsPage() {
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-700">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
-                  Neue Organization erstellen
+                  {t('modalTitle')}
                 </h2>
                 <button
                   onClick={closeCreateModal}
                   className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-                  aria-label="Schließen"
+                  aria-label={t('closeButton')}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -266,12 +270,12 @@ export default function AdminOrganizationsPage() {
                 {/* Organization Details */}
                 <fieldset className="space-y-4">
                   <legend className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
-                    Organization Details
+                    {t('orgDetailsLegend')}
                   </legend>
 
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Organization Name *
+                      {t('orgNameLabel')}
                     </label>
                     <input
                       type="text"
@@ -279,37 +283,37 @@ export default function AdminOrganizationsPage() {
                       onChange={e => setFormData({ ...formData, name: e.target.value })}
                       required
                       minLength={2}
-                      placeholder="z.B. Acme Transportation GmbH"
+                      placeholder={t('orgNamePlaceholder')}
                       className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-white"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Subdomain (optional)
+                      {t('subdomainOptionalLabel')}
                     </label>
                     <input
                       type="text"
                       value={formData.subdomain}
                       onChange={e => setFormData({ ...formData, subdomain: e.target.value })}
-                      placeholder="z.B. acme"
+                      placeholder={t('subdomainPlaceholder')}
                       pattern="[a-z0-9-]+"
                       className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-white"
                     />
                     <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                      Nur Kleinbuchstaben, Zahlen und Bindestriche
+                      {t('subdomainHint')}
                     </p>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Kontakt-Email (optional)
+                      {t('contactEmailOptionalLabel')}
                     </label>
                     <input
                       type="email"
                       value={formData.contactEmail}
                       onChange={e => setFormData({ ...formData, contactEmail: e.target.value })}
-                      placeholder="info@firma.com"
+                      placeholder={t('contactEmailPlaceholder')}
                       className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-white"
                     />
                   </div>
@@ -318,19 +322,19 @@ export default function AdminOrganizationsPage() {
                 {/* Admin User Details */}
                 <fieldset className="space-y-4">
                   <legend className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
-                    Erster Admin-User
+                    {t('adminUserLegend')}
                   </legend>
 
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Admin Email *
+                      {t('adminEmailLabel')}
                     </label>
                     <input
                       type="email"
                       value={formData.adminEmail}
                       onChange={e => setFormData({ ...formData, adminEmail: e.target.value })}
                       required
-                      placeholder="admin@firma.com"
+                      placeholder={t('adminEmailPlaceholder')}
                       className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-white"
                     />
                   </div>
@@ -338,26 +342,26 @@ export default function AdminOrganizationsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                        Vorname (optional)
+                        {t('firstNameOptionalLabel')}
                       </label>
                       <input
                         type="text"
                         value={formData.adminFirstName}
                         onChange={e => setFormData({ ...formData, adminFirstName: e.target.value })}
-                        placeholder="Max"
+                        placeholder={t('firstNamePlaceholder')}
                         className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-white"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                        Nachname (optional)
+                        {t('lastNameOptionalLabel')}
                       </label>
                       <input
                         type="text"
                         value={formData.adminLastName}
                         onChange={e => setFormData({ ...formData, adminLastName: e.target.value })}
-                        placeholder="Mustermann"
+                        placeholder={t('lastNamePlaceholder')}
                         className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-white"
                       />
                     </div>
@@ -365,15 +369,15 @@ export default function AdminOrganizationsPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Rolle in der Organisation
+                      {t('roleInOrgLabel')}
                     </label>
                     <select
                       value={formData.adminRole}
                       onChange={e => setFormData({ ...formData, adminRole: e.target.value as OrganizationRole })}
                       className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-white"
                     >
-                      <option value="owner">Owner (Standard, volle Rechte inkl. Löschen)</option>
-                      <option value="admin">Admin (kann Organisation verwalten, aber nicht löschen)</option>
+                      <option value="owner">{t('ownerOption')}</option>
+                      <option value="admin">{t('adminOption')}</option>
                     </select>
                   </div>
                 </fieldset>
@@ -384,13 +388,13 @@ export default function AdminOrganizationsPage() {
                     onClick={closeCreateModal}
                     className="px-4 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
                   >
-                    Abbrechen
+                    {tCommon('cancel')}
                   </button>
                   <button
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                   >
-                    Organization erstellen
+                    {t('createSubmitButton')}
                   </button>
                 </div>
               </form>
@@ -404,10 +408,10 @@ export default function AdminOrganizationsPage() {
                     </svg>
                     <div>
                       <h3 className="text-lg font-semibold text-green-900 dark:text-green-100">
-                        Organization erfolgreich erstellt!
+                        {t('successTitle')}
                       </h3>
                       <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                        Die Organization wurde angelegt und ein Invite für den Admin wurde generiert.
+                        {t('successBody')}
                       </p>
                     </div>
                   </div>
@@ -415,19 +419,19 @@ export default function AdminOrganizationsPage() {
 
                 {/* Organization Details */}
                 <div className="space-y-3">
-                  <h4 className="font-semibold text-zinc-900 dark:text-white">Organization Details:</h4>
+                  <h4 className="font-semibold text-zinc-900 dark:text-white">{t('orgDetailsTitle')}</h4>
                   <div className="bg-zinc-50 dark:bg-zinc-700/50 rounded-lg p-4 space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm text-zinc-600 dark:text-zinc-400">Name:</span>
+                      <span className="text-sm text-zinc-600 dark:text-zinc-400">{t('nameLabel')}</span>
                       <span className="text-sm font-medium text-zinc-900 dark:text-white">{createdResult.organization.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-zinc-600 dark:text-zinc-400">ID:</span>
+                      <span className="text-sm text-zinc-600 dark:text-zinc-400">{t('idLabel')}</span>
                       <span className="text-sm font-mono text-zinc-900 dark:text-white">{createdResult.organization.id}</span>
                     </div>
                     {createdResult.organization.subdomain && (
                       <div className="flex justify-between">
-                        <span className="text-sm text-zinc-600 dark:text-zinc-400">Subdomain:</span>
+                        <span className="text-sm text-zinc-600 dark:text-zinc-400">{t('subdomainLabel')}</span>
                         <span className="text-sm font-medium text-zinc-900 dark:text-white">{createdResult.organization.subdomain}</span>
                       </div>
                     )}
@@ -436,16 +440,16 @@ export default function AdminOrganizationsPage() {
 
                 {/* Invite Details */}
                 <div className="space-y-3">
-                  <h4 className="font-semibold text-zinc-900 dark:text-white">Admin Invite:</h4>
+                  <h4 className="font-semibold text-zinc-900 dark:text-white">{t('inviteDetailsTitle')}</h4>
                   <div className="bg-zinc-50 dark:bg-zinc-700/50 rounded-lg p-4 space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-sm text-zinc-600 dark:text-zinc-400">Email:</span>
+                      <span className="text-sm text-zinc-600 dark:text-zinc-400">{t('emailLabel')}</span>
                       <span className="text-sm font-medium text-zinc-900 dark:text-white">{createdResult.invite.email}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-zinc-600 dark:text-zinc-400">Läuft ab:</span>
+                      <span className="text-sm text-zinc-600 dark:text-zinc-400">{t('expiresLabel')}</span>
                       <span className="text-sm font-medium text-zinc-900 dark:text-white">
-                        {new Date(createdResult.invite.expiresAt).toLocaleString('de-DE')}
+                        {new Date(createdResult.invite.expiresAt).toLocaleString(dateLocale)}
                       </span>
                     </div>
                   </div>
@@ -453,7 +457,7 @@ export default function AdminOrganizationsPage() {
                   {/* Invite Link Box */}
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Invite-Link (an Admin senden):
+                      {t('inviteLinkLabel')}
                     </label>
                     <div className="flex gap-2">
                       <input
@@ -472,14 +476,14 @@ export default function AdminOrganizationsPage() {
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
-                            Kopiert
+                            {t('copiedLabel')}
                           </>
                         ) : (
                           <>
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                             </svg>
-                            Kopieren
+                            {t('copyButton')}
                           </>
                         )}
                       </button>
@@ -494,7 +498,7 @@ export default function AdminOrganizationsPage() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    Email-Entwurf erstellen
+                    {t('emailDraftButton')}
                   </button>
                 </div>
 
@@ -503,7 +507,7 @@ export default function AdminOrganizationsPage() {
                     onClick={closeCreateModal}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                   >
-                    Schließen
+                    {tCommon('close')}
                   </button>
                 </div>
               </div>

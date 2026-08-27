@@ -3,6 +3,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { createSelfServiceOrganization } from '@/lib/api/organizations'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import type { SubscriptionTier } from '@/lib/types/user'
@@ -17,39 +18,40 @@ interface PlanDefinition {
   highlight?: boolean
 }
 
-const plans: PlanDefinition[] = [
-  {
-    id: 'lieutenant',
-    label: 'Lieutenant',
-    price: 'Kostenlos',
-    maxVehicles: '2',
-    maxMembers: '5',
-    paid: false,
-  },
-  {
-    id: 'captain',
-    label: 'Captain',
-    price: 'CHF 99.- / Monat',
-    maxVehicles: '20',
-    maxMembers: '50',
-    paid: true,
-    highlight: true,
-  },
-  {
-    id: 'general',
-    label: 'General',
-    price: 'CHF 199.- / Monat',
-    maxVehicles: 'Unlimitiert',
-    maxMembers: 'Unlimitiert',
-    paid: true,
-  },
-]
-
 export default function CreateOrganizationOnboardingPage() {
   const { refreshOrganizations, hasOrganization } = useAuth()
   const searchParams = useSearchParams()
   const wasCanceled = searchParams.get('canceled') === '1'
   const backHref = hasOrganization ? '/settings' : '/onboarding'
+  const t = useTranslations('onboardingCreateOrg')
+
+  const plans: PlanDefinition[] = useMemo(() => [
+    {
+      id: 'lieutenant',
+      label: 'Lieutenant',
+      price: t('freeLabel'),
+      maxVehicles: '2',
+      maxMembers: '5',
+      paid: false,
+    },
+    {
+      id: 'captain',
+      label: 'Captain',
+      price: `CHF 99.- ${t('perMonthSuffix')}`,
+      maxVehicles: '20',
+      maxMembers: '50',
+      paid: true,
+      highlight: true,
+    },
+    {
+      id: 'general',
+      label: 'General',
+      price: `CHF 199.- ${t('perMonthSuffix')}`,
+      maxVehicles: t('unlimitedLabel'),
+      maxMembers: t('unlimitedLabel'),
+      paid: true,
+    },
+  ], [t])
 
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionTier>('lieutenant')
   const [organizationName, setOrganizationName] = useState('')
@@ -58,7 +60,7 @@ export default function CreateOrganizationOnboardingPage() {
 
   const currentPlan = useMemo(
     () => plans.find((plan) => plan.id === selectedPlan) ?? plans[0],
-    [selectedPlan]
+    [plans, selectedPlan]
   )
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -66,7 +68,7 @@ export default function CreateOrganizationOnboardingPage() {
     setError(null)
 
     if (!organizationName.trim()) {
-      setError('Bitte gib einen Organisationsnamen ein.')
+      setError(t('nameRequiredError'))
       return
     }
 
@@ -87,7 +89,7 @@ export default function CreateOrganizationOnboardingPage() {
       await refreshOrganizations()
       window.location.href = '/'
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Erstellen der Organisation.')
+      setError(err instanceof Error ? err.message : t('genericError'))
       setLoading(false)
     }
   }
@@ -97,25 +99,25 @@ export default function CreateOrganizationOnboardingPage() {
       <div className="max-w-5xl mx-auto space-y-8">
         <div>
           <Link href={backHref} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-            ← Zurück
+            {t('backLink')}
           </Link>
-          <h1 className="mt-3 text-3xl font-bold text-zinc-900 dark:text-zinc-50">Organisation erstellen</h1>
+          <h1 className="mt-3 text-3xl font-bold text-zinc-900 dark:text-zinc-50">{t('title')}</h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Wähle ein Paket und richte deine Organisation ein. Du wirst automatisch Owner der Organisation.
+            {t('subtitle')}
           </p>
         </div>
 
         {wasCanceled && (
           <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4">
             <p className="text-sm text-amber-800 dark:text-amber-200">
-              Die Zahlung wurde abgebrochen. Du kannst es erneut versuchen oder vorerst mit Lieutenant (kostenlos) starten.
+              {t('canceledMessage')}
             </p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
           <section>
-            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mb-4">1) Subscription wählen</h2>
+            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mb-4">{t('planSectionTitle')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {plans.map((plan) => {
                 const isSelected = plan.id === selectedPlan
@@ -133,14 +135,14 @@ export default function CreateOrganizationOnboardingPage() {
                   >
                     {plan.highlight && (
                       <span className="inline-flex mb-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-600 text-white">
-                        Beliebt
+                        {t('popularBadge')}
                       </span>
                     )}
                     <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{plan.label}</h3>
                     <p className="mt-1 text-blue-700 dark:text-blue-300 font-medium">{plan.price}</p>
                     <ul className="mt-3 text-sm text-zinc-600 dark:text-zinc-400 space-y-1">
-                      <li>{plan.maxVehicles} Fahrzeuge</li>
-                      <li>{plan.maxMembers} Mitarbeiter</li>
+                      <li>{plan.maxVehicles} {t('vehiclesSuffix')}</li>
+                      <li>{plan.maxMembers} {t('membersSuffix')}</li>
                     </ul>
                   </button>
                 )
@@ -149,11 +151,11 @@ export default function CreateOrganizationOnboardingPage() {
           </section>
 
           <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 space-y-4">
-            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">2) Name der Organisation</h2>
+            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{t('nameSectionTitle')}</h2>
 
             <div>
               <label htmlFor="organizationName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Organisationsname
+                {t('nameLabel')}
               </label>
               <input
                 id="organizationName"
@@ -161,7 +163,7 @@ export default function CreateOrganizationOnboardingPage() {
                 value={organizationName}
                 onChange={(event) => setOrganizationName(event.target.value)}
                 className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
-                placeholder="z. B. Muster Logistik GmbH"
+                placeholder={t('namePlaceholder')}
               />
             </div>
           </section>
@@ -178,10 +180,10 @@ export default function CreateOrganizationOnboardingPage() {
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading
-              ? 'Organisation wird erstellt...'
+              ? t('submitCreating')
               : currentPlan.paid
-                ? 'Organisation erstellen & bezahlen'
-                : 'Organisation erstellen'}
+                ? t('submitPay')
+                : t('submitFree')}
           </button>
         </form>
       </div>

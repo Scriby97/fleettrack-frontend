@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { applyTheme, getStoredTheme, setStoredTheme, type ThemePreference } from '@/lib/theme'
 import { useToast } from '@/lib/hooks/useToast'
@@ -12,6 +13,8 @@ export default function SettingsAppearancePage() {
   const router = useRouter()
   const { supabaseUser, loading: authLoading } = useAuth()
   const { toasts, showToast, removeToast } = useToast()
+  const t = useTranslations('settingsAppearance')
+  const tSettings = useTranslations('settings')
 
   const [themePreference, setThemePreference] = useState<ThemePreference>(() => getStoredTheme())
 
@@ -25,7 +28,7 @@ export default function SettingsAppearancePage() {
     setThemePreference(preference)
     setStoredTheme(preference)
     applyTheme(preference)
-    showToast('Ansicht gespeichert', 'success')
+    showToast(t('saveSuccess'), 'success')
   }
 
   if (authLoading) {
@@ -43,22 +46,22 @@ export default function SettingsAppearancePage() {
         <Breadcrumbs
           items={[
             { label: 'Dashboard', href: '/' },
-            { label: 'Einstellungen', href: '/settings' },
-            { label: 'Ansicht' },
+            { label: tSettings('title'), href: '/settings' },
+            { label: t('title') },
           ]}
         />
 
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-            Ansicht
+            {t('title')}
           </h1>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Waehle zwischen Systemstandard, dunklem oder hellem Modus.
+            {t('subtitle')}
           </p>
         </div>
 
         <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-6 space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Ansicht">
+          <div className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label={t('title')}>
             <button
               type="button"
               role="radio"
@@ -70,8 +73,8 @@ export default function SettingsAppearancePage() {
                   : 'border-zinc-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-600'
               }`}
             >
-              <div className="text-sm font-semibold">Systemstandard</div>
-              <div className="text-xs text-zinc-600 dark:text-zinc-400">Folgt deinem Geraet</div>
+              <div className="text-sm font-semibold">{t('systemLabel')}</div>
+              <div className="text-xs text-zinc-600 dark:text-zinc-400">{t('systemDescription')}</div>
             </button>
             <button
               type="button"
@@ -84,8 +87,8 @@ export default function SettingsAppearancePage() {
                   : 'border-zinc-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-600'
               }`}
             >
-              <div className="text-sm font-semibold">Dunkel</div>
-              <div className="text-xs text-zinc-600 dark:text-zinc-400">Schont die Augen</div>
+              <div className="text-sm font-semibold">{t('darkLabel')}</div>
+              <div className="text-xs text-zinc-600 dark:text-zinc-400">{t('darkDescription')}</div>
             </button>
             <button
               type="button"
@@ -98,8 +101,8 @@ export default function SettingsAppearancePage() {
                   : 'border-zinc-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-600'
               }`}
             >
-              <div className="text-sm font-semibold">Hell</div>
-              <div className="text-xs text-zinc-600 dark:text-zinc-400">Heller Hintergrund</div>
+              <div className="text-sm font-semibold">{t('lightLabel')}</div>
+              <div className="text-xs text-zinc-600 dark:text-zinc-400">{t('lightDescription')}</div>
             </button>
           </div>
         </div>

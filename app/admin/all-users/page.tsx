@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { createInvite, deleteInvite, getOrganizationInvites } from '@/lib/api/invites'
 import { getUsers, sendUserResetPassword } from '@/lib/api/users'
@@ -10,23 +11,28 @@ import type { InviteEntity, InviteStatus, Organization, User } from '@/lib/types
 import { useToast } from '@/lib/hooks/useToast'
 import { ToastContainer } from '@/app/components/Toast'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
-
-const STATUS_LABELS: Record<InviteStatus, string> = {
-  pending: 'Ausstehend',
-  used: 'Eingeloest',
-  expired: 'Abgelaufen',
-}
-
-const STATUS_CLASSES: Record<InviteStatus, string> = {
-  pending: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200',
-  used: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200',
-  expired: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200',
-}
+import { useDateLocale } from '@/lib/i18n/formatDate'
 
 export default function AdminAllUsersPage() {
   const router = useRouter()
   const { loading: authLoading, isAdmin } = useAuth()
   const { toasts, showToast, removeToast } = useToast()
+  const t = useTranslations('adminAllUsers')
+  const tInv = useTranslations('inviteManagement')
+  const tCommon = useTranslations('common')
+  const dateLocale = useDateLocale()
+
+  const STATUS_LABELS: Record<InviteStatus, string> = {
+    pending: tInv('pendingStatus'),
+    used: tInv('usedStatus'),
+    expired: tInv('expiredStatus'),
+  }
+
+  const STATUS_CLASSES: Record<InviteStatus, string> = {
+    pending: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200',
+    used: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200',
+    expired: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200',
+  }
 
   const [activeTab, setActiveTab] = useState<'users' | 'invites'>('users')
   const [users, setUsers] = useState<User[]>([])
@@ -72,7 +78,7 @@ export default function AdminAllUsersPage() {
           setOrganizations(orgData)
           setUsers(userData)
         } catch (err) {
-          const message = err instanceof Error ? err.message : 'Fehler beim Laden der Daten'
+          const message = err instanceof Error ? err.message : t('loadDataError')
           setError(message)
         } finally {
           setLoading(false)
@@ -81,6 +87,7 @@ export default function AdminAllUsersPage() {
 
       loadData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, isAdmin, router])
 
   useEffect(() => {
@@ -95,7 +102,7 @@ export default function AdminAllUsersPage() {
         const data = await getOrganizationInvites()
         setAllInvites(Array.isArray(data) ? data : [])
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Fehler beim Laden der Einladungen'
+        const message = err instanceof Error ? err.message : tInv('loadingInvites')
         setInvitesError(message)
       } finally {
         setInvitesLoading(false)
@@ -103,6 +110,7 @@ export default function AdminAllUsersPage() {
     }
 
     fetchInvites()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, activeTab, isAdmin])
 
   const filteredUsers = useMemo(() => {
@@ -156,13 +164,13 @@ export default function AdminAllUsersPage() {
     setInvitesError(null)
 
     if (!inviteOrgId) {
-      setInvitesError('Bitte zuerst eine Organization waehlen')
+      setInvitesError(tInv('selectOrgFirstError'))
       return
     }
 
     const email = inviteEmail.trim()
     if (!email) {
-      setInvitesError('Bitte eine Email-Adresse eingeben')
+      setInvitesError(tInv('emailRequiredError'))
       return
     }
 
@@ -174,9 +182,9 @@ export default function AdminAllUsersPage() {
       setCreatedInviteLink(inviteLinkForToken(invite.token))
       setInviteEmail('')
       setInviteRole('employee')
-      showToast('Einladung erstellt', 'success')
+      showToast(tInv('createSuccess'), 'success')
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Erstellen der Einladung'
+      const message = err instanceof Error ? err.message : tInv('createErrorGeneric')
       setInvitesError(message)
       showToast(message, 'error')
     } finally {
@@ -190,7 +198,7 @@ export default function AdminAllUsersPage() {
       setCopiedId(id)
       setTimeout(() => setCopiedId(null), 2000)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Kopieren'
+      const message = err instanceof Error ? err.message : tInv('copyErrorGeneric')
       setInvitesError(message)
     }
   }
@@ -200,7 +208,7 @@ export default function AdminAllUsersPage() {
       await deleteInvite(inviteId, inviteOrgId)
       setAllInvites((prev) => prev.filter((invite) => invite.id !== inviteId))
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Loeschen der Einladung'
+      const message = err instanceof Error ? err.message : tInv('deleteErrorGeneric')
       setInvitesError(message)
     }
   }
@@ -222,10 +230,10 @@ export default function AdminAllUsersPage() {
     setSubmittingId(confirmUser.id)
     try {
       await sendUserResetPassword(confirmUser.id)
-      showToast(`Reset Email gesendet an ${confirmUser.email}`, 'success')
+      showToast(t('resetSuccessToast', { email: confirmUser.email }), 'success')
       setConfirmUser(null)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Fehler beim Senden der Reset-Email'
+      const message = err instanceof Error ? err.message : t('resetErrorGeneric')
       showToast(message, 'error')
     } finally {
       setSubmittingId(null)
@@ -248,15 +256,15 @@ export default function AdminAllUsersPage() {
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 p-4 sm:p-8">
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="max-w-6xl mx-auto space-y-6">
-        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: 'Alle Benutzer' }]} />
+        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: t('title') }]} />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-              Alle Benutzer
+              {t('title')}
             </h1>
             <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400">
-              Benutzer aller Organisationen verwalten und Einladungen erstellen
+              {t('subtitle')}
             </p>
           </div>
           {activeTab === 'invites' && (
@@ -264,7 +272,7 @@ export default function AdminAllUsersPage() {
               onClick={() => setShowInviteModal(true)}
               className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
             >
-              + Einladung erstellen
+              {tInv('createButton')}
             </button>
           )}
         </div>
@@ -278,7 +286,7 @@ export default function AdminAllUsersPage() {
                 : 'border-zinc-200 text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-600'
             }`}
           >
-            Benutzer
+            {t('usersTabLabel')}
           </button>
           <button
             onClick={() => setActiveTab('invites')}
@@ -288,7 +296,7 @@ export default function AdminAllUsersPage() {
                 : 'border-zinc-200 text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-600'
             }`}
           >
-            Einladungen
+            {tInv('tabLabel')}
           </button>
         </div>
 
@@ -296,7 +304,7 @@ export default function AdminAllUsersPage() {
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4 sm:p-6 space-y-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Benutzer</h2>
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('usersTabLabel')}</h2>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{filteredUsers.length}</span>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -305,7 +313,7 @@ export default function AdminAllUsersPage() {
                   onChange={(event) => setSelectedOrgId(event.target.value)}
                   className="w-full sm:w-56 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm dark:bg-zinc-700 dark:text-zinc-100"
                 >
-                  <option value="">Alle Organizations</option>
+                  <option value="">{tInv('allOrganizationsOption')}</option>
                   {organizations.map((org) => (
                     <option key={org.id} value={org.id}>
                       {org.name}
@@ -315,7 +323,7 @@ export default function AdminAllUsersPage() {
                 <input
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Suche nach Name oder Email"
+                  placeholder={t('searchPlaceholder')}
                   className="w-full sm:w-64 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm dark:bg-zinc-700 dark:text-zinc-100"
                 />
               </div>
@@ -332,18 +340,18 @@ export default function AdminAllUsersPage() {
               <table className="w-full text-sm">
                 <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                   <tr>
-                    <th className="px-4 py-3 text-left font-medium">Name</th>
-                    <th className="px-4 py-3 text-left font-medium">Email</th>
-                    <th className="px-4 py-3 text-left font-medium">Rolle</th>
-                    <th className="px-4 py-3 text-left font-medium">Organization</th>
-                    <th className="px-4 py-3 text-left font-medium">Aktionen</th>
+                    <th className="px-4 py-3 text-left font-medium">{t('nameHeader')}</th>
+                    <th className="px-4 py-3 text-left font-medium">{t('emailHeader')}</th>
+                    <th className="px-4 py-3 text-left font-medium">{t('roleHeader')}</th>
+                    <th className="px-4 py-3 text-left font-medium">{t('organizationHeader')}</th>
+                    <th className="px-4 py-3 text-left font-medium">{t('actionsHeader')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
                   {filteredUsers.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-4 py-6 text-center text-zinc-500 dark:text-zinc-400">
-                        Keine Benutzer gefunden.
+                        {t('noUsersFound')}
                       </td>
                     </tr>
                   ) : (
@@ -367,7 +375,7 @@ export default function AdminAllUsersPage() {
                             className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                             disabled={submittingId === user.id}
                           >
-                            {submittingId === user.id ? 'Sende...' : 'Passwort-Reset senden'}
+                            {submittingId === user.id ? t('sendingLabel') : t('resetPasswordButton')}
                           </button>
                         </td>
                       </tr>
@@ -381,7 +389,7 @@ export default function AdminAllUsersPage() {
             <div className="md:hidden space-y-3">
               {filteredUsers.length === 0 ? (
                 <div className="py-6 text-center text-zinc-500 dark:text-zinc-400">
-                  Keine Benutzer gefunden.
+                  {t('noUsersFound')}
                 </div>
               ) : (
                 filteredUsers.map((user) => (
@@ -399,10 +407,10 @@ export default function AdminAllUsersPage() {
                     </div>
                     <div className="text-sm text-zinc-600 dark:text-zinc-400 space-y-1">
                       <p className="capitalize">
-                        <span className="font-medium">Rolle:</span> {user.role}
+                        <span className="font-medium">{t('roleHeader')}:</span> {user.role}
                       </p>
                       <p>
-                        <span className="font-medium">Organization:</span> {user.organization?.name ?? '-'}
+                        <span className="font-medium">{t('organizationLabel')}</span> {user.organization?.name ?? '-'}
                       </p>
                     </div>
                     <div className="pt-1">
@@ -411,7 +419,7 @@ export default function AdminAllUsersPage() {
                         className="w-full px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                         disabled={submittingId === user.id}
                       >
-                        {submittingId === user.id ? 'Sende...' : 'Passwort-Reset senden'}
+                        {submittingId === user.id ? t('sendingLabel') : t('resetPasswordButton')}
                       </button>
                     </div>
                   </div>
@@ -425,7 +433,7 @@ export default function AdminAllUsersPage() {
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4 sm:p-6 space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Einladungen</h2>
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{tInv('sectionTitle')}</h2>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">{sortedInvites.length}</span>
               </div>
               <select
@@ -433,7 +441,7 @@ export default function AdminAllUsersPage() {
                 onChange={(event) => setInviteOrgId(event.target.value)}
                 className="w-full sm:w-64 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm dark:bg-zinc-700 dark:text-zinc-100"
               >
-                <option value="">Alle Organizations</option>
+                <option value="">{tInv('allOrganizationsOption')}</option>
                 {organizations.map((org) => (
                   <option key={org.id} value={org.id}>
                     {org.name}
@@ -449,7 +457,7 @@ export default function AdminAllUsersPage() {
             )}
 
             {invitesLoading ? (
-              <div className="py-8 text-center text-zinc-500 dark:text-zinc-400">Lade Einladungen...</div>
+              <div className="py-8 text-center text-zinc-500 dark:text-zinc-400">{tInv('loadingInvites')}</div>
             ) : (
               <>
                 {/* Desktop Tabelle */}
@@ -457,18 +465,18 @@ export default function AdminAllUsersPage() {
                   <table className="w-full text-sm">
                     <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                       <tr>
-                        <th className="px-4 py-3 text-left font-medium">Email</th>
-                        <th className="px-4 py-3 text-left font-medium">Rolle</th>
-                        <th className="px-4 py-3 text-left font-medium">Status</th>
-                        <th className="px-4 py-3 text-left font-medium">Ablauf</th>
-                        <th className="px-4 py-3 text-left font-medium">Aktionen</th>
+                        <th className="px-4 py-3 text-left font-medium">{tInv('emailHeader')}</th>
+                        <th className="px-4 py-3 text-left font-medium">{tInv('roleHeader')}</th>
+                        <th className="px-4 py-3 text-left font-medium">{tInv('statusHeader')}</th>
+                        <th className="px-4 py-3 text-left font-medium">{tInv('expiryHeader')}</th>
+                        <th className="px-4 py-3 text-left font-medium">{tInv('actionsHeader')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
                       {sortedInvites.length === 0 ? (
                         <tr>
                           <td colSpan={5} className="px-4 py-6 text-center text-zinc-500 dark:text-zinc-400">
-                            Keine Einladungen gefunden.
+                            {tInv('noInvitesFound')}
                           </td>
                         </tr>
                       ) : (
@@ -491,7 +499,7 @@ export default function AdminAllUsersPage() {
                                 </span>
                               </td>
                               <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
-                                {new Date(invite.expiresAt).toLocaleDateString('de-DE')}
+                                {new Date(invite.expiresAt).toLocaleDateString(dateLocale)}
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex flex-wrap gap-2">
@@ -501,7 +509,7 @@ export default function AdminAllUsersPage() {
                                           disabled={isCopyDisabled}
                                           className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                                         >
-                                          {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
+                                          {copiedId === invite.id ? tInv('copiedLabel') : tInv('copyLinkButton')}
                                         </button>
                                       )}
 
@@ -510,7 +518,7 @@ export default function AdminAllUsersPage() {
                                           onClick={() => handleDeleteInvite(invite.id)}
                                           className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
                                         >
-                                          Loeschen
+                                          {tInv('deleteButton')}
                                         </button>
                                       )}
                                 </div>
@@ -527,7 +535,7 @@ export default function AdminAllUsersPage() {
                 <div className="md:hidden space-y-3">
                   {sortedInvites.length === 0 ? (
                     <div className="py-6 text-center text-zinc-500 dark:text-zinc-400">
-                      Keine Einladungen gefunden.
+                      {tInv('noInvitesFound')}
                     </div>
                   ) : (
                     sortedInvites.map((invite) => {
@@ -546,7 +554,7 @@ export default function AdminAllUsersPage() {
                                 {invite.email}
                               </p>
                               <p className="text-sm text-zinc-600 dark:text-zinc-400 capitalize mt-1">
-                                Rolle: {invite.role}
+                                {tInv('roleColumnLabel')} {invite.role}
                               </p>
                             </div>
                             <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${STATUS_CLASSES[status]}`}>
@@ -554,7 +562,7 @@ export default function AdminAllUsersPage() {
                             </span>
                           </div>
                           <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                            <span className="font-medium">Ablauf:</span> {new Date(invite.expiresAt).toLocaleDateString('de-DE')}
+                            <span className="font-medium">{tInv('expiryColumnLabel')}</span> {new Date(invite.expiresAt).toLocaleDateString(dateLocale)}
                           </div>
                           <div className="flex flex-wrap gap-2 pt-1">
                             {status === 'pending' && (
@@ -563,7 +571,7 @@ export default function AdminAllUsersPage() {
                                 disabled={isCopyDisabled}
                                 className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                               >
-                                {copiedId === invite.id ? 'Kopiert' : 'Link kopieren'}
+                                {copiedId === invite.id ? tInv('copiedLabel') : tInv('copyLinkButton')}
                               </button>
                             )}
 
@@ -572,7 +580,7 @@ export default function AdminAllUsersPage() {
                                 onClick={() => handleDeleteInvite(invite.id)}
                                 className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
                               >
-                                Loeschen
+                                {tInv('deleteButton')}
                               </button>
                             )}
                           </div>
@@ -592,10 +600,10 @@ export default function AdminAllUsersPage() {
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl max-w-md w-full">
             <div className="p-6 space-y-4">
               <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                Reset Email senden
+                {t('resetConfirmTitle')}
               </h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Reset Email an <span className="font-medium">{confirmUser.email}</span> senden?
+                {t('resetConfirmMessage', { email: confirmUser.email })}
               </p>
               <div className="flex gap-3 justify-end">
                 <button
@@ -603,14 +611,14 @@ export default function AdminAllUsersPage() {
                   className="px-4 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                   disabled={submittingId === confirmUser.id}
                 >
-                  Abbrechen
+                  {tCommon('cancel')}
                 </button>
                 <button
                   onClick={handleConfirmReset}
                   className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
                   disabled={submittingId === confirmUser.id}
                 >
-                  {submittingId === confirmUser.id ? 'Sende...' : 'Reset senden'}
+                  {submittingId === confirmUser.id ? t('sendingLabel') : t('resetPasswordButton')}
                 </button>
               </div>
             </div>
@@ -623,7 +631,7 @@ export default function AdminAllUsersPage() {
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl max-w-lg w-full">
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                Neue Einladung
+                {tInv('modalTitle')}
               </h2>
               <button
                 onClick={handleCloseInviteModal}
@@ -637,7 +645,7 @@ export default function AdminAllUsersPage() {
               <form onSubmit={handleCreateInvite} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    Organization
+                    {tInv('organizationLabel')}
                   </label>
                   <select
                     value={inviteOrgId}
@@ -645,7 +653,7 @@ export default function AdminAllUsersPage() {
                     required
                     className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg dark:bg-zinc-700 dark:text-zinc-100"
                   >
-                    <option value="">Bitte waehlen</option>
+                    <option value="">{tInv('pleaseSelectOrgOption')}</option>
                     {organizations.map((org) => (
                       <option key={org.id} value={org.id}>
                         {org.name}
@@ -656,7 +664,7 @@ export default function AdminAllUsersPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    Email
+                    {tInv('emailLabel')}
                   </label>
                   <input
                     type="email"
@@ -669,15 +677,15 @@ export default function AdminAllUsersPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    Rolle
+                    {tInv('roleLabel')}
                   </label>
                   <select
                     value={inviteRole}
                     onChange={(event) => setInviteRole(event.target.value as 'admin' | 'employee')}
                     className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg dark:bg-zinc-700 dark:text-zinc-100"
                   >
-                    <option value="employee">Mitarbeiter</option>
-                    <option value="admin">Admin</option>
+                    <option value="employee">{tInv('employeeOption')}</option>
+                    <option value="admin">{tInv('adminOption')}</option>
                   </select>
                 </div>
 
@@ -686,14 +694,14 @@ export default function AdminAllUsersPage() {
                   disabled={inviteSubmitting}
                   className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
                 >
-                  {inviteSubmitting ? 'Erstelle...' : 'Einladung erstellen'}
+                  {inviteSubmitting ? tInv('creatingLabel') : tInv('createSubmitButton')}
                 </button>
               </form>
 
               {createdInviteLink && (
                 <div className="mt-6 space-y-3">
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Invite Link
+                    {tInv('inviteLinkLabel')}
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -708,7 +716,7 @@ export default function AdminAllUsersPage() {
                       onClick={() => handleCopyLink(createdInviteLink, 'created')}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                      {copiedId === 'created' ? 'Kopiert' : 'Copy'}
+                      {copiedId === 'created' ? tInv('copiedLabel') : tInv('copyLinkButton')}
                     </button>
                   </div>
                 </div>
@@ -720,7 +728,7 @@ export default function AdminAllUsersPage() {
                   onClick={handleCloseInviteModal}
                   className="w-full px-4 py-2 bg-zinc-900 dark:bg-zinc-700 text-white rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-600 transition-colors"
                 >
-                  Done
+                  {tInv('doneButton')}
                 </button>
               </div>
             </div>

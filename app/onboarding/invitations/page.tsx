@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { getMyInvites, acceptInviteAsExistingUser, declineInviteAsExistingUser } from '@/lib/api/invites'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import type { PendingInvite } from '@/lib/types/user'
@@ -10,6 +11,7 @@ import type { PendingInvite } from '@/lib/types/user'
 export default function OnboardingInvitationsPage() {
   const router = useRouter()
   const { refreshOrganizations } = useAuth()
+  const t = useTranslations('onboardingInvitations')
 
   const [invites, setInvites] = useState<PendingInvite[]>([])
   const [loading, setLoading] = useState(true)
@@ -24,7 +26,7 @@ export default function OnboardingInvitationsPage() {
         if (!cancelled) setInvites(data)
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Fehler beim Laden der Einladungen')
+        if (!cancelled) setError(err instanceof Error ? err.message : t('loadError'))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -33,6 +35,7 @@ export default function OnboardingInvitationsPage() {
     return () => {
       cancelled = true
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleAccept = async (token: string) => {
@@ -43,7 +46,7 @@ export default function OnboardingInvitationsPage() {
       await refreshOrganizations()
       router.push('/')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Annehmen der Einladung')
+      setError(err instanceof Error ? err.message : t('acceptError'))
       setProcessingToken(null)
     }
   }
@@ -55,7 +58,7 @@ export default function OnboardingInvitationsPage() {
       await declineInviteAsExistingUser(token)
       setInvites((prev) => prev.filter((invite) => invite.token !== token))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Ablehnen der Einladung')
+      setError(err instanceof Error ? err.message : t('declineError'))
     } finally {
       setProcessingToken(null)
     }
@@ -66,11 +69,11 @@ export default function OnboardingInvitationsPage() {
       <div className="max-w-2xl w-full space-y-6">
         <div>
           <Link href="/onboarding" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-            ← Zurück
+            {t('backLink')}
           </Link>
-          <h1 className="mt-3 text-3xl font-bold text-zinc-900 dark:text-zinc-50">Organisationseinladungen</h1>
+          <h1 className="mt-3 text-3xl font-bold text-zinc-900 dark:text-zinc-50">{t('title')}</h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Diese Einladungen wurden an deine Email-Adresse geschickt. Nimm eine an oder lehne sie ab.
+            {t('subtitle')}
           </p>
         </div>
 
@@ -89,10 +92,10 @@ export default function OnboardingInvitationsPage() {
         {!loading && invites.length === 0 && (
           <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 text-center">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Aktuell liegen keine offenen Einladungen für dich vor.
+              {t('noInvitesMessage')}
             </p>
             <Link href="/onboarding" className="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline">
-              Zurück zur Übersicht
+              {t('backToOverview')}
             </Link>
           </div>
         )}
@@ -107,10 +110,10 @@ export default function OnboardingInvitationsPage() {
                 {invite.organization.name}
               </h2>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                Rolle: <span className="font-medium">{invite.role}</span>
+                {t('roleLabel')} <span className="font-medium">{invite.role}</span>
               </p>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Läuft ab: {new Date(invite.expiresAt).toLocaleDateString()}
+                {t('expiresLabel')} {new Date(invite.expiresAt).toLocaleDateString()}
               </p>
 
               <div className="mt-4 flex gap-3">
@@ -119,14 +122,14 @@ export default function OnboardingInvitationsPage() {
                   disabled={processingToken === invite.token}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {processingToken === invite.token ? 'Wird verarbeitet...' : 'Annehmen'}
+                  {processingToken === invite.token ? t('accepting') : t('acceptButton')}
                 </button>
                 <button
                   onClick={() => handleDecline(invite.token)}
                   disabled={processingToken === invite.token}
                   className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-900 dark:text-zinc-100 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Ablehnen
+                  {t('declineButton')}
                 </button>
               </div>
             </div>
