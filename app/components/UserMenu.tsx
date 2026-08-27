@@ -6,15 +6,9 @@ import { useRouter } from 'next/navigation'
 import type { FC } from 'react'
 
 const UserMenu: FC = () => {
-  const { supabaseUser, userProfile, signOut, isAdmin, userRole, organization } = useAuth()
+  const { supabaseUser, userProfile, isAdmin, userRole, organization } = useAuth()
   const { organizations, selectedOrgId, setSelectedOrgId, selectedOrganizationRole } = useOrganization()
   const router = useRouter()
-
-  const handleSignOut = async () => {
-    await signOut()
-    router.push('/login')
-    router.refresh()
-  }
 
   if (!supabaseUser) return null
 
@@ -85,14 +79,6 @@ const UserMenu: FC = () => {
         className="w-full px-4 py-2 text-sm bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-lg transition-colors text-left"
       >
         ⚙️ Einstellungen
-      </button>
-
-      {/* Sign Out Button */}
-      <button
-        onClick={handleSignOut}
-        className="w-full px-4 py-2 text-sm bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-900 dark:text-zinc-100 rounded-lg transition-colors"
-      >
-        Abmelden
       </button>
     </div>
   )

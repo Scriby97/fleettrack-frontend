@@ -10,8 +10,9 @@ import Breadcrumbs from '@/app/components/Breadcrumbs'
 
 export default function SettingsAccountPage() {
   const router = useRouter()
-  const { supabaseUser, loading: authLoading } = useAuth()
+  const { supabaseUser, loading: authLoading, signOut } = useAuth()
   const { toasts, showToast, removeToast } = useToast()
+  const [signingOut, setSigningOut] = useState(false)
 
   const [formData, setFormData] = useState({
     newPassword: '',
@@ -53,6 +54,13 @@ export default function SettingsAccountPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleSignOut = async () => {
+    setSigningOut(true)
+    await signOut()
+    router.push('/login')
+    router.refresh()
   }
 
   if (authLoading) {
@@ -153,6 +161,22 @@ export default function SettingsAccountPage() {
                 {submitting ? 'Bitte warten...' : 'Passwort aendern'}
               </button>
             </form>
+          </section>
+
+          <section className="border-t border-zinc-200 dark:border-zinc-700 pt-6 space-y-3">
+            <div>
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Sitzung</h2>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                Auf diesem Gerät abmelden.
+              </p>
+            </div>
+            <button
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="px-5 py-2.5 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-900 dark:text-zinc-100 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {signingOut ? 'Wird abgemeldet...' : 'Abmelden'}
+            </button>
           </section>
         </div>
       </div>
