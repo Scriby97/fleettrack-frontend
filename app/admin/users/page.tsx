@@ -11,6 +11,7 @@ import { getUsers, sendUserResetPassword } from '@/lib/api/users'
 import { getOrganizationMembers, updateMemberRole, transferOwnership } from '@/lib/api/organizationMembers'
 import type { InviteEntity, InviteStatus, OrganizationMemberDetail, User } from '@/lib/types/user'
 import { useDateLocale } from '@/lib/i18n/formatDate'
+import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 
 export default function UsersPage() {
   const router = useRouter()
@@ -23,6 +24,7 @@ export default function UsersPage() {
   const tMember = useTranslations('memberManagement')
   const tCommon = useTranslations('common')
   const dateLocale = useDateLocale()
+  const getApiErrorMessage = useApiErrorMessage()
 
   const STATUS_LABELS: Record<InviteStatus, string> = {
     pending: tInv('pendingStatus'),
@@ -96,28 +98,19 @@ export default function UsersPage() {
       if (inviteResult.status === 'fulfilled') {
         setInvites(inviteResult.value)
       } else {
-        const message = inviteResult.reason instanceof Error
-          ? inviteResult.reason.message
-          : t('loadInvitesError')
-        setError(message)
+        setError(getApiErrorMessage(inviteResult.reason, t('loadInvitesError')))
       }
 
       if (userResult.status === 'fulfilled') {
         setUsers(userResult.value)
       } else {
-        const message = userResult.reason instanceof Error
-          ? userResult.reason.message
-          : t('loadUsersError')
-        setUsersError(message)
+        setUsersError(getApiErrorMessage(userResult.reason, t('loadUsersError')))
       }
 
       if (memberResult.status === 'fulfilled') {
         setMembers(memberResult.value)
       } else {
-        const message = memberResult.reason instanceof Error
-          ? memberResult.reason.message
-          : t('loadMembersError')
-        setMembersError(message)
+        setMembersError(getApiErrorMessage(memberResult.reason, t('loadMembersError')))
       }
 
       setLoading(false)
@@ -133,7 +126,7 @@ export default function UsersPage() {
       const result = await getOrganizationMembers(selectedOrgId)
       setMembers(result)
     } catch (err) {
-      const message = err instanceof Error ? err.message : tMember('loadErrorGeneric')
+      const message = getApiErrorMessage(err, tMember('loadErrorGeneric'))
       setMembersError(message)
     }
   }
@@ -151,7 +144,7 @@ export default function UsersPage() {
       await refetchMembers()
       await refreshOrganizations()
     } catch (err) {
-      const message = err instanceof Error ? err.message : tMember('promoteErrorGeneric')
+      const message = getApiErrorMessage(err, tMember('promoteErrorGeneric'))
       setMembersError(message)
     } finally {
       setMemberActionId(null)
@@ -169,7 +162,7 @@ export default function UsersPage() {
       await refetchMembers()
       await refreshOrganizations()
     } catch (err) {
-      const message = err instanceof Error ? err.message : tMember('demoteErrorGeneric')
+      const message = getApiErrorMessage(err, tMember('demoteErrorGeneric'))
       setMembersError(message)
     } finally {
       setMemberActionId(null)
@@ -187,7 +180,7 @@ export default function UsersPage() {
       await refetchMembers()
       await refreshOrganizations()
     } catch (err) {
-      const message = err instanceof Error ? err.message : tMember('transferErrorGeneric')
+      const message = getApiErrorMessage(err, tMember('transferErrorGeneric'))
       setMembersError(message)
     } finally {
       setMemberActionId(null)
@@ -224,7 +217,7 @@ export default function UsersPage() {
       setInviteEmail('')
       setInviteRole('employee')
     } catch (err) {
-      const message = err instanceof Error ? err.message : tInv('createErrorGeneric')
+      const message = getApiErrorMessage(err, tInv('createErrorGeneric'))
       setError(message)
     } finally {
       setSubmitting(false)
@@ -237,7 +230,7 @@ export default function UsersPage() {
       setCopiedId(id)
       setTimeout(() => setCopiedId(null), 2000)
     } catch (err) {
-      const message = err instanceof Error ? err.message : tInv('copyErrorGeneric')
+      const message = getApiErrorMessage(err, tInv('copyErrorGeneric'))
       setError(message)
     }
   }
@@ -247,7 +240,7 @@ export default function UsersPage() {
       await deleteInvite(inviteId, selectedOrgId ?? undefined)
       setInvites((prev) => prev.filter((invite) => invite.id !== inviteId))
     } catch (err) {
-      const message = err instanceof Error ? err.message : tInv('deleteErrorGeneric')
+      const message = getApiErrorMessage(err, tInv('deleteErrorGeneric'))
       setError(message)
     }
   }
@@ -298,7 +291,7 @@ export default function UsersPage() {
       setResetNotice(t('resetSuccessNotice', { email: confirmUser.email }))
       setConfirmUser(null)
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('loadUsersError')
+      const message = getApiErrorMessage(err, t('loadUsersError'))
       setUsersError(message)
     } finally {
       setSubmittingId(null)

@@ -4,9 +4,11 @@ import { useState, useCallback, useEffect, useRef, type FC, type FormEvent } fro
 import { useTranslations } from 'next-intl';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
+import { throwApiError } from '@/lib/api/ApiError';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
+import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { ToastContainer } from './Toast';
 
 interface Vehicle {
@@ -70,6 +72,7 @@ const CreateUsage: FC = () => {
   const { toasts, showToast, removeToast } = useToast();
   const t = useTranslations('createUsage');
   const tCommon = useTranslations('common');
+  const getApiErrorMessage = useApiErrorMessage();
 
   const getTodayDate = () => {
     const today = new Date();
@@ -241,8 +244,7 @@ const CreateUsage: FC = () => {
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`API-Fehler ${res.status}: ${text}`);
+        await throwApiError(res, `API-Fehler ${res.status}`);
       }
 
       await res.json();
@@ -262,7 +264,7 @@ const CreateUsage: FC = () => {
         setError(message);
         showToast(message, 'error');
       } else {
-        setError(err instanceof Error ? err.message : t('saveErrorGeneric'));
+        setError(getApiErrorMessage(err, t('saveErrorGeneric')));
         showToast(t('saveErrorToast'), 'error');
       }
     } finally {

@@ -10,6 +10,7 @@ import { CreateOrganizationRequest, CreateOrganizationResponse, Organization, Or
 import { useToast } from '@/lib/hooks/useToast'
 import { ToastContainer } from '@/app/components/Toast'
 import { useDateLocale } from '@/lib/i18n/formatDate'
+import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 
 export default function AdminOrganizationsPage() {
   const { supabaseUser, isAdmin, loading: authLoading } = useAuth()
@@ -18,6 +19,7 @@ export default function AdminOrganizationsPage() {
   const t = useTranslations('adminOrganizations')
   const tCommon = useTranslations('common')
   const dateLocale = useDateLocale()
+  const getApiErrorMessage = useApiErrorMessage()
 
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [loading, setLoading] = useState(true)
@@ -81,7 +83,7 @@ export default function AdminOrganizationsPage() {
       loadOrganizations()
     } catch (error: unknown) {
       console.error('Fehler beim Erstellen der Organisation:', error)
-      showToast(t('createErrorPrefix') + (error instanceof Error ? error.message : t('unknownError')), 'error')
+      showToast(t('createErrorPrefix') + getApiErrorMessage(error, t('unknownError')), 'error')
     }
   }
 

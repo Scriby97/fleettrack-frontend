@@ -4,9 +4,11 @@ import { useState, useEffect, type FC, type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
+import { throwApiError } from '@/lib/api/ApiError';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
+import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { ToastContainer } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
 
@@ -183,6 +185,7 @@ const FlottenUebersicht: FC = () => {
   const { toasts, showToast, removeToast } = useToast();
   const t = useTranslations('fleetOverview');
   const tCommon = useTranslations('common');
+  const getApiErrorMessage = useApiErrorMessage();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [statsMap, setStatsMap] = useState<Record<string, { hours: number; fuelLiters: number }>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -336,8 +339,7 @@ const FlottenUebersicht: FC = () => {
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`API error ${res.status}: ${text}`);
+        await throwApiError(res, `API error ${res.status}`);
       }
 
       const updatedVehicle = await res.json();
@@ -364,7 +366,7 @@ const FlottenUebersicht: FC = () => {
       showToast(t('updateSuccess'), 'success');
     } catch (err) {
       console.error('Fehler beim Aktualisieren des Fahrzeugs:', err);
-      setError(err instanceof Error ? err.message : t('updateErrorGeneric'));
+      setError(getApiErrorMessage(err, t('updateErrorGeneric')));
       showToast(t('updateErrorToast'), 'error');
     } finally {
       setIsSubmitting(false);
@@ -378,14 +380,14 @@ const FlottenUebersicht: FC = () => {
       });
 
       if (!res.ok) {
-        throw new Error(t('deleteErrorGeneric', { status: res.status }));
+        await throwApiError(res, t('deleteErrorGeneric', { status: res.status }));
       }
 
       setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== id));
       showToast(t('deleteSuccess'), 'success');
     } catch (err) {
       console.error('Fehler beim Löschen des Fahrzeugs:', err);
-      showToast(t('deleteErrorToast'), 'error');
+      showToast(getApiErrorMessage(err, t('deleteErrorToast')), 'error');
     }
   };
 

@@ -1,5 +1,6 @@
 import { authenticatedFetch } from './authenticatedFetch';
 import { buildApiUrl } from './url';
+import { throwApiError } from './ApiError';
 
 export interface Creator {
   id: string;
@@ -51,7 +52,7 @@ export async function getUsagesWithVehicles(
   const response = await authenticatedFetch(url.toString());
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    await throwApiError(response, `HTTP ${response.status}`);
   }
 
   const data: GetUsagesWithVehiclesResponse = await response.json();

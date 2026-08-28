@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, useRef, useCallback, Re
 import { getAllOrganizations } from '@/lib/api/organizations';
 import type { Organization, OrganizationRole } from '@/lib/types/user';
 import { useAuth } from '@/lib/auth/AuthProvider';
+import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 
 const SELECTED_ORG_STORAGE_KEY = 'fleettrack:selectedOrgId';
 
@@ -32,6 +33,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const [selectedOrgId, setSelectedOrgIdState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const getApiErrorMessage = useApiErrorMessage();
   // Use a ref so loading once doesn't add itself to the effect dependency array
   const hasLoadedRef = useRef(false);
 
@@ -66,7 +68,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         setSelectedOrgIdState((current) => current ?? orgs[0]?.id ?? null);
       } catch (err) {
         console.error('Fehler beim Laden der Organisationen:', err);
-        setError(err instanceof Error ? err.message : 'Fehler beim Laden der Organisationen');
+        setError(getApiErrorMessage(err, 'Fehler beim Laden der Organisationen'));
       } finally {
         setIsLoading(false);
       }

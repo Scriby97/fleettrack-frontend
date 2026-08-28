@@ -6,10 +6,12 @@ import { useDateLocale } from '@/lib/i18n/formatDate';
 import CalendarView from './CalendarView';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
+import { throwApiError } from '@/lib/api/ApiError';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { getUsagesWithVehicles } from '@/lib/api/usages';
 import { useToast } from '@/lib/hooks/useToast';
+import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { ToastContainer } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
 
@@ -140,6 +142,7 @@ const UebersichtEintraege: FC = () => {
   const { organizations, selectedOrgId, setSelectedOrgId, canManageSelectedOrganization } = useOrganization();
   const t = useTranslations('usagesOverview');
   const tCommon = useTranslations('common');
+  const getApiErrorMessage = useApiErrorMessage();
   // Ein Mitarbeiter darf zusaetzlich seine eigenen Nutzungen bearbeiten (aber
   // nicht loeschen) - siehe assertCanEditUsage im Backend.
   const canEditReport = (report: Report) =>
@@ -229,8 +232,7 @@ const UebersichtEintraege: FC = () => {
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`API error ${res.status}: ${text}`);
+        await throwApiError(res, `API error ${res.status}`);
       }
 
       // Aktualisiere die Liste
@@ -261,7 +263,7 @@ const UebersichtEintraege: FC = () => {
       showToast(t('updateSuccess'), 'success');
     } catch (err) {
       console.error('Fehler beim Aktualisieren der Nutzung:', err);
-      setError(err instanceof Error ? err.message : t('updateErrorGeneric'));
+      setError(getApiErrorMessage(err, t('updateErrorGeneric')));
       showToast(t('updateErrorToast'), 'error');
     } finally {
       setIsSubmitting(false);
@@ -275,14 +277,14 @@ const UebersichtEintraege: FC = () => {
       });
 
       if (!res.ok) {
-        throw new Error(t('deleteErrorGeneric', { status: res.status }));
+        await throwApiError(res, t('deleteErrorGeneric', { status: res.status }));
       }
 
       setReports((prev) => prev.filter((report) => report.id !== id));
       showToast(t('deleteSuccess'), 'success');
     } catch (err) {
       console.error('Fehler beim Löschen der Nutzung:', err);
-      showToast(t('deleteErrorToast'), 'error');
+      showToast(getApiErrorMessage(err, t('deleteErrorToast')), 'error');
     }
   };
 

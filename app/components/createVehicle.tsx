@@ -4,9 +4,11 @@ import { useState, type FC, type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { buildApiUrl } from '@/lib/api/url';
+import { throwApiError } from '@/lib/api/ApiError';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
+import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { ToastContainer } from './Toast';
 
 interface FormState {
@@ -25,6 +27,7 @@ const CreateVehicle: FC = () => {
   const { toasts, showToast, removeToast } = useToast();
   const t = useTranslations('createVehicle');
   const tCommon = useTranslations('common');
+  const getApiErrorMessage = useApiErrorMessage();
   const [formData, setFormData] = useState<FormState>({
     name: '',
     plate: '',
@@ -58,8 +61,7 @@ const CreateVehicle: FC = () => {
       });
 
       if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.message || `API-Fehler ${res.status}`);
+        await throwApiError(res, `API-Fehler ${res.status}`);
       }
 
       await res.json();
@@ -68,7 +70,7 @@ const CreateVehicle: FC = () => {
       showToast(t('addSuccess'), 'success');
     } catch (err) {
       console.error('Fehler beim Erstellen des Fahrzeugs:', err);
-      setError(err instanceof Error ? err.message : t('genericError'));
+      setError(getApiErrorMessage(err, t('genericError')));
       showToast(t('addErrorToast'), 'error');
     } finally {
       setIsSubmitting(false);

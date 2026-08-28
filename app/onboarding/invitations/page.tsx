@@ -6,12 +6,14 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { getMyInvites, acceptInviteAsExistingUser, declineInviteAsExistingUser } from '@/lib/api/invites'
 import { useAuth } from '@/lib/auth/AuthProvider'
+import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 import type { PendingInvite } from '@/lib/types/user'
 
 export default function OnboardingInvitationsPage() {
   const router = useRouter()
   const { refreshOrganizations } = useAuth()
   const t = useTranslations('onboardingInvitations')
+  const getApiErrorMessage = useApiErrorMessage()
 
   const [invites, setInvites] = useState<PendingInvite[]>([])
   const [loading, setLoading] = useState(true)
@@ -26,7 +28,7 @@ export default function OnboardingInvitationsPage() {
         if (!cancelled) setInvites(data)
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : t('loadError'))
+        if (!cancelled) setError(getApiErrorMessage(err, t('loadError')))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -46,7 +48,7 @@ export default function OnboardingInvitationsPage() {
       await refreshOrganizations()
       router.push('/')
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('acceptError'))
+      setError(getApiErrorMessage(err, t('acceptError')))
       setProcessingToken(null)
     }
   }
@@ -58,7 +60,7 @@ export default function OnboardingInvitationsPage() {
       await declineInviteAsExistingUser(token)
       setInvites((prev) => prev.filter((invite) => invite.token !== token))
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('declineError'))
+      setError(getApiErrorMessage(err, t('declineError')))
     } finally {
       setProcessingToken(null)
     }

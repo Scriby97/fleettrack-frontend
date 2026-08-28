@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { createSelfServiceOrganization } from '@/lib/api/organizations'
 import { useAuth } from '@/lib/auth/AuthProvider'
+import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 import type { SubscriptionTier } from '@/lib/types/user'
 
 interface PlanDefinition {
@@ -24,6 +25,7 @@ export default function CreateOrganizationOnboardingPage() {
   const wasCanceled = searchParams.get('canceled') === '1'
   const backHref = hasOrganization ? '/settings' : '/onboarding'
   const t = useTranslations('onboardingCreateOrg')
+  const getApiErrorMessage = useApiErrorMessage()
 
   const plans: PlanDefinition[] = useMemo(() => [
     {
@@ -89,7 +91,7 @@ export default function CreateOrganizationOnboardingPage() {
       await refreshOrganizations()
       window.location.href = '/'
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('genericError'))
+      setError(getApiErrorMessage(err, t('genericError')))
       setLoading(false)
     }
   }

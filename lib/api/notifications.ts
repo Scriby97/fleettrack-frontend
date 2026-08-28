@@ -1,5 +1,6 @@
 import { authenticatedFetch } from './authenticatedFetch'
 import { buildApiUrl } from './url'
+import { throwApiError } from './ApiError'
 
 export interface UsageReminder {
   id?: string
@@ -13,8 +14,7 @@ export async function getReminderSettings(): Promise<UsageReminder> {
   const response = await authenticatedFetch(buildApiUrl('/notifications/reminder'))
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Erinnerung' }))
-    throw new Error(error.message || 'Fehler beim Laden der Erinnerung')
+    await throwApiError(response, 'Fehler beim Laden der Erinnerung')
   }
 
   return response.json()
@@ -27,8 +27,7 @@ export async function updateReminderSettings(enabled: boolean, time: string): Pr
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Speichern der Erinnerung' }))
-    throw new Error(error.message || 'Fehler beim Speichern der Erinnerung')
+    await throwApiError(response, 'Fehler beim Speichern der Erinnerung')
   }
 
   return response.json()
@@ -38,8 +37,7 @@ export async function getVapidPublicKey(): Promise<string | null> {
   const response = await authenticatedFetch(buildApiUrl('/notifications/vapid-public-key'))
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Laden des Push-Schlüssels' }))
-    throw new Error(error.message || 'Fehler beim Laden des Push-Schlüssels')
+    await throwApiError(response, 'Fehler beim Laden des Push-Schlüssels')
   }
 
   const data = await response.json()
@@ -53,8 +51,7 @@ export async function registerPushSubscription(subscription: PushSubscriptionJSO
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Registrieren der Push-Benachrichtigungen' }))
-    throw new Error(error.message || 'Fehler beim Registrieren der Push-Benachrichtigungen')
+    await throwApiError(response, 'Fehler beim Registrieren der Push-Benachrichtigungen')
   }
 }
 
@@ -65,7 +62,6 @@ export async function unregisterPushSubscription(endpoint: string): Promise<void
   const response = await authenticatedFetch(url.toString(), { method: 'DELETE' })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Entfernen der Push-Benachrichtigungen' }))
-    throw new Error(error.message || 'Fehler beim Entfernen der Push-Benachrichtigungen')
+    await throwApiError(response, 'Fehler beim Entfernen der Push-Benachrichtigungen')
   }
 }

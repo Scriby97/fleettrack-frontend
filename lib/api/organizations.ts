@@ -8,6 +8,7 @@ import {
 } from '@/lib/types/user'
 import { authenticatedFetch } from './authenticatedFetch'
 import { buildApiUrl } from './url'
+import { throwApiError } from './ApiError'
 
 /**
  * Create a new organization (Super Admin only)
@@ -21,8 +22,7 @@ export async function createOrganization(
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Erstellen der Organisation' }))
-    throw new Error(error.message || 'Fehler beim Erstellen der Organisation')
+    await throwApiError(response, 'Fehler beim Erstellen der Organisation')
   }
 
   return response.json()
@@ -35,8 +35,7 @@ export async function getAllOrganizations(): Promise<Organization[]> {
   const response = await authenticatedFetch(buildApiUrl('/organizations'))
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Organisationen' }))
-    throw new Error(error.message || 'Fehler beim Laden der Organisationen')
+    await throwApiError(response, 'Fehler beim Laden der Organisationen')
   }
 
   return response.json()
@@ -49,8 +48,7 @@ export async function getMyOrganizations(): Promise<OrganizationMembership[]> {
   const response = await authenticatedFetch(buildApiUrl('/organizations/mine'))
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Organisationen' }))
-    throw new Error(error.message || 'Fehler beim Laden der Organisationen')
+    await throwApiError(response, 'Fehler beim Laden der Organisationen')
   }
 
   return response.json()
@@ -68,8 +66,7 @@ export async function createSelfServiceOrganization(
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Erstellen der Organisation' }))
-    throw new Error(error.message || 'Fehler beim Erstellen der Organisation')
+    await throwApiError(response, 'Fehler beim Erstellen der Organisation')
   }
 
   return response.json()

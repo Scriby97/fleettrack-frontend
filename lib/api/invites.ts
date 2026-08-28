@@ -1,5 +1,6 @@
 import { authenticatedFetch } from './authenticatedFetch'
 import { buildApiUrl } from './url'
+import { throwApiError } from './ApiError'
 import type { InviteInfo, InviteEntity, PendingInvite } from '@/lib/types/user'
 
 /**
@@ -9,8 +10,7 @@ export async function getInviteByToken(token: string): Promise<InviteInfo> {
   const response = await fetch(buildApiUrl(`/invites/${token}`))
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Ungültige oder abgelaufene Einladung' }))
-    throw new Error(error.message || 'Fehler beim Laden der Einladung')
+    await throwApiError(response, 'Ungültige oder abgelaufene Einladung')
   }
   
   return response.json()
@@ -39,8 +39,7 @@ export async function acceptInvite(data: {
   })
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Annehmen der Einladung' }))
-    throw new Error(error.message || 'Fehler beim Annehmen der Einladung')
+    await throwApiError(response, 'Fehler beim Annehmen der Einladung')
   }
   
   return response.json()
@@ -65,8 +64,7 @@ export async function createInvite(
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Erstellen der Einladung' }))
-    throw new Error(error.message || 'Fehler beim Erstellen der Einladung')
+    await throwApiError(response, 'Fehler beim Erstellen der Einladung')
   }
 
   return response.json()
@@ -85,8 +83,7 @@ export async function getOrganizationInvites(organizationId?: string): Promise<I
   const response = await authenticatedFetch(url.toString())
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Einladungen' }))
-    throw new Error(error.message || 'Fehler beim Laden der Einladungen')
+    await throwApiError(response, 'Fehler beim Laden der Einladungen')
   }
 
   return response.json()
@@ -99,8 +96,7 @@ export async function getMyInvites(): Promise<PendingInvite[]> {
   const response = await authenticatedFetch(buildApiUrl('/invites/mine'))
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Einladungen' }))
-    throw new Error(error.message || 'Fehler beim Laden der Einladungen')
+    await throwApiError(response, 'Fehler beim Laden der Einladungen')
   }
 
   return response.json()
@@ -115,8 +111,7 @@ export async function acceptInviteAsExistingUser(token: string): Promise<{ messa
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Annehmen der Einladung' }))
-    throw new Error(error.message || 'Fehler beim Annehmen der Einladung')
+    await throwApiError(response, 'Fehler beim Annehmen der Einladung')
   }
 
   return response.json()
@@ -131,8 +126,7 @@ export async function declineInviteAsExistingUser(token: string): Promise<{ mess
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Ablehnen der Einladung' }))
-    throw new Error(error.message || 'Fehler beim Ablehnen der Einladung')
+    await throwApiError(response, 'Fehler beim Ablehnen der Einladung')
   }
 
   return response.json()
@@ -150,7 +144,6 @@ export async function deleteInvite(inviteId: string, _organizationId?: string): 
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Löschen der Einladung' }))
-    throw new Error(error.message || 'Fehler beim Löschen der Einladung')
+    await throwApiError(response, 'Fehler beim Löschen der Einladung')
   }
 }

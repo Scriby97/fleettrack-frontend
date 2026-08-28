@@ -13,6 +13,7 @@ import {
   getVapidPublicKey,
   registerPushSubscription,
 } from '@/lib/api/notifications'
+import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 
 // Push-Server erwarten den VAPID Public Key als Uint8Array, Browser liefern ihn
 // aber nur als base64url-String - Standard-Konvertierung dafuer.
@@ -33,6 +34,7 @@ export default function SettingsRemindersPage() {
   const { toasts, showToast, removeToast } = useToast()
   const t = useTranslations('settingsReminders')
   const tSettings = useTranslations('settings')
+  const getApiErrorMessage = useApiErrorMessage()
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -64,7 +66,7 @@ export default function SettingsRemindersPage() {
         setEnabled(settings.enabled)
         setTime(settings.reminderTime)
       } catch (err) {
-        const message = err instanceof Error ? err.message : t('loadError')
+        const message = getApiErrorMessage(err, t('loadError'))
         showToast(message, 'error')
       } finally {
         setLoading(false)
@@ -113,7 +115,7 @@ export default function SettingsRemindersPage() {
       await updateReminderSettings(enabled, time)
       showToast(t('saveSuccess'), 'success')
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('saveErrorGeneric')
+      const message = getApiErrorMessage(err, t('saveErrorGeneric'))
       showToast(message, 'error')
       if (enabled) {
         // Aktivieren ist fehlgeschlagen (z.B. Berechtigung verweigert) - Toggle

@@ -12,6 +12,7 @@ import { useToast } from '@/lib/hooks/useToast'
 import { ToastContainer } from '@/app/components/Toast'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { useDateLocale } from '@/lib/i18n/formatDate'
+import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 
 export default function AdminAllUsersPage() {
   const router = useRouter()
@@ -21,6 +22,7 @@ export default function AdminAllUsersPage() {
   const tInv = useTranslations('inviteManagement')
   const tCommon = useTranslations('common')
   const dateLocale = useDateLocale()
+  const getApiErrorMessage = useApiErrorMessage()
 
   const STATUS_LABELS: Record<InviteStatus, string> = {
     pending: tInv('pendingStatus'),
@@ -78,7 +80,7 @@ export default function AdminAllUsersPage() {
           setOrganizations(orgData)
           setUsers(userData)
         } catch (err) {
-          const message = err instanceof Error ? err.message : t('loadDataError')
+          const message = getApiErrorMessage(err, t('loadDataError'))
           setError(message)
         } finally {
           setLoading(false)
@@ -102,7 +104,7 @@ export default function AdminAllUsersPage() {
         const data = await getOrganizationInvites()
         setAllInvites(Array.isArray(data) ? data : [])
       } catch (err) {
-        const message = err instanceof Error ? err.message : tInv('loadingInvites')
+        const message = getApiErrorMessage(err, tInv('loadingInvites'))
         setInvitesError(message)
       } finally {
         setInvitesLoading(false)
@@ -184,7 +186,7 @@ export default function AdminAllUsersPage() {
       setInviteRole('employee')
       showToast(tInv('createSuccess'), 'success')
     } catch (err) {
-      const message = err instanceof Error ? err.message : tInv('createErrorGeneric')
+      const message = getApiErrorMessage(err, tInv('createErrorGeneric'))
       setInvitesError(message)
       showToast(message, 'error')
     } finally {
@@ -198,7 +200,7 @@ export default function AdminAllUsersPage() {
       setCopiedId(id)
       setTimeout(() => setCopiedId(null), 2000)
     } catch (err) {
-      const message = err instanceof Error ? err.message : tInv('copyErrorGeneric')
+      const message = getApiErrorMessage(err, tInv('copyErrorGeneric'))
       setInvitesError(message)
     }
   }
@@ -208,7 +210,7 @@ export default function AdminAllUsersPage() {
       await deleteInvite(inviteId, inviteOrgId)
       setAllInvites((prev) => prev.filter((invite) => invite.id !== inviteId))
     } catch (err) {
-      const message = err instanceof Error ? err.message : tInv('deleteErrorGeneric')
+      const message = getApiErrorMessage(err, tInv('deleteErrorGeneric'))
       setInvitesError(message)
     }
   }
@@ -233,7 +235,7 @@ export default function AdminAllUsersPage() {
       showToast(t('resetSuccessToast', { email: confirmUser.email }), 'success')
       setConfirmUser(null)
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('resetErrorGeneric')
+      const message = getApiErrorMessage(err, t('resetErrorGeneric'))
       showToast(message, 'error')
     } finally {
       setSubmittingId(null)

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { getInviteByToken, acceptInvite } from '@/lib/api/invites'
+import { ApiError } from '@/lib/api/ApiError'
+import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 import type { InviteInfo } from '@/lib/types/user'
 
 export default function InvitePage() {
@@ -11,6 +13,7 @@ export default function InvitePage() {
   const router = useRouter()
   const token = params.token as string
   const t = useTranslations('invite')
+  const getApiErrorMessage = useApiErrorMessage()
 
   const [invite, setInvite] = useState<InviteInfo | null>(null)
   const [loading, setLoading] = useState(true)
@@ -34,7 +37,7 @@ export default function InvitePage() {
         setInvite(data)
         setFormData(prev => ({ ...prev, email: data.email }))
       } catch (err) {
-        setError(err instanceof Error ? err.message : t('invalidLinkError'))
+        setError(getApiErrorMessage(err, t('invalidLinkError')))
       } finally {
         setLoading(false)
       }
@@ -72,10 +75,10 @@ export default function InvitePage() {
       // Redirect to login page after successful registration
       router.push(`/login?message=${encodeURIComponent(t('accountCreatedRedirectMessage'))}`)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t('genericError')
-      setError(errorMessage)
-      // Check if the error is an UnauthorizedException
-      if (errorMessage.toLowerCase().includes('unauthorized') || errorMessage.toLowerCase().includes('not authenticated') || errorMessage.toLowerCase().includes('nicht autorisiert') || errorMessage.toLowerCase().includes('nicht angemeldet')) {
+      setError(getApiErrorMessage(err, t('genericError')))
+      // 401 vom Backend (z.B. Supabase-Signup schlägt fehl, weil parallel schon
+      // eine Session besteht) - robuster als String-Matching auf die Meldung.
+      if (err instanceof ApiError && err.status === 401) {
         setIsUnauthorized(true)
       }
       setSubmitting(false)

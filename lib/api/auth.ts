@@ -1,5 +1,6 @@
 import { authenticatedFetch } from './authenticatedFetch'
 import { buildApiUrl } from './url'
+import { throwApiError } from './ApiError'
 
 export async function updatePassword(newPassword: string): Promise<void> {
   const response = await authenticatedFetch(buildApiUrl('/auth/update-password'), {
@@ -8,7 +9,6 @@ export async function updatePassword(newPassword: string): Promise<void> {
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Aktualisieren des Passworts' }))
-    throw new Error(error.message || 'Fehler beim Aktualisieren des Passworts')
+    await throwApiError(response, 'Fehler beim Aktualisieren des Passworts')
   }
 }

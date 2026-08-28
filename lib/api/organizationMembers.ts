@@ -1,5 +1,6 @@
 import { authenticatedFetch } from './authenticatedFetch'
 import { buildApiUrl } from './url'
+import { throwApiError } from './ApiError'
 import type { OrganizationMemberDetail } from '@/lib/types/user'
 
 /**
@@ -13,8 +14,7 @@ export async function getOrganizationMembers(
   )
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Laden der Mitglieder' }))
-    throw new Error(error.message || 'Fehler beim Laden der Mitglieder')
+    await throwApiError(response, 'Fehler beim Laden der Mitglieder')
   }
 
   return response.json()
@@ -38,8 +38,7 @@ export async function updateMemberRole(
   )
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Ändern der Rolle' }))
-    throw new Error(error.message || 'Fehler beim Ändern der Rolle')
+    await throwApiError(response, 'Fehler beim Ändern der Rolle')
   }
 
   return response.json()
@@ -62,8 +61,7 @@ export async function transferOwnership(
   )
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Fehler beim Übertragen der Owner-Rolle' }))
-    throw new Error(error.message || 'Fehler beim Übertragen der Owner-Rolle')
+    await throwApiError(response, 'Fehler beim Übertragen der Owner-Rolle')
   }
 
   return response.json()
