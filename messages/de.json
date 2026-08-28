@@ -190,7 +190,7 @@
     "accountTitle": "Account",
     "accountDescription": "Passwort aendern und Kontodetails ansehen.",
     "appearanceTitle": "Ansicht",
-    "appearanceDescription": "Hell, dunkel oder Systemstandard waehlen.",
+    "appearanceDescription": "Hell, dunkel, Systemstandard oder Sprache waehlen.",
     "remindersTitle": "Erinnerung",
     "remindersDescription": "Tägliche Benachrichtigung zum Erfassen deiner Nutzung einrichten.",
     "userManagementTitle": "User Management",
@@ -223,14 +223,17 @@
   },
   "settingsAppearance": {
     "title": "Ansicht",
-    "subtitle": "Waehle zwischen Systemstandard, dunklem oder hellem Modus.",
+    "subtitle": "Waehle zwischen Systemstandard, dunklem oder hellem Modus und deiner Sprache.",
     "systemLabel": "Systemstandard",
     "systemDescription": "Folgt deinem Geraet",
     "darkLabel": "Dunkel",
     "darkDescription": "Schont die Augen",
     "lightLabel": "Hell",
     "lightDescription": "Heller Hintergrund",
-    "saveSuccess": "Ansicht gespeichert"
+    "saveSuccess": "Ansicht gespeichert",
+    "languageSectionTitle": "Sprache",
+    "languageSectionDescription": "Waehle deine bevorzugte Sprache.",
+    "languageSaveSuccess": "Sprache geaendert"
   },
   "settingsReminders": {
     "title": "Erfassungserinnerung",

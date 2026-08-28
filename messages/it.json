@@ -190,7 +190,7 @@
     "accountTitle": "Account",
     "accountDescription": "Cambia la password e visualizza i dettagli dell'account.",
     "appearanceTitle": "Aspetto",
-    "appearanceDescription": "Scegli tra chiaro, scuro o predefinito di sistema.",
+    "appearanceDescription": "Scegli chiaro, scuro, sistema o la lingua.",
     "remindersTitle": "Promemoria",
     "remindersDescription": "Configura una notifica giornaliera per registrare il tuo utilizzo.",
     "userManagementTitle": "Gestione utenti",
@@ -223,14 +223,17 @@
   },
   "settingsAppearance": {
     "title": "Aspetto",
-    "subtitle": "Scegli tra predefinito di sistema, modalità scura o chiara.",
+    "subtitle": "Scegli tra la modalita di sistema, scura o chiara, e la tua lingua.",
     "systemLabel": "Predefinito di sistema",
     "systemDescription": "Segue il tuo dispositivo",
     "darkLabel": "Scuro",
     "darkDescription": "Più riposante per gli occhi",
     "lightLabel": "Chiaro",
     "lightDescription": "Sfondo chiaro",
-    "saveSuccess": "Aspetto salvato"
+    "saveSuccess": "Aspetto salvato",
+    "languageSectionTitle": "Lingua",
+    "languageSectionDescription": "Scegli la tua lingua preferita.",
+    "languageSaveSuccess": "Lingua modificata"
   },
   "settingsReminders": {
     "title": "Promemoria di registrazione",

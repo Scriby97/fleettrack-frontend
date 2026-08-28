@@ -190,7 +190,7 @@
     "accountTitle": "Account",
     "accountDescription": "Change your password and view account details.",
     "appearanceTitle": "Appearance",
-    "appearanceDescription": "Choose light, dark, or system default.",
+    "appearanceDescription": "Choose light, dark, system default, or language.",
     "remindersTitle": "Reminder",
     "remindersDescription": "Set up a daily notification to log your usage.",
     "userManagementTitle": "User Management",
@@ -223,14 +223,17 @@
   },
   "settingsAppearance": {
     "title": "Appearance",
-    "subtitle": "Choose between system default, dark, or light mode.",
+    "subtitle": "Choose between system default, dark or light mode, and your language.",
     "systemLabel": "System default",
     "systemDescription": "Follows your device",
     "darkLabel": "Dark",
     "darkDescription": "Easier on the eyes",
     "lightLabel": "Light",
     "lightDescription": "Bright background",
-    "saveSuccess": "Appearance saved"
+    "saveSuccess": "Appearance saved",
+    "languageSectionTitle": "Language",
+    "languageSectionDescription": "Choose your preferred language.",
+    "languageSaveSuccess": "Language changed"
   },
   "settingsReminders": {
     "title": "Usage Reminder",
