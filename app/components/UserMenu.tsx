@@ -5,7 +5,7 @@ import { useOrganization } from '@/lib/contexts/OrganizationContext'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import type { FC } from 'react'
-import { SUPPORTED_LOCALES, LOCALE_COOKIE_NAME, type AppLocale } from '@/i18n/request'
+import { SUPPORTED_LOCALES, LOCALE_COOKIE_NAME, type AppLocale } from '@/i18n/locales'
 
 // Sprachnamen werden bewusst NICHT uebersetzt - ein Sprachumschalter zeigt
 // jede Option immer in ihrer eigenen Sprache (Standard-UX-Konvention), nicht

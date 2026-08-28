@@ -1,14 +1,9 @@
 import { getRequestConfig } from 'next-intl/server';
 import { cookies } from 'next/headers';
+import { DEFAULT_LOCALE, LOCALE_COOKIE_NAME, isSupportedLocale } from './locales';
 
-export const SUPPORTED_LOCALES = ['de', 'en', 'fr', 'it'] as const;
-export type AppLocale = (typeof SUPPORTED_LOCALES)[number];
-export const DEFAULT_LOCALE: AppLocale = 'de';
-export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
-
-export function isSupportedLocale(value: string | undefined): value is AppLocale {
-  return !!value && (SUPPORTED_LOCALES as readonly string[]).includes(value);
-}
+export { SUPPORTED_LOCALES, DEFAULT_LOCALE, LOCALE_COOKIE_NAME, isSupportedLocale } from './locales';
+export type { AppLocale } from './locales';
 
 // Kein URL-Praefix (kein /de/..., /en/...) - die Sprache ist eine Einstellung,
 // server-seitig aus einem Cookie gelesen (kein Flackern beim ersten Request
