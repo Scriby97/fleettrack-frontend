@@ -92,6 +92,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     const ownOrganizations = organizationMemberships
       .map((membership) => membership.organization)
       .filter((org): org is Organization => Boolean(org));
+    console.log('[EFFECT mapping]', { count: ownOrganizations.length });
     setOrganizations(ownOrganizations);
   }, [isAdmin, organizationMemberships]);
 
@@ -103,6 +104,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
     setSelectedOrgIdState((current) => {
       if (current && organizations.some((org) => org.id === current)) {
+        console.log('[EFFECT selection] keeping current', current);
         return current;
       }
 
@@ -113,10 +115,13 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         // ignore
       }
       if (stored && organizations.some((org) => org.id === stored)) {
+        console.log('[EFFECT selection] using stored', stored);
         return stored;
       }
 
-      return organizationId ?? organizations[0].id;
+      const picked = organizationId ?? organizations[0].id;
+      console.log('[EFFECT selection] picking default', picked, 'organizationId=', organizationId);
+      return picked;
     });
   }, [isAdmin, organizations, organizationId]);
 
@@ -127,7 +132,9 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   // das fetchOrganizationMemberships() vor dem Setzen von loading=false abwartet).
   useEffect(() => {
     if (isAdmin) return;
+    console.log('[EFFECT isLoading-check]', { membershipsLen: organizationMemberships.length, selectedOrgId });
     if (organizationMemberships.length === 0 || selectedOrgId) {
+      console.log('[EFFECT isLoading-check] -> setIsLoading(false)');
       setIsLoading(false);
     }
   }, [isAdmin, organizationMemberships, selectedOrgId]);
