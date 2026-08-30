@@ -75,17 +75,14 @@ export default function UsersPage() {
     // Ableitung (organizationMemberships -> organizations -> selectedOrgId)
     // noch durchlaeuft, was einen berechtigten Owner/Admin faelschlich auf
     // '/' umgeleitet hat (siehe E2E-Testbefund).
-    console.log('[ADMIN/USERS GUARD]', { authLoading, orgLoading, canManageSelectedOrganization, isAdmin })
     if (authLoading || orgLoading) return
 
     if (!canManageSelectedOrganization) {
-      console.log('[ADMIN/USERS GUARD] REDIRECTING TO / because canManageSelectedOrganization is false')
       router.push('/')
       return
     }
 
     if (isAdmin) {
-      console.log('[ADMIN/USERS GUARD] REDIRECTING TO /admin/all-users because isAdmin')
       router.push('/admin/all-users')
       return
     }

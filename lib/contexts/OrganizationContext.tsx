@@ -28,7 +28,7 @@ interface OrganizationContextType {
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
-  const { isAdmin, organizationId, organizationMemberships } = useAuth();
+  const { isAdmin, organizationId, organizationMemberships, loading: authLoading } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrgId, setSelectedOrgIdState] = useState<string | null>(null);
   // Startet bewusst auf true (nicht false) - Konsumenten mit einem
@@ -92,7 +92,6 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     const ownOrganizations = organizationMemberships
       .map((membership) => membership.organization)
       .filter((org): org is Organization => Boolean(org));
-    console.log('[EFFECT mapping]', { count: ownOrganizations.length });
     setOrganizations(ownOrganizations);
   }, [isAdmin, organizationMemberships]);
 
@@ -104,7 +103,6 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
     setSelectedOrgIdState((current) => {
       if (current && organizations.some((org) => org.id === current)) {
-        console.log('[EFFECT selection] keeping current', current);
         return current;
       }
 
@@ -115,29 +113,30 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         // ignore
       }
       if (stored && organizations.some((org) => org.id === stored)) {
-        console.log('[EFFECT selection] using stored', stored);
         return stored;
       }
 
-      const picked = organizationId ?? organizations[0].id;
-      console.log('[EFFECT selection] picking default', picked, 'organizationId=', organizationId);
-      return picked;
+      return organizationId ?? organizations[0].id;
     });
   }, [isAdmin, organizations, organizationId]);
 
   // Normale User: isLoading auf false setzen, sobald die obige Ableitung
   // tatsaechlich abgeschlossen ist - entweder eine Organisation ausgewaehlt
-  // wurde, oder feststeht, dass der User keine hat (organizationMemberships
-  // ist zu diesem Zeitpunkt bereits verlaesslich, siehe AuthProvider.initAuth,
-  // das fetchOrganizationMemberships() vor dem Setzen von loading=false abwartet).
+  // wurde, oder feststeht, dass der User keine hat. WICHTIG: erst NACH
+  // authLoading auswerten - organizationMemberships startet selbst bei einem
+  // User mit Organisationen als leeres Array (bevor AuthProvider ueberhaupt
+  // gefetcht hat), war also faelschlich als "User hat keine Organisation"
+  // interpretierbar und hat isLoading zu frueh auf false gesetzt (siehe
+  // Bugreport: /admin/users leitete Owner/Admin faelschlich auf '/' um).
+  // authLoading=false garantiert, dass organizationMemberships bereits
+  // verlaesslich ist (AuthProvider.initAuth wartet fetchOrganizationMemberships()
+  // vor dem Setzen von loading=false ab).
   useEffect(() => {
-    if (isAdmin) return;
-    console.log('[EFFECT isLoading-check]', { membershipsLen: organizationMemberships.length, selectedOrgId });
+    if (isAdmin || authLoading) return;
     if (organizationMemberships.length === 0 || selectedOrgId) {
-      console.log('[EFFECT isLoading-check] -> setIsLoading(false)');
       setIsLoading(false);
     }
-  }, [isAdmin, organizationMemberships, selectedOrgId]);
+  }, [isAdmin, authLoading, organizationMemberships, selectedOrgId]);
 
   const selectedMembership = organizationMemberships.find(
     (membership) => membership.organizationId === selectedOrgId,
@@ -147,21 +146,6 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     isAdmin ||
     selectedOrganizationRole === 'admin' ||
     selectedOrganizationRole === 'owner';
-
-  if (typeof window !== 'undefined') {
-    // TEMP DEBUG
-    console.log('[ORGCTX RENDER]', {
-      isAdmin,
-      organizationId,
-      membershipsLen: organizationMemberships.length,
-      membershipsRef: organizationMemberships,
-      organizationsLen: organizations.length,
-      selectedOrgId,
-      selectedOrganizationRole,
-      canManageSelectedOrganization,
-      isLoading,
-    });
-  }
 
   return (
     <OrganizationContext.Provider value={{
