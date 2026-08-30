@@ -31,7 +31,15 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const { isAdmin, organizationId, organizationMemberships } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrgId, setSelectedOrgIdState] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  // Startet bewusst auf true (nicht false) - Konsumenten mit einem
+  // Redirect-Guard (z.B. admin/users/page.tsx) muessen abwarten koennen, bis
+  // die mehrstufige Ableitung organizationMemberships -> organizations ->
+  // selectedOrgId tatsaechlich durchgelaufen ist, statt mit dem initialen
+  // Default (false/null) einen falschen canManageSelectedOrganization=false
+  // zu sehen und faelschlich wegzuleiten (siehe Bugreport: /admin/users
+  // leitete Owner/Admin bei jedem frischen Seitenaufruf faelschlich auf '/'
+  // um, weil authLoading schneller false wurde als diese Ableitung fertig war).
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const getApiErrorMessage = useApiErrorMessage();
   // Use a ref so loading once doesn't add itself to the effect dependency array
@@ -111,6 +119,18 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       return organizationId ?? organizations[0].id;
     });
   }, [isAdmin, organizations, organizationId]);
+
+  // Normale User: isLoading auf false setzen, sobald die obige Ableitung
+  // tatsaechlich abgeschlossen ist - entweder eine Organisation ausgewaehlt
+  // wurde, oder feststeht, dass der User keine hat (organizationMemberships
+  // ist zu diesem Zeitpunkt bereits verlaesslich, siehe AuthProvider.initAuth,
+  // das fetchOrganizationMemberships() vor dem Setzen von loading=false abwartet).
+  useEffect(() => {
+    if (isAdmin) return;
+    if (organizationMemberships.length === 0 || selectedOrgId) {
+      setIsLoading(false);
+    }
+  }, [isAdmin, organizationMemberships, selectedOrgId]);
 
   const selectedMembership = organizationMemberships.find(
     (membership) => membership.organizationId === selectedOrgId,

@@ -16,7 +16,7 @@ import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 export default function UsersPage() {
   const router = useRouter()
   const { loading: authLoading, isAdmin, userProfile, refreshOrganizations } = useAuth()
-  const { organizations, selectedOrgId, canManageSelectedOrganization, selectedOrganizationRole } = useOrganization()
+  const { organizations, selectedOrgId, canManageSelectedOrganization, selectedOrganizationRole, isLoading: orgLoading } = useOrganization()
   const selectedOrganization = organizations.find((org) => org.id === selectedOrgId)
   const isOwner = selectedOrganizationRole === 'owner'
   const t = useTranslations('userManagement')
@@ -69,19 +69,27 @@ export default function UsersPage() {
   }, [])
 
   useEffect(() => {
-    if (!authLoading && !canManageSelectedOrganization) {
+    // Erst entscheiden, wenn sowohl Auth ALS AUCH die Organisationsdaten
+    // wirklich fertig geladen sind - canManageSelectedOrganization ist sonst
+    // kurzzeitig faelschlich false, waehrend OrganizationContext seine
+    // Ableitung (organizationMemberships -> organizations -> selectedOrgId)
+    // noch durchlaeuft, was einen berechtigten Owner/Admin faelschlich auf
+    // '/' umgeleitet hat (siehe E2E-Testbefund).
+    if (authLoading || orgLoading) return
+
+    if (!canManageSelectedOrganization) {
       router.push('/')
       return
     }
 
-    if (!authLoading && isAdmin) {
+    if (isAdmin) {
       router.push('/admin/all-users')
       return
     }
-  }, [authLoading, canManageSelectedOrganization, isAdmin, router])
+  }, [authLoading, orgLoading, canManageSelectedOrganization, isAdmin, router])
 
   useEffect(() => {
-    if (authLoading || !canManageSelectedOrganization || isAdmin) return
+    if (authLoading || orgLoading || !canManageSelectedOrganization || isAdmin) return
 
     const fetchData = async () => {
       setLoading(true)
@@ -118,7 +126,7 @@ export default function UsersPage() {
 
     fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, isAdmin, canManageSelectedOrganization, selectedOrgId])
+  }, [authLoading, orgLoading, isAdmin, canManageSelectedOrganization, selectedOrgId])
 
   const refetchMembers = async () => {
     if (!selectedOrgId) return
@@ -298,7 +306,7 @@ export default function UsersPage() {
     }
   }
 
-  if (authLoading || loading) {
+  if (authLoading || orgLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>

@@ -223,7 +223,7 @@
   },
   "settingsAppearance": {
     "title": "Aspetto",
-    "subtitle": "Scegli tra la modalita di sistema, scura o chiara, e la tua lingua.",
+    "subtitle": "Scegli tra la modalità di sistema, scura o chiara, e la tua lingua.",
     "systemLabel": "Predefinito di sistema",
     "systemDescription": "Segue il tuo dispositivo",
     "darkLabel": "Scuro",

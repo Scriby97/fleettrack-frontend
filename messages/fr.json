@@ -190,7 +190,7 @@
     "accountTitle": "Compte",
     "accountDescription": "Modifier le mot de passe et consulter les détails du compte.",
     "appearanceTitle": "Affichage",
-    "appearanceDescription": "Choisissez clair, sombre, systeme ou la langue.",
+    "appearanceDescription": "Choisissez clair, sombre, système ou la langue.",
     "remindersTitle": "Rappel",
     "remindersDescription": "Configurer une notification quotidienne pour saisir ton utilisation.",
     "userManagementTitle": "Gestion des utilisateurs",
@@ -223,7 +223,7 @@
   },
   "settingsAppearance": {
     "title": "Affichage",
-    "subtitle": "Choisissez entre le mode systeme, sombre ou clair, ainsi que votre langue.",
+    "subtitle": "Choisissez entre le mode système, sombre ou clair, ainsi que votre langue.",
     "systemLabel": "Standard système",
     "systemDescription": "Suit ton appareil",
     "darkLabel": "Sombre",
@@ -232,8 +232,8 @@
     "lightDescription": "Fond clair",
     "saveSuccess": "Affichage enregistré",
     "languageSectionTitle": "Langue",
-    "languageSectionDescription": "Choisissez votre langue preferee.",
-    "languageSaveSuccess": "Langue modifiee"
+    "languageSectionDescription": "Choisissez votre langue préférée.",
+    "languageSaveSuccess": "Langue modifiée"
   },
   "settingsReminders": {
     "title": "Rappel de saisie",
