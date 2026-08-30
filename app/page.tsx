@@ -62,7 +62,7 @@ export default function Home() {
                 : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
             }
           >
-            Nutzung erfassen
+            {t("createUsage")}
           </button>
 
           <button
@@ -74,7 +74,7 @@ export default function Home() {
                 : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
             }
           >
-            Übersicht Nutzungen
+            {t("usagesOverview")}
           </button>
 
           {/* Fleet management menu items - global admins and org admins/owners */}
@@ -202,7 +202,7 @@ export default function Home() {
                         : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
                     }
                   >
-                    Flottenübersicht
+                    {t("fleetOverview")}
                   </button>
 
                   <button
@@ -217,7 +217,7 @@ export default function Home() {
                         : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
                     }
                   >
-                    Fahrzeug erfassen
+                    {t("createVehicle")}
                   </button>
                 </>
               )}
