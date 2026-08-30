@@ -141,6 +141,21 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     selectedOrganizationRole === 'admin' ||
     selectedOrganizationRole === 'owner';
 
+  if (typeof window !== 'undefined') {
+    // TEMP DEBUG
+    console.log('[ORGCTX RENDER]', {
+      isAdmin,
+      organizationId,
+      membershipsLen: organizationMemberships.length,
+      membershipsRef: organizationMemberships,
+      organizationsLen: organizations.length,
+      selectedOrgId,
+      selectedOrganizationRole,
+      canManageSelectedOrganization,
+      isLoading,
+    });
+  }
+
   return (
     <OrganizationContext.Provider value={{
       organizations,
