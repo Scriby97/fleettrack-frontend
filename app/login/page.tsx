@@ -59,7 +59,12 @@ const LoginPage: FC = () => {
       if (error) {
         setError(error.message)
       } else {
-        router.push('/')
+        // Nur refresh() statt push()+refresh(): beide loesen sonst je einen
+        // eigenen Request durch die Middleware aus, die parallel um die
+        // Navigation konkurrieren - das verursachte ein kurzes Zurueckspringen
+        // auf /login, bevor die Session erkannt wurde. Die Middleware leitet
+        // bei erkannter Session von /login ohnehin selbst auf / weiter (siehe
+        // lib/supabase/middleware.ts), ein einzelner refresh() reicht daher.
         router.refresh()
       }
     } catch (err) {
