@@ -175,8 +175,8 @@
   "register": {
     "title": "S'inscrire",
     "subtitle": "Crée ton compte FleetTrack.",
-    "nameLabel": "Nom",
-    "namePlaceholder": "Jean Dupont",
+    "firstNameLabel": "Prénom",
+    "lastNameLabel": "Nom de famille",
     "emailLabel": "E-mail",
     "passwordLabel": "Mot de passe",
     "confirmPasswordLabel": "Confirmer le mot de passe",

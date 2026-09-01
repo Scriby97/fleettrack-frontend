@@ -175,8 +175,8 @@
   "register": {
     "title": "Register",
     "subtitle": "Create your FleetTrack account.",
-    "nameLabel": "Name",
-    "namePlaceholder": "John Doe",
+    "firstNameLabel": "First name",
+    "lastNameLabel": "Last name",
     "emailLabel": "Email",
     "passwordLabel": "Password",
     "confirmPasswordLabel": "Confirm password",

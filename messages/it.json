@@ -175,8 +175,8 @@
   "register": {
     "title": "Registrati",
     "subtitle": "Crea il tuo account FleetTrack.",
-    "nameLabel": "Nome",
-    "namePlaceholder": "Mario Rossi",
+    "firstNameLabel": "Nome",
+    "lastNameLabel": "Cognome",
     "emailLabel": "E-mail",
     "passwordLabel": "Password",
     "confirmPasswordLabel": "Conferma password",
