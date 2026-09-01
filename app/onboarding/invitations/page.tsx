@@ -7,11 +7,13 @@ import { useTranslations } from 'next-intl'
 import { getMyInvites, acceptInviteAsExistingUser, declineInviteAsExistingUser } from '@/lib/api/invites'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
+import { usePendingInvites } from '@/lib/contexts/PendingInvitesContext'
 import type { PendingInvite } from '@/lib/types/user'
 
 export default function OnboardingInvitationsPage() {
   const router = useRouter()
   const { refreshOrganizations } = useAuth()
+  const { removeInvite: removePendingInvite } = usePendingInvites()
   const t = useTranslations('onboardingInvitations')
   const getApiErrorMessage = useApiErrorMessage()
 
@@ -45,6 +47,7 @@ export default function OnboardingInvitationsPage() {
     setProcessingToken(token)
     try {
       await acceptInviteAsExistingUser(token)
+      removePendingInvite(token)
       await refreshOrganizations()
       router.push('/')
     } catch (err) {
@@ -59,6 +62,7 @@ export default function OnboardingInvitationsPage() {
     try {
       await declineInviteAsExistingUser(token)
       setInvites((prev) => prev.filter((invite) => invite.token !== token))
+      removePendingInvite(token)
     } catch (err) {
       setError(getApiErrorMessage(err, t('declineError')))
     } finally {

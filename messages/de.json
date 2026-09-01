@@ -202,6 +202,8 @@
     "allUsersDescription": "Benutzer und Einladungen über alle Organisationen hinweg verwalten.",
     "organizationsTitle": "Organizations",
     "organizationsDescription": "Organisationen anlegen und verwalten.",
+    "invitationsTitle": "Einladungen",
+    "invitationsDescription": "Einladungen zu anderen Organisationen ansehen und annehmen oder ablehnen.",
     "createOrgTitle": "Organisation erstellen",
     "createOrgDescription": "Eine neue Organisation anlegen und automatisch Owner werden."
   },
@@ -325,6 +327,19 @@
     "declineButton": "Ablehnen",
     "acceptError": "Fehler beim Annehmen der Einladung",
     "declineError": "Fehler beim Ablehnen der Einladung"
+  },
+  "invitePopup": {
+    "title": "Du hast eine Einladung",
+    "subtitle": "Du wurdest zu einer oder mehreren Organisationen eingeladen. Nimm die Einladung an, lehne sie ab, oder entscheide später.",
+    "roleLabel": "Rolle:",
+    "expiresLabel": "Läuft ab:",
+    "acceptButton": "Annehmen",
+    "accepting": "Wird verarbeitet...",
+    "declineButton": "Ablehnen",
+    "acceptError": "Fehler beim Annehmen der Einladung",
+    "declineError": "Fehler beim Ablehnen der Einladung",
+    "closeButton": "Schliessen",
+    "laterButton": "Später"
   },
   "invite": {
     "loadingText": "Einladung wird geladen...",

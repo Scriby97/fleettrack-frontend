@@ -5,7 +5,9 @@ import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
 import { OrganizationProvider } from "@/lib/contexts/OrganizationContext";
+import { PendingInvitesProvider } from "@/lib/contexts/PendingInvitesContext";
 import { BackendLoadingWrapper } from "./components/BackendLoadingWrapper";
+import { InvitePopup } from "./components/InvitePopup";
 import { ApiLoadingProvider } from "@/lib/api/ApiLoadingContext";
 import { ApiLoadingOverlay } from "./components/TopLoadingBar";
 import { ServiceWorkerRegistration } from "./components/ServiceWorkerRegistration";
@@ -73,7 +75,10 @@ export default async function RootLayout({
             <AuthProvider>
               <OrganizationProvider>
                 <BackendLoadingWrapper>
-                  {children}
+                  <PendingInvitesProvider>
+                    <InvitePopup />
+                    {children}
+                  </PendingInvitesProvider>
                 </BackendLoadingWrapper>
               </OrganizationProvider>
             </AuthProvider>

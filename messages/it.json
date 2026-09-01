@@ -202,6 +202,8 @@
     "allUsersDescription": "Gestisci utenti e inviti in tutte le organizzazioni.",
     "organizationsTitle": "Organizzazioni",
     "organizationsDescription": "Crea e gestisci le organizzazioni.",
+    "invitationsTitle": "Inviti",
+    "invitationsDescription": "Visualizza gli inviti di altre organizzazioni e accettali o rifiutali.",
     "createOrgTitle": "Crea organizzazione",
     "createOrgDescription": "Crea una nuova organizzazione e diventane automaticamente proprietario."
   },
@@ -325,6 +327,19 @@
     "declineButton": "Rifiuta",
     "acceptError": "Errore durante l'accettazione dell'invito",
     "declineError": "Errore durante il rifiuto dell'invito"
+  },
+  "invitePopup": {
+    "title": "Hai un invito",
+    "subtitle": "Sei stato invitato a una o più organizzazioni. Accettalo, rifiutalo o decidi più tardi.",
+    "roleLabel": "Ruolo:",
+    "expiresLabel": "Scade il:",
+    "acceptButton": "Accetta",
+    "accepting": "Elaborazione in corso...",
+    "declineButton": "Rifiuta",
+    "acceptError": "Errore durante l'accettazione dell'invito",
+    "declineError": "Errore durante il rifiuto dell'invito",
+    "closeButton": "Chiudi",
+    "laterButton": "Più tardi"
   },
   "invite": {
     "loadingText": "Caricamento dell'invito...",

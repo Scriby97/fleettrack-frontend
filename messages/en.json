@@ -202,6 +202,8 @@
     "allUsersDescription": "Manage users and invitations across all organizations.",
     "organizationsTitle": "Organizations",
     "organizationsDescription": "Create and manage organizations.",
+    "invitationsTitle": "Invitations",
+    "invitationsDescription": "View invitations from other organizations and accept or decline them.",
     "createOrgTitle": "Create Organization",
     "createOrgDescription": "Create a new organization and automatically become its owner."
   },
@@ -325,6 +327,19 @@
     "declineButton": "Decline",
     "acceptError": "Error accepting the invitation",
     "declineError": "Error declining the invitation"
+  },
+  "invitePopup": {
+    "title": "You have an invitation",
+    "subtitle": "You've been invited to one or more organizations. Accept it, decline it, or decide later.",
+    "roleLabel": "Role:",
+    "expiresLabel": "Expires:",
+    "acceptButton": "Accept",
+    "accepting": "Processing...",
+    "declineButton": "Decline",
+    "acceptError": "Error accepting the invitation",
+    "declineError": "Error declining the invitation",
+    "closeButton": "Close",
+    "laterButton": "Later"
   },
   "invite": {
     "loadingText": "Loading invitation...",

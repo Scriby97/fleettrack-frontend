@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useOrganization } from '@/lib/contexts/OrganizationContext'
+import { usePendingInvites } from '@/lib/contexts/PendingInvitesContext'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import type { FC } from 'react'
@@ -9,6 +10,7 @@ import type { FC } from 'react'
 const UserMenu: FC = () => {
   const { supabaseUser, userProfile, isAdmin, userRole, organization } = useAuth()
   const { organizations, selectedOrgId, setSelectedOrgId, selectedOrganizationRole } = useOrganization()
+  const { pendingInvites, hasPendingInvites } = usePendingInvites()
   const router = useRouter()
   const t = useTranslations('userMenu')
   const tCommon = useTranslations('common')
@@ -79,9 +81,14 @@ const UserMenu: FC = () => {
       {/* Einstellungen (buendelt Account, Ansicht inkl. Sprache, User Management, Organizations je nach Rolle) */}
       <button
         onClick={() => router.push('/settings')}
-        className="w-full px-4 py-2 text-sm bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-lg transition-colors text-left"
+        className="relative w-full px-4 py-2 text-sm bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-lg transition-colors text-left"
       >
         ⚙️ {t('settings')}
+        {hasPendingInvites && (
+          <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-green-500 text-white text-[11px] font-semibold leading-none">
+            {pendingInvites.length}
+          </span>
+        )}
       </button>
     </div>
   )
