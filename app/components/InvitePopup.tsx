@@ -27,20 +27,32 @@ export const InvitePopup: FC = () => {
   } = usePendingInvites()
 
   const [dismissed, setDismissed] = useState(false)
+  // Einmal eingerastet, sobald das Popup oeffnen durfte - bewusst getrennt von
+  // popupShownThisSession aus dem Context: markPopupShown() (unten) setzt
+  // dieses Context-Flag sofort auf true, sobald das Popup aufgeht. Wuerde
+  // shouldShow direkt von popupShownThisSession abhaengen, wuerde genau dieser
+  // Effekt das Popup im selben Zug wieder schliessen, bevor es je sichtbar
+  // war (Race zwischen Render und Effekt-Commit) - daher der eigene, nur
+  // vorwaerts laufende "opened"-State.
+  const [opened, setOpened] = useState(false)
   const [processingToken, setProcessingToken] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const shouldShow = !isLoading && hasPendingInvites && !popupShownThisSession && !dismissed
-
   useEffect(() => {
-    if (shouldShow) markPopupShown()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldShow])
+    if (opened || isLoading || !hasPendingInvites || popupShownThisSession) return
+    setOpened(true)
+    markPopupShown()
+  }, [opened, isLoading, hasPendingInvites, popupShownThisSession, markPopupShown])
+
+  const shouldShow = opened && !dismissed
 
   // Popup wieder ausblenden, sobald keine offenen Einladungen mehr da sind
   // (z.B. weil die letzte gerade angenommen/abgelehnt wurde).
   useEffect(() => {
-    if (!hasPendingInvites) setDismissed(false)
+    if (!hasPendingInvites) {
+      setDismissed(false)
+      setOpened(false)
+    }
   }, [hasPendingInvites])
 
   useEffect(() => {
