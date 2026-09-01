@@ -49,9 +49,20 @@ export const PendingInvitesProvider: FC<{ children: ReactNode }> = ({ children }
   useEffect(() => {
     if (!supabaseUser) {
       // Abgemeldet (oder noch nicht eingeloggt) - Zustand zuruecksetzen, damit
-      // beim naechsten Login wieder frisch geladen und das Popup wieder gezeigt wird.
+      // beim naechsten Login wieder frisch geladen und das Popup wieder gezeigt
+      // wird. Wichtig: auch den sessionStorage-Eintrag selbst loeschen, nicht
+      // nur den React-State - sonst wuerde ein erneuter Login im selben Tab
+      // (z.B. Account-Wechsel oder einfach ab-/wieder anmelden ohne den Tab zu
+      // schliessen) das alte "schon gezeigt"-Flag wieder einlesen und das
+      // Popup faelschlich dauerhaft unterdruecken, obwohl es laut Vorgabe bei
+      // jedem neuen Login wieder erscheinen soll.
       setPendingInvites([])
       setPopupShownThisSession(false)
+      try {
+        sessionStorage.removeItem(POPUP_SHOWN_KEY)
+      } catch {
+        // siehe unten
+      }
       return
     }
 
