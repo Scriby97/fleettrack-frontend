@@ -5,7 +5,9 @@ import { useTranslations } from 'next-intl'
 import { acceptInviteAsExistingUser, declineInviteAsExistingUser } from '@/lib/api/invites'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
+import { useDateLocale } from '@/lib/i18n/formatDate'
 import { usePendingInvites } from '@/lib/contexts/PendingInvitesContext'
+import type { OrganizationRole } from '@/lib/types/user'
 
 /**
  * Popup, das direkt nach dem Login erscheint, wenn offene Einladungen fuer den
@@ -16,7 +18,14 @@ import { usePendingInvites } from '@/lib/contexts/PendingInvitesContext'
 export const InvitePopup: FC = () => {
   const t = useTranslations('invitePopup')
   const getApiErrorMessage = useApiErrorMessage()
+  const dateLocale = useDateLocale()
   const { refreshOrganizations } = useAuth()
+
+  const ROLE_LABELS: Record<OrganizationRole, string> = {
+    employee: t('employeeRole'),
+    admin: t('adminRole'),
+    owner: t('ownerRole'),
+  }
   const {
     pendingInvites,
     hasPendingInvites,
@@ -132,10 +141,10 @@ export const InvitePopup: FC = () => {
                 {invite.organization.name}
               </div>
               <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-                {t('roleLabel')} <span className="font-medium">{invite.role}</span>
+                {t('roleLabel')} <span className="font-medium">{ROLE_LABELS[invite.role]}</span>
               </p>
               <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                {t('expiresLabel')} {new Date(invite.expiresAt).toLocaleDateString()}
+                {t('expiresLabel')} {new Date(invite.expiresAt).toLocaleDateString(dateLocale)}
               </p>
 
               <div className="mt-3 flex gap-2">

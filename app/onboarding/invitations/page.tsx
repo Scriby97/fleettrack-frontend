@@ -7,8 +7,9 @@ import { useTranslations } from 'next-intl'
 import { getMyInvites, acceptInviteAsExistingUser, declineInviteAsExistingUser } from '@/lib/api/invites'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
+import { useDateLocale } from '@/lib/i18n/formatDate'
 import { usePendingInvites } from '@/lib/contexts/PendingInvitesContext'
-import type { PendingInvite } from '@/lib/types/user'
+import type { OrganizationRole, PendingInvite } from '@/lib/types/user'
 
 export default function OnboardingInvitationsPage() {
   const router = useRouter()
@@ -16,6 +17,13 @@ export default function OnboardingInvitationsPage() {
   const { removeInvite: removePendingInvite } = usePendingInvites()
   const t = useTranslations('onboardingInvitations')
   const getApiErrorMessage = useApiErrorMessage()
+  const dateLocale = useDateLocale()
+
+  const ROLE_LABELS: Record<OrganizationRole, string> = {
+    employee: t('employeeRole'),
+    admin: t('adminRole'),
+    owner: t('ownerRole'),
+  }
 
   const [invites, setInvites] = useState<PendingInvite[]>([])
   const [loading, setLoading] = useState(true)
@@ -116,10 +124,10 @@ export default function OnboardingInvitationsPage() {
                 {invite.organization.name}
               </h2>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                {t('roleLabel')} <span className="font-medium">{invite.role}</span>
+                {t('roleLabel')} <span className="font-medium">{ROLE_LABELS[invite.role]}</span>
               </p>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                {t('expiresLabel')} {new Date(invite.expiresAt).toLocaleDateString()}
+                {t('expiresLabel')} {new Date(invite.expiresAt).toLocaleDateString(dateLocale)}
               </p>
 
               <div className="mt-4 flex gap-3">
