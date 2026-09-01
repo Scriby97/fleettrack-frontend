@@ -49,9 +49,8 @@ interface StatsArrayItem {
   notes?: string;
   bemerkung?: string;
   remarks?: string;
-  totalWorkHours?: number;
-  totalHours?: number;
-  hours?: number;
+  periodStartHours?: number | null;
+  periodEndHours?: number | null;
   totalFuelLiters?: number;
   fuelLiters?: number;
 }
@@ -77,9 +76,8 @@ interface StatsObjectValue {
   notes?: string;
   bemerkung?: string;
   remarks?: string;
-  totalWorkHours?: number;
-  totalHours?: number;
-  hours?: number;
+  periodStartHours?: number | null;
+  periodEndHours?: number | null;
   totalFuelLiters?: number;
   fuelLiters?: number;
 }
@@ -88,7 +86,7 @@ interface VehicleItemProps {
   vehicle: Vehicle;
   onEdit: (vehicle: Vehicle) => void;
   onDelete: (id: string) => void;
-  stats?: { hours: number; fuelLiters: number } | null;
+  stats?: { startHours: number | null; endHours: number | null; fuelLiters: number } | null;
 }
 
 const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = null }) => {
@@ -124,9 +122,15 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
       </div>
       <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
         <div>
-          {t('workingHoursLabel')}:{' '}
+          {t('startHoursLabel')}:{' '}
           <span className="font-medium">
-            {typeof stats?.hours === 'number' ? stats.hours.toFixed(2) : '—'}
+            {typeof stats?.startHours === 'number' ? stats.startHours.toFixed(1) : '—'}
+          </span>
+        </div>
+        <div>
+          {t('endHoursLabel')}:{' '}
+          <span className="font-medium">
+            {typeof stats?.endHours === 'number' ? stats.endHours.toFixed(1) : '—'}
           </span>
         </div>
         <div>{t('totalFueledLabel')}: <span className="font-medium">{stats?.fuelLiters ?? '—'} L</span></div>
@@ -179,6 +183,19 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
   );
 };
 
+// Formatiert ein Date fuer <input type="datetime-local"> (lokale Zeit, kein "Z"/Offset)
+const toDatetimeLocalValue = (date: Date): string => {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+const defaultRangeStart = (): string => {
+  const now = new Date();
+  return toDatetimeLocalValue(new Date(now.getFullYear(), now.getMonth(), 1, 0, 0));
+};
+
+const defaultRangeEnd = (): string => toDatetimeLocalValue(new Date());
+
 const FlottenUebersicht: FC = () => {
   const { isAdmin } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
@@ -187,9 +204,11 @@ const FlottenUebersicht: FC = () => {
   const tCommon = useTranslations('common');
   const getApiErrorMessage = useApiErrorMessage();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [statsMap, setStatsMap] = useState<Record<string, { hours: number; fuelLiters: number }>>({});
+  const [statsMap, setStatsMap] = useState<Record<string, { startHours: number | null; endHours: number | null; fuelLiters: number }>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rangeStart, setRangeStart] = useState(defaultRangeStart);
+  const [rangeEnd, setRangeEnd] = useState(defaultRangeEnd);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [editForm, setEditForm] = useState({
     name: '',
@@ -203,13 +222,15 @@ const FlottenUebersicht: FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  // Fetch vehicle stats when organization is selected
-  // Fetch vehicle stats when organization is selected
+  const rangeInvalid = Boolean(rangeStart) && Boolean(rangeEnd) && new Date(rangeStart) > new Date(rangeEnd);
+
+  // Fetch vehicle stats when organization or Zeitraum sich aendert
   useEffect(() => {
     const apiBaseUrl = getApiBaseUrlOrNull();
     if (!apiBaseUrl) return;
 
     if (!selectedOrgId) return;
+    if (!rangeStart || !rangeEnd || rangeInvalid) return;
 
     const controller = new AbortController();
     const fetchStats = async () => {
@@ -221,6 +242,8 @@ const FlottenUebersicht: FC = () => {
         if (selectedOrgId) {
           url.searchParams.set('organizationId', selectedOrgId);
         }
+        url.searchParams.set('startDate', new Date(rangeStart).toISOString());
+        url.searchParams.set('endDate', new Date(rangeEnd).toISOString());
 
         const res = await authenticatedFetch(url.toString(), { signal: controller.signal });
         if (!res.ok) throw new Error(`Vehicles stats HTTP ${res.status}`);
@@ -228,10 +251,10 @@ const FlottenUebersicht: FC = () => {
 
         // Normalize into vehicles array and statsMap
         const vehiclesFromStats: Vehicle[] = [];
-        const map: Record<string, { hours: number; fuelLiters: number }> = {};
+        const map: Record<string, { startHours: number | null; endHours: number | null; fuelLiters: number }> = {};
 
         if (Array.isArray(statsData)) {
-          // Expect items like { id|vehicleId, name, plate, totalHours, totalFuelLiters }
+          // Expect items like { id|vehicleId, name, plate, periodStartHours, periodEndHours, totalFuelLiters }
           statsData.forEach((s: StatsArrayItem) => {
             const id = String(s.vehicleId ?? s.id ?? s.vehicle ?? '');
             const name = s.name ?? s.vehicleName ?? s.vehicle ?? t('vehicleFallbackName', { id });
@@ -244,12 +267,13 @@ const FlottenUebersicht: FC = () => {
             const notes = s.notes ?? s.bemerkung ?? s.remarks ?? undefined;
             vehiclesFromStats.push({ id, name, plate, snowsatNumber, isRetired, location, vehicleType, fuelType, notes });
             map[id] = {
-              hours: Number(s.totalWorkHours ?? s.totalHours ?? s.hours ?? 0),
-              fuelLiters: Number(s.totalFuelLiters ?? s.fuelLiters ?? s.fuel ?? 0),
+              startHours: s.periodStartHours == null ? null : Number(s.periodStartHours),
+              endHours: s.periodEndHours == null ? null : Number(s.periodEndHours),
+              fuelLiters: Number(s.totalFuelLiters ?? s.fuelLiters ?? 0),
             };
           });
         } else if (statsData && typeof statsData === 'object') {
-          // object mapping: { vehicleId: { hours, fuelLiters, name?, plate? }, ... }
+          // object mapping: { vehicleId: { periodStartHours, periodEndHours, fuelLiters, name?, plate? }, ... }
           Object.entries(statsData as Record<string, StatsObjectValue>).forEach(([k, obj]) => {
             const id = String(k);
             const name = obj.name ?? obj.vehicleName ?? t('vehicleFallbackName', { id });
@@ -262,8 +286,9 @@ const FlottenUebersicht: FC = () => {
             const notes = obj.notes ?? obj.bemerkung ?? obj.remarks ?? undefined;
             vehiclesFromStats.push({ id, name, plate, snowsatNumber, isRetired, location, vehicleType, fuelType, notes });
             map[id] = {
-              hours: Number(obj.totalWorkHours ?? obj.totalHours ?? obj.hours ?? 0),
-              fuelLiters: Number(obj.totalFuelLiters ?? obj.fuelLiters ?? obj.fuel ?? 0),
+              startHours: obj.periodStartHours == null ? null : Number(obj.periodStartHours),
+              endHours: obj.periodEndHours == null ? null : Number(obj.periodEndHours),
+              fuelLiters: Number(obj.totalFuelLiters ?? obj.fuelLiters ?? 0),
             };
           });
         } else {
@@ -287,7 +312,7 @@ const FlottenUebersicht: FC = () => {
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedOrgId]);
+  }, [selectedOrgId, rangeStart, rangeEnd, rangeInvalid]);
 
   const handleEdit = (vehicle: Vehicle) => {
     setEditingVehicle(vehicle);
@@ -391,9 +416,6 @@ const FlottenUebersicht: FC = () => {
     }
   };
 
-  // Berechne Gesamttreibstoff über alle Fahrzeuge
-  const totalFuel = Object.values(statsMap).reduce((sum, stats) => sum + stats.fuelLiters, 0);
-
   return (
     <section className="space-y-6">
       <div>
@@ -425,28 +447,38 @@ const FlottenUebersicht: FC = () => {
         </div>
       </div>
 
-      {/* Gesamttreibstoff Anzeige */}
-      {vehicles.length > 0 && (
-        <div className="rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-                {t('totalFuelLabel')}
-              </p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {totalFuel.toFixed(2)} L
-              </p>
-            </div>
-            <svg 
-              className="w-16 h-16 text-blue-400 dark:text-blue-600" 
-              fill="currentColor"
-              viewBox="0 0 640 640"
-            >
-              <path d="M96 128C96 92.7 124.7 64 160 64L320 64C355.3 64 384 92.7 384 128L384 320L392 320C440.6 320 480 359.4 480 408L480 440C480 453.3 490.7 464 504 464C517.3 464 528 453.3 528 440L528 286C500.4 278.9 480 253.8 480 224L480 164.5L454.2 136.2C445.3 126.4 446 111.2 455.8 102.3C465.6 93.4 480.8 94.1 489.7 103.9L561.4 182.7C570.8 193 576 206.4 576 220.4L576 440C576 479.8 543.8 512 504 512C464.2 512 432 479.8 432 440L432 408C432 385.9 414.1 368 392 368L384 368L384 529.4C393.3 532.7 400 541.6 400 552C400 565.3 389.3 576 376 576L104 576C90.7 576 80 565.3 80 552C80 541.5 86.7 532.7 96 529.4L96 128zM160 144L160 240C160 248.8 167.2 256 176 256L304 256C312.8 256 320 248.8 320 240L320 144C320 135.2 312.8 128 304 128L176 128C167.2 128 160 135.2 160 144z"/>
-            </svg>
+      {/* Zeitraum-Filter */}
+      <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+          <div className="flex-1 space-y-1">
+            <label htmlFor="rangeStart" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              {t('filterStartLabel')}
+            </label>
+            <input
+              id="rangeStart"
+              type="datetime-local"
+              value={rangeStart}
+              onChange={(e) => setRangeStart(e.target.value)}
+              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex-1 space-y-1">
+            <label htmlFor="rangeEnd" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              {t('filterEndLabel')}
+            </label>
+            <input
+              id="rangeEnd"
+              type="datetime-local"
+              value={rangeEnd}
+              onChange={(e) => setRangeEnd(e.target.value)}
+              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+            />
           </div>
         </div>
-      )}
+        {rangeInvalid && (
+          <p className="mt-3 text-sm text-red-600 dark:text-red-400">{t('invalidRangeError')}</p>
+        )}
+      </div>
 
       {/* Edit Modal */}
       {editingVehicle && (

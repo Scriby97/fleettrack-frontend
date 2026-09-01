@@ -92,7 +92,6 @@
   "fleetOverview": {
     "title": "Aperçu de la flotte",
     "vehiclesInFleetCount": "{count} véhicules dans la flotte",
-    "totalFuelLabel": "Total du carburant fait le plein",
     "retiredLabel": "Hors service",
     "plateLabel": "Plaque d'immatriculation",
     "snowsatLabel": "N° SNOWsat",
@@ -100,7 +99,6 @@
     "typeLabel": "Type",
     "fuelTypeLabel": "Carburant",
     "notesLabel": "Remarque",
-    "workingHoursLabel": "Heures de travail",
     "totalFueledLabel": "Total ravitaillé",
     "editModalTitle": "Modifier le véhicule",
     "vehicleNameLabel": "Nom du véhicule",
@@ -127,7 +125,12 @@
     "confirmDeleteTitle": "Supprimer le véhicule",
     "confirmDeleteMessage": "Voulez-vous vraiment supprimer ce véhicule ?",
     "vehicleFallbackName": "Véhicule {id}",
-    "statsLoadError": "Erreur lors du chargement des véhicules"
+    "statsLoadError": "Erreur lors du chargement des véhicules",
+    "filterStartLabel": "Date et heure de début",
+    "filterEndLabel": "Date et heure de fin",
+    "startHoursLabel": "Heures de service - début",
+    "endHoursLabel": "Heures de service - fin",
+    "invalidRangeError": "La date de début doit être antérieure à la date de fin."
   },
   "createVehicle": {
     "title": "Ajouter un véhicule",

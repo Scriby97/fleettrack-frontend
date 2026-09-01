@@ -92,7 +92,6 @@
   "fleetOverview": {
     "title": "Fleet overview",
     "vehiclesInFleetCount": "{count} vehicles in the fleet",
-    "totalFuelLabel": "Total fuel refilled",
     "retiredLabel": "Retired",
     "plateLabel": "License plate",
     "snowsatLabel": "SNOWsat no.",
@@ -100,7 +99,6 @@
     "typeLabel": "Type",
     "fuelTypeLabel": "Fuel",
     "notesLabel": "Notes",
-    "workingHoursLabel": "Working hours",
     "totalFueledLabel": "Total refilled",
     "editModalTitle": "Edit vehicle",
     "vehicleNameLabel": "Vehicle name",
@@ -127,7 +125,12 @@
     "confirmDeleteTitle": "Delete vehicle",
     "confirmDeleteMessage": "Are you sure you want to delete this vehicle?",
     "vehicleFallbackName": "Vehicle {id}",
-    "statsLoadError": "Error loading vehicles"
+    "statsLoadError": "Error loading vehicles",
+    "filterStartLabel": "Start date + time",
+    "filterEndLabel": "End date + time",
+    "startHoursLabel": "Start operating hours",
+    "endHoursLabel": "End operating hours",
+    "invalidRangeError": "The start date must be before the end date."
   },
   "createVehicle": {
     "title": "Add vehicle",

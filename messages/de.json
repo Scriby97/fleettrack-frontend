@@ -92,7 +92,6 @@
   "fleetOverview": {
     "title": "Flottenübersicht",
     "vehiclesInFleetCount": "{count} Fahrzeuge in der Flotte",
-    "totalFuelLabel": "Gesamt getankter Treibstoff",
     "retiredLabel": "Ausrangiert",
     "plateLabel": "Kennzeichen",
     "snowsatLabel": "SNOWsat-Nr",
@@ -100,7 +99,6 @@
     "typeLabel": "Typ",
     "fuelTypeLabel": "Treibstoff",
     "notesLabel": "Bemerkung",
-    "workingHoursLabel": "Arbeitsstunden",
     "totalFueledLabel": "Total getankt",
     "editModalTitle": "Fahrzeug bearbeiten",
     "vehicleNameLabel": "Fahrzeugname",
@@ -127,7 +125,12 @@
     "confirmDeleteTitle": "Fahrzeug löschen",
     "confirmDeleteMessage": "Möchten Sie das Fahrzeug wirklich löschen?",
     "vehicleFallbackName": "Fahrzeug {id}",
-    "statsLoadError": "Fehler beim Laden der Fahrzeuge"
+    "statsLoadError": "Fehler beim Laden der Fahrzeuge",
+    "filterStartLabel": "Startdatum + Zeit",
+    "filterEndLabel": "Enddatum + Zeit",
+    "startHoursLabel": "Start-Betriebsstunden",
+    "endHoursLabel": "End-Betriebsstunden",
+    "invalidRangeError": "Das Startdatum muss vor dem Enddatum liegen."
   },
   "createVehicle": {
     "title": "Fahrzeug erfassen",
