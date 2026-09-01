@@ -49,7 +49,6 @@ export default function UsersPage() {
   const [usersError, setUsersError] = useState<string | null>(null)
   const [resetNotice, setResetNotice] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
-  const [createdInviteLink, setCreatedInviteLink] = useState<string | null>(null)
   const [origin, setOrigin] = useState('')
   const [users, setUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -221,9 +220,10 @@ export default function UsersPage() {
     try {
       const invite = await createInvite({ email, role: inviteRole }, selectedOrgId ?? undefined)
       setInvites((prev) => [invite, ...prev])
-      setCreatedInviteLink(inviteLinkForToken(invite.token))
-      setInviteEmail('')
-      setInviteRole('employee')
+      // Der eingeladene User wird die Einladung nach dem naechsten Login
+      // automatisch per Popup angezeigt bekommen - kein Link-Handout im
+      // Erstellungs-Dialog mehr noetig, Fenster schliesst direkt.
+      handleCloseModal()
     } catch (err) {
       const message = getApiErrorMessage(err, tInv('createErrorGeneric'))
       setError(message)
@@ -255,9 +255,9 @@ export default function UsersPage() {
 
   const handleCloseModal = () => {
     setShowInviteModal(false)
-    setCreatedInviteLink(null)
     setInviteEmail('')
     setInviteRole('employee')
+    setError(null)
   }
 
   const sortedInvites = useMemo(() => {
@@ -831,48 +831,24 @@ export default function UsersPage() {
                   </select>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
-                >
-                  {submitting ? tInv('creatingLabel') : tInv('createSubmitButton')}
-                </button>
-              </form>
-
-              {createdInviteLink && (
-                <div className="mt-6 space-y-3">
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    {tInv('inviteLinkLabel')}
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      readOnly
-                      value={createdInviteLink}
-                      className="flex-1 px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm font-mono"
-                      onClick={(e) => (e.target as HTMLInputElement).select()}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleCopyLink(createdInviteLink, 'created')}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      {copiedId === 'created' ? tInv('copiedLabel') : tInv('copyLinkButton')}
-                    </button>
-                  </div>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    disabled={submitting}
+                    className="flex-1 px-4 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors disabled:opacity-60"
+                  >
+                    {tCommon('cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
+                  >
+                    {submitting ? tInv('creatingLabel') : tInv('createSubmitButton')}
+                  </button>
                 </div>
-              )}
-
-              <div className="pt-6">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="w-full px-4 py-2 bg-zinc-900 dark:bg-zinc-700 text-white rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-600 transition-colors"
-                >
-                  {tInv('doneButton')}
-                </button>
-              </div>
+              </form>
             </div>
           </div>
         </div>
