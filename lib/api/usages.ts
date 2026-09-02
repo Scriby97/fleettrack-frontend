@@ -6,6 +6,9 @@ export interface Creator {
   id: string;
   firstName: string;
   lastName: string;
+  // Fallback fuer die Anzeige, falls Vor-/Nachname fehlen (z.B. Accounts, die
+  // vor der Vorname/Nachname-Pflicht bei der Registrierung angelegt wurden).
+  email?: string;
 }
 
 export interface Usage {

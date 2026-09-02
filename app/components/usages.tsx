@@ -26,6 +26,9 @@ interface Report {
   creatorId?: string;
   creatorFirstName?: string;
   creatorLastName?: string;
+  // Fallback fuer die Anzeige, falls Vor-/Nachname fehlen (z.B. Accounts, die
+  // vor der Vorname/Nachname-Pflicht bei der Registrierung angelegt wurden).
+  creatorEmail?: string;
 }
 
 interface Vehicle {
@@ -56,7 +59,7 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, 
   const dateLocale = useDateLocale();
   const creatorName = report.creatorFirstName || report.creatorLastName
     ? `${report.creatorFirstName || ''} ${report.creatorLastName || ''}`.trim()
-    : null;
+    : report.creatorEmail ?? null;
 
   return (
   <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 hover:shadow-md transition-shadow flex justify-between items-start">
@@ -254,6 +257,7 @@ const UebersichtEintraege: FC = () => {
                 creatorId: updatedUsage.creatorId ?? r.creatorId,
                 creatorFirstName: updatedUsage.creator?.firstName ?? r.creatorFirstName,
                 creatorLastName: updatedUsage.creator?.lastName ?? r.creatorLastName,
+                creatorEmail: updatedUsage.creator?.email ?? r.creatorEmail,
               }
             : r
         )
@@ -325,6 +329,7 @@ const UebersichtEintraege: FC = () => {
           creatorId: u.creatorId,
           creatorFirstName: u.creator?.firstName,
           creatorLastName: u.creator?.lastName,
+          creatorEmail: u.creator?.email,
         }));
 
         setReports(mapped);
@@ -400,11 +405,16 @@ const UebersichtEintraege: FC = () => {
                 <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
                   {canEditEditingReport ? t('editUsage') : t('viewUsage')}
                 </h2>
-                {canEditEditingReport && (editingReport.creatorFirstName || editingReport.creatorLastName) && (
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-                    {t('createdBy', { name: `${editingReport.creatorFirstName ?? ''} ${editingReport.creatorLastName ?? ''}`.trim() })}
-                  </p>
-                )}
+                {canEditEditingReport && (() => {
+                  const editingCreatorName = editingReport.creatorFirstName || editingReport.creatorLastName
+                    ? `${editingReport.creatorFirstName ?? ''} ${editingReport.creatorLastName ?? ''}`.trim()
+                    : editingReport.creatorEmail
+                  return editingCreatorName && (
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+                      {t('createdBy', { name: editingCreatorName })}
+                    </p>
+                  )
+                })()}
               </div>
               <button
                 onClick={handleCancelEdit}
