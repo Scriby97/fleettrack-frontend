@@ -18,7 +18,13 @@ const LoginPage: FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isRecoveryRedirect, setIsRecoveryRedirect] = useState(false)
-  const [infoMessage, setInfoMessage] = useState<string | null>(null)
+  const [redirecting, setRedirecting] = useState(false)
+
+  // Reine Ableitung aus den URL-Query-Params - useSearchParams() liefert die
+  // bereits waehrend des Renders (kein Browser-only-API wie window.location),
+  // daher kein useEffect/useState noetig.
+  const infoMessage = searchParams.get('message')
+    ?? (searchParams.get('registered') === '1' ? t('registeredSuccessMessage') : null)
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -27,27 +33,17 @@ const LoginPage: FC = () => {
 
     const hash = window.location.hash
     if (hash && hash.includes('type=recovery')) {
+      // window.location.hash ist echtes Browser-only-API (server-seitig nicht
+      // verfuegbar, taucht auch nie im Server-Response auf) und muss daher
+      // zwingend erst nach dem Mount gelesen werden - die eigentliche
+      // Zustandsaenderung ist hier untrennbar an die Navigation (router.replace)
+      // gekoppelt, ein reiner Render-Ableitung waere nicht moeglich, ohne beim
+      // Hydrieren kurzzeitig das falsche UI zu zeigen.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsRecoveryRedirect(true)
       router.replace(`/reset-password${hash}`)
     }
   }, [router])
-
-  useEffect(() => {
-    const message = searchParams.get('message')
-    const registered = searchParams.get('registered')
-
-    if (message) {
-      setInfoMessage(message)
-      return
-    }
-
-    if (registered === '1') {
-      setInfoMessage(t('registeredSuccessMessage'))
-      return
-    }
-
-    setInfoMessage(null)
-  }, [searchParams, t])
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -58,23 +54,32 @@ const LoginPage: FC = () => {
       const { error } = await signIn(email, password)
       if (error) {
         setError(error.message)
+        setLoading(false)
       } else {
         // Nur refresh() statt push()+refresh(): beide loesen sonst je einen
         // eigenen Request durch die Middleware aus, die parallel um die
-        // Navigation konkurrieren - das verursachte ein kurzes Zurueckspringen
-        // auf /login, bevor die Session erkannt wurde. Die Middleware leitet
-        // bei erkannter Session von /login ohnehin selbst auf / weiter (siehe
-        // lib/supabase/middleware.ts), ein einzelner refresh() reicht daher.
+        // Navigation konkurrieren. Die Middleware leitet bei erkannter Session
+        // von /login ohnehin selbst auf / weiter (siehe lib/supabase/middleware.ts).
+        //
+        // router.refresh() aendert die URL aber erst, wenn der Server-Roundtrip
+        // (inkl. Middleware-Redirect) fertig ist - bis dahin steht die Seite
+        // noch auf /login. Wuerde man hier loading wieder auf false setzen,
+        // wuerde in genau dieser Zwischenzeit kurz das echte Login-Formular
+        // aufblitzen, sobald AuthProvider mit dem Laden von Profil/Organisation
+        // fertig ist (der globale Splash-Spinner verschwindet dann, obwohl die
+        // Navigation noch laeuft). Stattdessen bleibt die Seite bis zum
+        // tatsaechlichen Routenwechsel im eigenen Redirect-Spinner (unten).
+        setRedirecting(true)
         router.refresh()
+        return
       }
     } catch (err) {
       setError(tCommon('unexpectedError'))
-    } finally {
       setLoading(false)
     }
   }
 
-  if (isRecoveryRedirect) {
+  if (isRecoveryRedirect || redirecting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 px-4">
         <div className="max-w-md w-full text-center">
