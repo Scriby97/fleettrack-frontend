@@ -126,8 +126,9 @@
     "confirmDeleteMessage": "Vuoi davvero eliminare questo veicolo?",
     "vehicleFallbackName": "Veicolo {id}",
     "statsLoadError": "Errore durante il caricamento dei veicoli",
-    "filterStartLabel": "Data e ora di inizio",
-    "filterEndLabel": "Data e ora di fine",
+    "filterSectionTitle": "Periodo di utilizzo",
+    "filterStartLabel": "Inizio",
+    "filterEndLabel": "Fine",
     "startHoursLabel": "Ore di servizio - inizio",
     "endHoursLabel": "Ore di servizio - fine",
     "invalidRangeError": "La data di inizio deve essere precedente alla data di fine."

@@ -126,8 +126,9 @@
     "confirmDeleteMessage": "Möchten Sie das Fahrzeug wirklich löschen?",
     "vehicleFallbackName": "Fahrzeug {id}",
     "statsLoadError": "Fehler beim Laden der Fahrzeuge",
-    "filterStartLabel": "Startdatum + Zeit",
-    "filterEndLabel": "Enddatum + Zeit",
+    "filterSectionTitle": "Nutzungszeitraum",
+    "filterStartLabel": "Start",
+    "filterEndLabel": "Ende",
     "startHoursLabel": "Start-Betriebsstunden",
     "endHoursLabel": "End-Betriebsstunden",
     "invalidRangeError": "Das Startdatum muss vor dem Enddatum liegen."

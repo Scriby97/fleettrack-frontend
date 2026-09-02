@@ -126,8 +126,9 @@
     "confirmDeleteMessage": "Are you sure you want to delete this vehicle?",
     "vehicleFallbackName": "Vehicle {id}",
     "statsLoadError": "Error loading vehicles",
-    "filterStartLabel": "Start date + time",
-    "filterEndLabel": "End date + time",
+    "filterSectionTitle": "Usage period",
+    "filterStartLabel": "Start",
+    "filterEndLabel": "End",
     "startHoursLabel": "Start operating hours",
     "endHoursLabel": "End operating hours",
     "invalidRangeError": "The start date must be before the end date."

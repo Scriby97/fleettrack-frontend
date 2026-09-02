@@ -191,7 +191,7 @@ const toDatetimeLocalValue = (date: Date): string => {
 
 const defaultRangeStart = (): string => {
   const now = new Date();
-  return toDatetimeLocalValue(new Date(now.getFullYear(), now.getMonth(), 1, 0, 0));
+  return toDatetimeLocalValue(new Date(now.getFullYear() - 1, now.getMonth(), now.getDate(), now.getHours(), now.getMinutes()));
 };
 
 const defaultRangeEnd = (): string => toDatetimeLocalValue(new Date());
@@ -449,6 +449,9 @@ const FlottenUebersicht: FC = () => {
 
       {/* Zeitraum-Filter */}
       <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">
+          {t('filterSectionTitle')}
+        </h2>
         <div className="flex flex-col sm:flex-row sm:items-end gap-3">
           <div className="flex-1 space-y-1">
             <label htmlFor="rangeStart" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
