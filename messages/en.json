@@ -191,6 +191,9 @@
   "settings": {
     "title": "Settings",
     "subtitle": "Choose what you'd like to edit.",
+    "personalSectionTitle": "Personal",
+    "organizationSectionTitle": "Organization",
+    "adminSectionTitle": "Administration",
     "accountTitle": "Account",
     "accountDescription": "Change your password and view account details.",
     "appearanceTitle": "Appearance",

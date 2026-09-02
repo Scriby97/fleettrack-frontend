@@ -191,6 +191,9 @@
   "settings": {
     "title": "Einstellungen",
     "subtitle": "Wähl aus, was du bearbeiten möchtest.",
+    "personalSectionTitle": "Persönlich",
+    "organizationSectionTitle": "Organisation",
+    "adminSectionTitle": "Administration",
     "accountTitle": "Account",
     "accountDescription": "Passwort ändern und Kontodetails ansehen.",
     "appearanceTitle": "Ansicht",

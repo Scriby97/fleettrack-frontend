@@ -191,6 +191,9 @@
   "settings": {
     "title": "Paramètres",
     "subtitle": "Choisis ce que tu souhaites modifier.",
+    "personalSectionTitle": "Personnel",
+    "organizationSectionTitle": "Organisation",
+    "adminSectionTitle": "Administration",
     "accountTitle": "Compte",
     "accountDescription": "Modifier le mot de passe et consulter les détails du compte.",
     "appearanceTitle": "Affichage",
