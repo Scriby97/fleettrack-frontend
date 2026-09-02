@@ -85,7 +85,7 @@ const UserMenu: FC = () => {
       >
         ⚙️ {t('settings')}
         {hasPendingInvites && (
-          <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-green-500 text-white text-[11px] font-semibold leading-none">
+          <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-yellow-400 text-zinc-900 text-[11px] font-semibold leading-none">
             {pendingInvites.length}
           </span>
         )}

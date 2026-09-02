@@ -50,7 +50,7 @@ export default function SettingsPage() {
             className="relative rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
           >
             {hasPendingInvites && (
-              <span className="absolute top-3 right-3 min-w-[20px] h-[20px] px-1.5 flex items-center justify-center rounded-full bg-green-500 text-white text-xs font-semibold leading-none">
+              <span className="absolute top-3 right-3 min-w-[20px] h-[20px] px-1.5 flex items-center justify-center rounded-full bg-yellow-400 text-zinc-900 text-xs font-semibold leading-none">
                 {pendingInvites.length}
               </span>
             )}
