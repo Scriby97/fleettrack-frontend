@@ -78,10 +78,8 @@ export default function SettingsBillingPage() {
     void loadSubscription()
   }, [authLoading, orgLoading, isOwner, selectedOrgId, loadSubscription])
 
-  const handleConfirmSwitch = async () => {
-    if (!selectedOrgId || !confirmTier) return
-    const tier = confirmTier
-    setConfirmTier(null)
+  const performSwitch = async (tier: SubscriptionTier) => {
+    if (!selectedOrgId) return
     setSwitchingTier(tier)
     setError(null)
     setNotice(null)
@@ -108,6 +106,24 @@ export default function SettingsBillingPage() {
     } finally {
       setSwitchingTier(null)
     }
+  }
+
+  // Upgrade vom kostenlosen Lieutenant-Tarif fuehrt ohnehin sofort zu einer
+  // externen Stripe-Checkout-Weiterleitung - dafuer braucht es keinen
+  // zusaetzlichen Bestaetigungsdialog, der Wechsel geht direkt los.
+  const handlePlanClick = (tier: SubscriptionTier) => {
+    if (subscription?.tier === 'lieutenant' && tier !== 'lieutenant') {
+      void performSwitch(tier)
+    } else {
+      setConfirmTier(tier)
+    }
+  }
+
+  const handleConfirmSwitch = async () => {
+    if (!confirmTier) return
+    const tier = confirmTier
+    setConfirmTier(null)
+    await performSwitch(tier)
   }
 
   const handleManageBilling = async () => {
@@ -238,7 +254,7 @@ export default function SettingsBillingPage() {
                       <button
                         type="button"
                         disabled={isCurrent || switchingTier !== null}
-                        onClick={() => setConfirmTier(plan.id)}
+                        onClick={() => handlePlanClick(plan.id)}
                         className={[
                           'mt-4 w-full px-4 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
                           isCurrent
@@ -264,8 +280,13 @@ export default function SettingsBillingPage() {
       </div>
 
       {confirmTier && (() => {
+        // Diese Verzweigung wird nur fuer Kuendigung (-> lieutenant) und den
+        // direkten Wechsel zwischen zwei bereits bezahlten Tarifen erreicht -
+        // ein Upgrade vom kostenlosen Tarif laeuft ohne Dialog direkt zu Stripe
+        // Checkout (siehe handlePlanClick).
         const isCancel = confirmTier === 'lieutenant'
         const overLimit = isCancel && subscription?.overLieutenantLimit
+
         return (
           <ConfirmDialog
             title={overLimit ? t('cancelConfirmOverLimitTitle') : isCancel ? t('cancelConfirmTitle') : t('switchConfirmTitle')}
