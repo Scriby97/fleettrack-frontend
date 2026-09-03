@@ -8,6 +8,27 @@ import { useAuth } from '@/lib/auth/AuthProvider'
 import { useOrganization } from '@/lib/contexts/OrganizationContext'
 import { usePendingInvites } from '@/lib/contexts/PendingInvitesContext'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
+import type { ReactNode } from 'react'
+
+// Einheitlicher Linien-Icon-Stil fuer alle Settings-Karten (Umschlag-Icon der
+// Einladungen-Karte als Vorlage) - jede Karte uebergibt nur ihre eigenen
+// SVG-Formen, Grösse/Farbe/Strichstil bleiben so garantiert konsistent.
+function SettingsIcon({ children }: { children: ReactNode }) {
+  return (
+    <svg
+      className="w-7 h-7 text-blue-600 dark:text-blue-400"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  )
+}
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -54,7 +75,10 @@ export default function SettingsPage() {
               href="/settings/account"
               className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
             >
-              <span className="text-2xl" aria-hidden="true">👤</span>
+              <SettingsIcon>
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+              </SettingsIcon>
               <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('accountTitle')}</div>
               <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                 {t('accountDescription')}
@@ -65,7 +89,10 @@ export default function SettingsPage() {
               href="/settings/appearance"
               className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
             >
-              <span className="text-2xl" aria-hidden="true">🎨</span>
+              <SettingsIcon>
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+              </SettingsIcon>
               <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('appearanceTitle')}</div>
               <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                 {t('appearanceDescription')}
@@ -76,7 +103,10 @@ export default function SettingsPage() {
               href="/settings/reminders"
               className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
             >
-              <span className="text-2xl" aria-hidden="true">🔔</span>
+              <SettingsIcon>
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </SettingsIcon>
               <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('remindersTitle')}</div>
               <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                 {t('remindersDescription')}
@@ -92,19 +122,10 @@ export default function SettingsPage() {
                   {pendingInvites.length}
                 </span>
               )}
-              <svg
-                className="w-7 h-7 text-blue-600 dark:text-blue-400"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
+              <SettingsIcon>
                 <rect x="3" y="5" width="18" height="14" rx="2" />
                 <path d="M3 7l9 6 9-6" />
-              </svg>
+              </SettingsIcon>
               <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('invitationsTitle')}</div>
               <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                 {t('invitationsDescription')}
@@ -124,7 +145,12 @@ export default function SettingsPage() {
                 href="/admin/users"
                 className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
               >
-                <span className="text-2xl" aria-hidden="true">👥</span>
+                <SettingsIcon>
+                  <circle cx="9" cy="8" r="3.5" />
+                  <path d="M2 20c0-3.6 3.1-6.5 7-6.5s7 2.9 7 6.5" />
+                  <path d="M15.5 4.2a3.5 3.5 0 0 1 0 6.8" />
+                  <path d="M17.5 13.8c2.3.7 4 2.9 4 5.7" />
+                </SettingsIcon>
                 <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('userManagementTitle')}</div>
                 <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                   {t('userManagementDescription')}
@@ -137,7 +163,10 @@ export default function SettingsPage() {
                 href="/settings/billing"
                 className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
               >
-                <span className="text-2xl" aria-hidden="true">💳</span>
+                <SettingsIcon>
+                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                  <path d="M2 10h20" />
+                </SettingsIcon>
                 <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('billingTitle')}</div>
                 <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                   {t('billingDescription')}
@@ -149,7 +178,11 @@ export default function SettingsPage() {
               href="/onboarding/create-organization"
               className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
             >
-              <span className="text-2xl" aria-hidden="true">🏢</span>
+              <SettingsIcon>
+                <rect x="4" y="3" width="16" height="18" rx="1" />
+                <path d="M9 21v-4h6v4" />
+                <path d="M8 7h2M14 7h2M8 12h2M14 12h2" />
+              </SettingsIcon>
               <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('createOrgTitle')}</div>
               <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                 {t('createOrgDescription')}
@@ -169,7 +202,11 @@ export default function SettingsPage() {
                 href="/admin/all-users"
                 className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
               >
-                <span className="text-2xl" aria-hidden="true">🗂️</span>
+                <SettingsIcon>
+                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                  <circle cx="8" cy="12" r="2" />
+                  <path d="M13 10h6M13 14h4" />
+                </SettingsIcon>
                 <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('allUsersTitle')}</div>
                 <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                   {t('allUsersDescription')}
@@ -180,7 +217,11 @@ export default function SettingsPage() {
                 href="/admin/organizations"
                 className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
               >
-                <span className="text-2xl" aria-hidden="true">🏛️</span>
+                <SettingsIcon>
+                  <path d="M3 10l9-6 9 6" />
+                  <path d="M5 10v11M9 10v11M15 10v11M19 10v11" />
+                  <path d="M3 21h18" />
+                </SettingsIcon>
                 <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('organizationsTitle')}</div>
                 <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                   {t('organizationsDescription')}
