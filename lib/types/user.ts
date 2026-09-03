@@ -52,9 +52,21 @@ export interface OrganizationSubscription {
   currentPeriodStart?: string
   currentPeriodEnd?: string
   canceledAt?: string
+  // Nur gesetzt, sobald einmal eine Stripe-Subscription bestand (nie beim
+  // reinen Free/Lieutenant-Tarif) - steuert im Frontend, ob der Link zum
+  // Stripe Customer Portal (Rechnungen/Zahlungsmethode) angezeigt wird.
+  stripeCustomerId?: string
   createdAt: string
   updatedAt: string
   limits?: SubscriptionLimits
+}
+
+// Antwort von PATCH /organizations/:id/subscription - bei einem Upgrade vom
+// kostenlosen Lieutenant-Tarif liefert der Server statt der aktualisierten
+// Subscription eine Stripe-Checkout-URL, zu der weitergeleitet werden muss
+// (die Subscription selbst aendert sich erst nach erfolgreicher Zahlung).
+export interface UpdateOrganizationSubscriptionResponse extends OrganizationSubscription {
+  checkoutUrl?: string | null
 }
 
 export interface PendingInvite {

@@ -12,7 +12,7 @@ import Breadcrumbs from '@/app/components/Breadcrumbs'
 export default function SettingsPage() {
   const router = useRouter()
   const { supabaseUser, loading: authLoading, isAdmin } = useAuth()
-  const { canManageSelectedOrganization } = useOrganization()
+  const { canManageSelectedOrganization, selectedOrganizationRole } = useOrganization()
   const { pendingInvites, hasPendingInvites } = usePendingInvites()
   const t = useTranslations('settings')
 
@@ -116,6 +116,19 @@ export default function SettingsPage() {
                 <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('userManagementTitle')}</div>
                 <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                   {t('userManagementDescription')}
+                </p>
+              </Link>
+            )}
+
+            {selectedOrganizationRole === 'owner' && (
+              <Link
+                href="/settings/billing"
+                className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+              >
+                <span className="text-2xl" aria-hidden="true">💳</span>
+                <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('billingTitle')}</div>
+                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                  {t('billingDescription')}
                 </p>
               </Link>
             )}
