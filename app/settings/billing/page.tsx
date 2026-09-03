@@ -94,8 +94,11 @@ export default function SettingsBillingPage() {
       }
       if (tier === 'lieutenant') {
         // Kuendigung wirkt erst zum Periodenende (Stripe cancel_at_period_end) -
-        // Tier/Status aendern sich hier serverseitig bewusst noch nicht.
-        setNotice(t('cancelSuccessNotice'))
+        // Tier/Status aendern sich hier serverseitig bewusst noch nicht. Ob die
+        // Organisation dann tatsaechlich alle Mitgliedschaften verliert, wird
+        // beim eigentlichen Downgrade live neu geprueft (siehe downgradeToFree) -
+        // der aktuelle overLieutenantLimit-Wert ist nur eine Momentaufnahme.
+        setNotice(subscription?.overLieutenantLimit ? t('cancelSuccessOverLimitNotice') : t('cancelSuccessNotice'))
       } else {
         setSubscription(result)
         setNotice(t('switchSuccessNotice'))
@@ -260,16 +263,20 @@ export default function SettingsBillingPage() {
         ) : null}
       </div>
 
-      {confirmTier && (
-        <ConfirmDialog
-          title={confirmTier === 'lieutenant' ? t('cancelConfirmTitle') : t('switchConfirmTitle')}
-          message={confirmTier === 'lieutenant' ? t('cancelConfirmMessage') : t('switchConfirmMessage')}
-          confirmLabel={confirmTier === 'lieutenant' ? t('cancelConfirmButton') : t('switchConfirmButton')}
-          cancelLabel={t('confirmCancelLabel')}
-          onConfirm={handleConfirmSwitch}
-          onCancel={() => setConfirmTier(null)}
-        />
-      )}
+      {confirmTier && (() => {
+        const isCancel = confirmTier === 'lieutenant'
+        const overLimit = isCancel && subscription?.overLieutenantLimit
+        return (
+          <ConfirmDialog
+            title={overLimit ? t('cancelConfirmOverLimitTitle') : isCancel ? t('cancelConfirmTitle') : t('switchConfirmTitle')}
+            message={overLimit ? t('cancelConfirmOverLimitMessage') : isCancel ? t('cancelConfirmMessage') : t('switchConfirmMessage')}
+            confirmLabel={isCancel ? t('cancelConfirmButton') : t('switchConfirmButton')}
+            cancelLabel={t('confirmCancelLabel')}
+            onConfirm={handleConfirmSwitch}
+            onCancel={() => setConfirmTier(null)}
+          />
+        )
+      })()}
     </div>
   )
 }

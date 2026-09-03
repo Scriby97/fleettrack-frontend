@@ -59,6 +59,10 @@ export interface OrganizationSubscription {
   createdAt: string
   updatedAt: string
   limits?: SubscriptionLimits
+  // true, wenn die Organisation aktuell mehr aktive Fahrzeuge oder Mitarbeiter
+  // hat, als der kostenlose Lieutenant-Tarif erlaubt - steuert die verschärfte
+  // Kündigungswarnung (Kündigen trennt in diesem Fall alle Mitgliedschaften).
+  overLieutenantLimit?: boolean
 }
 
 // Antwort von PATCH /organizations/:id/subscription - bei einem Upgrade vom
