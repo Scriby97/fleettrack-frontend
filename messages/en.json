@@ -283,7 +283,6 @@
     "perMonthSuffix": "/ month",
     "currentPlanBadge": "Current plan",
     "switching": "Switching...",
-    "cancelButton": "Cancel",
     "switchButton": "Switch to {plan}",
     "switchError": "Error changing the subscription",
     "switchSuccessNotice": "Plan switched successfully.",

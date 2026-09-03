@@ -283,7 +283,6 @@
     "perMonthSuffix": "/ mese",
     "currentPlanBadge": "Piano attuale",
     "switching": "Cambio in corso...",
-    "cancelButton": "Disdici",
     "switchButton": "Passa a {plan}",
     "switchError": "Errore durante la modifica dell'abbonamento",
     "switchSuccessNotice": "Piano cambiato con successo.",

@@ -283,7 +283,6 @@
     "perMonthSuffix": "/ mois",
     "currentPlanBadge": "Forfait actuel",
     "switching": "Changement en cours...",
-    "cancelButton": "Résilier",
     "switchButton": "Passer à {plan}",
     "switchError": "Erreur lors du changement d'abonnement",
     "switchSuccessNotice": "Forfait changé avec succès.",

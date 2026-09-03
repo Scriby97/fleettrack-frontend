@@ -283,7 +283,6 @@
     "perMonthSuffix": "/ Monat",
     "currentPlanBadge": "Aktueller Tarif",
     "switching": "Wird umgestellt...",
-    "cancelButton": "Kündigen",
     "switchButton": "Wechseln zu {plan}",
     "switchError": "Fehler beim Ändern des Abonnements",
     "switchSuccessNotice": "Tarif erfolgreich gewechselt.",

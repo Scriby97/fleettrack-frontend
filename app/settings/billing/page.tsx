@@ -249,9 +249,7 @@ export default function SettingsBillingPage() {
                           ? t('currentPlanBadge')
                           : isBusy
                             ? t('switching')
-                            : plan.id === 'lieutenant'
-                              ? t('cancelButton')
-                              : t('switchButton', { plan: plan.label })}
+                            : t('switchButton', { plan: plan.label })}
                       </button>
                     </div>
                   )
