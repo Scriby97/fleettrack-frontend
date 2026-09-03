@@ -92,7 +92,19 @@ export default function SettingsPage() {
                   {pendingInvites.length}
                 </span>
               )}
-              <span className="text-2xl" aria-hidden="true">✉️</span>
+              <svg
+                className="w-7 h-7 text-blue-600 dark:text-blue-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <path d="M3 7l9 6 9-6" />
+              </svg>
               <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('invitationsTitle')}</div>
               <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                 {t('invitationsDescription')}
