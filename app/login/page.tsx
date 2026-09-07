@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth/AuthProvider'
 const LoginPage: FC = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { signIn } = useAuth()
+  const { signIn, supabaseUser } = useAuth()
   const t = useTranslations('login')
   const tCommon = useTranslations('common')
   const [email, setEmail] = useState('')
@@ -79,7 +79,12 @@ const LoginPage: FC = () => {
     }
   }
 
-  if (isRecoveryRedirect || redirecting) {
+  // supabaseUser deckt den Fall ab, dass diese Seite waehrend des Login-
+  // Uebergangs neu gemountet wird (BackendLoadingWrapper haengt sie auf
+  // Auth-Routen zwar nicht mehr aus, aber ein bereits eingeloggter User, der
+  // /login direkt aufruft, soll ebenfalls sofort den Spinner sehen statt kurz
+  // das Formular) - bis die Middleware auf / weiterleitet.
+  if (isRecoveryRedirect || redirecting || supabaseUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 px-4">
         <div className="max-w-md w-full text-center">
