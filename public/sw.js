@@ -1,8 +1,8 @@
 // FleetTrack Service Worker
 // Conservative caching strategy for Render Free Tier compatibility
 
-const CACHE_NAME = 'fleettrack-v7';
-const STATIC_CACHE_NAME = 'fleettrack-static-v7';
+const CACHE_NAME = 'fleettrack-v8';
+const STATIC_CACHE_NAME = 'fleettrack-static-v8';
 
 // Assets to cache on install
 const STATIC_ASSETS = [
@@ -11,6 +11,7 @@ const STATIC_ASSETS = [
   '/offline.html',
   '/icon-192x192.png',
   '/icon-512x512.png',
+  '/notification-badge.png',
 ];
 
 // Install event - cache static assets
@@ -110,7 +111,10 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || '',
     icon: '/icon-192x192.png',
-    badge: '/icon-192x192.png',
+    // Android nutzt vom Badge nur den Alphakanal und zeichnet ihn flaechig
+    // weiss - deshalb eine transparente Schneeflocken-Silhouette statt des
+    // vollflaechigen App-Icons (das sonst als weisses Quadrat erscheint).
+    badge: '/notification-badge.png',
     data: { url: data.url || '/' },
   };
 
