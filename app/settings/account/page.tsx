@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth/AuthProvider'
-import { updatePassword } from '@/lib/api/auth'
-import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
+import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/lib/hooks/useToast'
 import { ToastContainer } from '@/app/components/Toast'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
@@ -17,7 +16,7 @@ export default function SettingsAccountPage() {
   const [signingOut, setSigningOut] = useState(false)
   const t = useTranslations('settingsAccount')
   const tSettings = useTranslations('settings')
-  const getApiErrorMessage = useApiErrorMessage()
+  const supabase = useMemo(() => createClient(), [])
 
   const [formData, setFormData] = useState({
     newPassword: '',
@@ -49,11 +48,19 @@ export default function SettingsAccountPage() {
     setSubmitting(true)
 
     try {
-      await updatePassword(formData.newPassword)
+      // Bewusst client-seitig ueber die eigene Session - so bleibt sie gueltig.
+      // Ein Backend-Wechsel via admin.updateUserById wuerde dem Browser den
+      // Refresh-Token entziehen.
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: formData.newPassword,
+      })
+      if (updateError) {
+        throw updateError
+      }
       showToast(t('updateSuccess'), 'success')
       setFormData({ newPassword: '', confirmPassword: '' })
     } catch (err) {
-      const message = getApiErrorMessage(err, t('updateErrorGeneric'))
+      const message = err instanceof Error ? err.message : t('updateErrorGeneric')
       setError(message)
       showToast(message, 'error')
     } finally {
