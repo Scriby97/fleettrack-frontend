@@ -11,6 +11,7 @@ import { useToast } from '@/lib/hooks/useToast';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { ToastContainer } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
+import { VehicleTypeIcon } from './VehicleTypeIcon';
 
 interface Vehicle {
   id: string;
@@ -96,12 +97,18 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onEdit, onDelete, stats = 
   return (
   <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 hover:shadow-md transition-shadow flex justify-between items-start">
     <div className="flex-1">
-      <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-        {vehicle.name}
-        {vehicle.isRetired && (
-          <span className="ml-2 text-sm font-normal text-red-600 dark:text-red-400">({t('retiredLabel')})</span>
-        )}
-      </h3>
+      <div className="flex items-center gap-2.5 mb-2">
+        <VehicleTypeIcon
+          type={vehicle.vehicleType}
+          className="w-8 h-8 shrink-0 text-blue-600 dark:text-blue-400"
+        />
+        <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+          {vehicle.name}
+          {vehicle.isRetired && (
+            <span className="ml-2 text-sm font-normal text-red-600 dark:text-red-400">({t('retiredLabel')})</span>
+          )}
+        </h3>
+      </div>
       <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
         <div>{t('plateLabel')}: <span className="font-medium">{vehicle.plate}</span></div>
         {vehicle.snowsatNumber && (

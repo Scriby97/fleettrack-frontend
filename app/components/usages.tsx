@@ -14,11 +14,13 @@ import { useToast } from '@/lib/hooks/useToast';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { ToastContainer } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
+import { VehicleTypeIcon } from './VehicleTypeIcon';
 
 interface Report {
   id: number | string;
   vehicleId?: string;
   vehicle: string;
+  vehicleType?: string;
   startOperatingHours: number;
   endOperatingHours: number;
   fuel: number;
@@ -35,6 +37,7 @@ interface Vehicle {
   id: string;
   name: string;
   plate?: string;
+  vehicleType?: string;
 }
 
 
@@ -64,9 +67,16 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, 
   return (
   <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 hover:shadow-md transition-shadow flex justify-between items-start">
     <div className="flex-1">
-      <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-        {report.vehicle}
-      </h3>
+      <div className="flex items-center gap-2.5 mb-2">
+        <VehicleTypeIcon
+          type={report.vehicleType}
+          variant="document"
+          className="w-8 h-8 shrink-0 text-blue-600 dark:text-blue-400"
+        />
+        <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+          {report.vehicle}
+        </h3>
+      </div>
       <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
         {report.usageDate && (
           <p>
@@ -250,6 +260,7 @@ const UebersichtEintraege: FC = () => {
                 id: updatedUsage.id,
                 vehicleId: updatedUsage.vehicleId,
                 vehicle: vehicleMap.get(String(updatedUsage.vehicleId))?.name ?? t('unknownVehicle'),
+                vehicleType: vehicleMap.get(String(updatedUsage.vehicleId))?.vehicleType ?? r.vehicleType,
                 startOperatingHours: updatedUsage.startOperatingHours,
                 endOperatingHours: updatedUsage.endOperatingHours,
                 fuel: updatedUsage.fuelLitersRefilled,
@@ -322,6 +333,7 @@ const UebersichtEintraege: FC = () => {
           id: u.id,
           vehicleId: u.vehicleId,
           vehicle: u.vehicle?.name ?? String(u.vehicleId ?? t('unknownVehicle')),
+          vehicleType: u.vehicle?.vehicleType,
           startOperatingHours: typeof u.startOperatingHours === 'number' ? u.startOperatingHours : Number(u.startOperatingHours ?? 0),
           endOperatingHours: typeof u.endOperatingHours === 'number' ? u.endOperatingHours : Number(u.endOperatingHours ?? 0),
           fuel: typeof u.fuelLitersRefilled === 'number' ? u.fuelLitersRefilled : Number(u.fuelLitersRefilled ?? 0),

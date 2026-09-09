@@ -26,6 +26,7 @@ export interface Vehicle {
   id: string;
   name: string;
   plate?: string;
+  vehicleType?: string;
 }
 
 export interface UsageWithVehicle extends Usage {
