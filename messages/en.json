@@ -213,7 +213,9 @@
     "createOrgTitle": "Create Organization",
     "createOrgDescription": "Create a new organization and automatically become its owner.",
     "organizationProfileTitle": "Organization",
-    "organizationProfileDescription": "Change the organization's name and logo."
+    "organizationProfileDescription": "Change the organization's name and logo.",
+    "switchOrganizationTitle": "Switch organization",
+    "switchOrganizationDescription": "Choose which organization the app shows."
   },
   "settingsAccount": {
     "title": "Account",

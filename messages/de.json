@@ -213,7 +213,9 @@
     "createOrgTitle": "Organisation erstellen",
     "createOrgDescription": "Eine neue Organisation anlegen und automatisch Owner werden.",
     "organizationProfileTitle": "Organisation",
-    "organizationProfileDescription": "Name und Logo der Organisation ändern."
+    "organizationProfileDescription": "Name und Logo der Organisation ändern.",
+    "switchOrganizationTitle": "Organisation wechseln",
+    "switchOrganizationDescription": "Wähle, welche Organisation in der App angezeigt wird."
   },
   "settingsAccount": {
     "title": "Account",
