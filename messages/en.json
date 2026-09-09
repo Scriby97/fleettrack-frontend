@@ -211,7 +211,9 @@
     "billingTitle": "Subscription",
     "billingDescription": "View or change your plan, cancel, manage invoices.",
     "createOrgTitle": "Create Organization",
-    "createOrgDescription": "Create a new organization and automatically become its owner."
+    "createOrgDescription": "Create a new organization and automatically become its owner.",
+    "organizationProfileTitle": "Organization",
+    "organizationProfileDescription": "Change the organization's name and logo."
   },
   "settingsAccount": {
     "title": "Account",
@@ -347,13 +349,21 @@
     "genericError": "Error creating the organization.",
     "submitCreating": "Creating organization...",
     "submitPay": "Create organization & pay",
-    "submitFree": "Create organization"
+    "submitFree": "Create organization",
+    "logoSectionTitle": "3) Logo (optional)",
+    "logoSectionHint": "PNG, JPEG or WebP. Without a logo the organization gets an icon with its initials.",
+    "logoChooseButton": "Choose logo",
+    "logoRemoveButton": "Remove",
+    "logoInvalidType": "Please choose a PNG, JPEG or WebP image.",
+    "logoTooLarge": "The image must be 2 MB or smaller.",
+    "logoProcessingFailed": "The image could not be processed."
   },
   "onboardingCreateOrgSuccess": {
     "title": "Payment successful",
     "bodyInProgress": "Your organization is being activated... This may take a moment.",
     "bodyDone": "Your organization is being activated. This may take a moment.",
-    "continueButton": "Continue to FleetTrack"
+    "continueButton": "Continue to FleetTrack",
+    "applyingLogo": "Applying logo..."
   },
   "onboardingInvitations": {
     "backLink": "← Back",
@@ -622,6 +632,32 @@
     "SUBSCRIPTION_NO_STRIPE_SUBSCRIPTION": "No active Stripe subscription found for this organization.",
     "SUBSCRIPTION_NO_STRIPE_CUSTOMER": "This organization does not have a Stripe customer yet (Lieutenant/free plan).",
     "SUBSCRIPTION_CHECKOUT_CREATE_FAILED": "The Stripe checkout session could not be created. Please try again.",
-    "SUBSCRIPTION_TIER_CHANGE_FAILED": "The plan change could not be completed. Please try again or contact support."
+    "SUBSCRIPTION_TIER_CHANGE_FAILED": "The plan change could not be completed. Please try again or contact support.",
+    "ORG_LOGO_INVALID": "The image is invalid. Allowed formats are PNG, JPEG or WebP (max. 3 MB)."
+  },
+  "settingsOrganization": {
+    "title": "Organization",
+    "subtitle": "Your organization's name and logo. Only the owner can change these.",
+    "logoSectionTitle": "Logo",
+    "logoSectionSubtitle": "Shown in the sidebar next to the organization name.",
+    "logoHint": "PNG, JPEG or WebP, max. 2 MB. The image is cropped to a square.",
+    "chooseButton": "Upload logo",
+    "replaceButton": "Replace logo",
+    "removeButton": "Remove logo",
+    "uploading": "Uploading...",
+    "removing": "Removing...",
+    "nameSectionTitle": "Name",
+    "nameSectionSubtitle": "The name must be unique across all organizations.",
+    "nameLabel": "Organization name",
+    "saveButton": "Save",
+    "saving": "Saving...",
+    "nameUpdateSuccess": "Name updated",
+    "logoUpdateSuccess": "Logo updated",
+    "logoRemoveSuccess": "Logo removed",
+    "nameErrorGeneric": "The name could not be saved.",
+    "logoErrorGeneric": "The logo could not be saved.",
+    "invalidImageType": "Please choose a PNG, JPEG or WebP image.",
+    "imageTooLarge": "The image must be 2 MB or smaller.",
+    "imageProcessingFailed": "The image could not be processed."
   }
 }

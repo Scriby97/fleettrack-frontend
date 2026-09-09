@@ -119,6 +119,74 @@ export async function updateOrganizationSubscription(
 }
 
 /**
+ * Update the current organization's profile (currently just the name).
+ * Owner only.
+ */
+export async function updateOrganizationProfile(
+  organizationId: string,
+  data: { name?: string }
+): Promise<Organization> {
+  const response = await authenticatedFetch(
+    buildApiUrl(`/organizations/${organizationId}/profile`),
+    {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }
+  )
+
+  if (!response.ok) {
+    await throwApiError(response, 'Fehler beim Speichern der Organisation')
+  }
+
+  return response.json()
+}
+
+/**
+ * Upload (or replace) the organization's logo. Owner only.
+ * `image` should already be a resized square raster blob (see resizeToSquareWebp).
+ */
+export async function uploadOrganizationLogo(
+  organizationId: string,
+  image: Blob
+): Promise<Organization> {
+  const form = new FormData()
+  form.append('file', image, 'logo.webp')
+
+  const response = await authenticatedFetch(
+    buildApiUrl(`/organizations/${organizationId}/logo`),
+    {
+      method: 'POST',
+      body: form,
+    }
+  )
+
+  if (!response.ok) {
+    await throwApiError(response, 'Fehler beim Hochladen des Logos')
+  }
+
+  return response.json()
+}
+
+/**
+ * Remove the organization's logo (falls back to the generated initials avatar).
+ * Owner only.
+ */
+export async function deleteOrganizationLogo(
+  organizationId: string
+): Promise<Organization> {
+  const response = await authenticatedFetch(
+    buildApiUrl(`/organizations/${organizationId}/logo`),
+    { method: 'DELETE' }
+  )
+
+  if (!response.ok) {
+    await throwApiError(response, 'Fehler beim Entfernen des Logos')
+  }
+
+  return response.json()
+}
+
+/**
  * Create a Stripe Customer Portal session (invoices, payment method, cancel)
  * for self-service billing management. Owner only; only available once the
  * organization has a Stripe customer (i.e. not on the free Lieutenant tier).

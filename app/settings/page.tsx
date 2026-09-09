@@ -140,6 +140,23 @@ export default function SettingsPage() {
             {t('organizationSectionTitle')}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
+            {selectedOrganizationRole === 'owner' && (
+              <Link
+                href="/settings/organization"
+                className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+              >
+                <SettingsIcon>
+                  <rect x="4" y="3" width="16" height="18" rx="1" />
+                  <circle cx="12" cy="9" r="2" />
+                  <path d="M8 17c0-2.2 1.8-4 4-4s4 1.8 4 4" />
+                </SettingsIcon>
+                <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('organizationProfileTitle')}</div>
+                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                  {t('organizationProfileDescription')}
+                </p>
+              </Link>
+            )}
+
             {canManageSelectedOrganization && !isAdmin && (
               <Link
                 href="/admin/users"

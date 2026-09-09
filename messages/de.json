@@ -211,7 +211,9 @@
     "billingTitle": "Abonnement",
     "billingDescription": "Tarif einsehen, wechseln oder kündigen, Rechnungen verwalten.",
     "createOrgTitle": "Organisation erstellen",
-    "createOrgDescription": "Eine neue Organisation anlegen und automatisch Owner werden."
+    "createOrgDescription": "Eine neue Organisation anlegen und automatisch Owner werden.",
+    "organizationProfileTitle": "Organisation",
+    "organizationProfileDescription": "Name und Logo der Organisation ändern."
   },
   "settingsAccount": {
     "title": "Account",
@@ -347,13 +349,21 @@
     "genericError": "Fehler beim Erstellen der Organisation.",
     "submitCreating": "Organisation wird erstellt...",
     "submitPay": "Organisation erstellen & bezahlen",
-    "submitFree": "Organisation erstellen"
+    "submitFree": "Organisation erstellen",
+    "logoSectionTitle": "3) Logo (optional)",
+    "logoSectionHint": "PNG, JPEG oder WebP. Ohne Logo bekommt die Organisation ein Symbol mit den Initialen.",
+    "logoChooseButton": "Logo wählen",
+    "logoRemoveButton": "Entfernen",
+    "logoInvalidType": "Bitte wähle ein PNG-, JPEG- oder WebP-Bild.",
+    "logoTooLarge": "Das Bild darf höchstens 2 MB gross sein.",
+    "logoProcessingFailed": "Das Bild konnte nicht verarbeitet werden."
   },
   "onboardingCreateOrgSuccess": {
     "title": "Zahlung erfolgreich",
     "bodyInProgress": "Deine Organisation wird aktiviert... Das kann einen Moment dauern.",
     "bodyDone": "Deine Organisation wird aktiviert. Das kann einen Moment dauern.",
-    "continueButton": "Weiter zu FleetTrack"
+    "continueButton": "Weiter zu FleetTrack",
+    "applyingLogo": "Logo wird übernommen..."
   },
   "onboardingInvitations": {
     "backLink": "← Zurück",
@@ -622,6 +632,32 @@
     "SUBSCRIPTION_NO_STRIPE_SUBSCRIPTION": "Keine aktive Stripe-Subscription für diese Organisation gefunden.",
     "SUBSCRIPTION_NO_STRIPE_CUSTOMER": "Diese Organisation hat noch keinen Stripe-Kunden (Lieutenant/Free-Tarif).",
     "SUBSCRIPTION_CHECKOUT_CREATE_FAILED": "Stripe Checkout-Session konnte nicht erstellt werden. Bitte versuche es erneut.",
-    "SUBSCRIPTION_TIER_CHANGE_FAILED": "Der Tarifwechsel konnte nicht durchgeführt werden. Bitte versuche es erneut oder kontaktiere den Support."
+    "SUBSCRIPTION_TIER_CHANGE_FAILED": "Der Tarifwechsel konnte nicht durchgeführt werden. Bitte versuche es erneut oder kontaktiere den Support.",
+    "ORG_LOGO_INVALID": "Das Bild ist ungültig. Erlaubt sind PNG, JPEG oder WebP (max. 3 MB)."
+  },
+  "settingsOrganization": {
+    "title": "Organisation",
+    "subtitle": "Name und Logo deiner Organisation. Nur der Owner kann das ändern.",
+    "logoSectionTitle": "Logo",
+    "logoSectionSubtitle": "Wird im Seitenmenü neben dem Organisationsnamen angezeigt.",
+    "logoHint": "PNG, JPEG oder WebP, max. 2 MB. Das Bild wird quadratisch zugeschnitten.",
+    "chooseButton": "Logo hochladen",
+    "replaceButton": "Logo ersetzen",
+    "removeButton": "Logo entfernen",
+    "uploading": "Wird hochgeladen...",
+    "removing": "Wird entfernt...",
+    "nameSectionTitle": "Name",
+    "nameSectionSubtitle": "Der Name muss über alle Organisationen hinweg eindeutig sein.",
+    "nameLabel": "Organisationsname",
+    "saveButton": "Speichern",
+    "saving": "Wird gespeichert...",
+    "nameUpdateSuccess": "Name aktualisiert",
+    "logoUpdateSuccess": "Logo aktualisiert",
+    "logoRemoveSuccess": "Logo entfernt",
+    "nameErrorGeneric": "Der Name konnte nicht gespeichert werden.",
+    "logoErrorGeneric": "Das Logo konnte nicht gespeichert werden.",
+    "invalidImageType": "Bitte wähle ein PNG-, JPEG- oder WebP-Bild.",
+    "imageTooLarge": "Das Bild darf höchstens 2 MB gross sein.",
+    "imageProcessingFailed": "Das Bild konnte nicht verarbeitet werden."
   }
 }

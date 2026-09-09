@@ -211,7 +211,9 @@
     "billingTitle": "Abbonamento",
     "billingDescription": "Visualizza o cambia il tuo piano, disdici, gestisci le fatture.",
     "createOrgTitle": "Crea organizzazione",
-    "createOrgDescription": "Crea una nuova organizzazione e diventane automaticamente proprietario."
+    "createOrgDescription": "Crea una nuova organizzazione e diventane automaticamente proprietario.",
+    "organizationProfileTitle": "Organizzazione",
+    "organizationProfileDescription": "Modifica il nome e il logo dell'organizzazione."
   },
   "settingsAccount": {
     "title": "Account",
@@ -347,13 +349,21 @@
     "genericError": "Errore durante la creazione dell'organizzazione.",
     "submitCreating": "Creazione dell'organizzazione in corso...",
     "submitPay": "Crea organizzazione e paga",
-    "submitFree": "Crea organizzazione"
+    "submitFree": "Crea organizzazione",
+    "logoSectionTitle": "3) Logo (facoltativo)",
+    "logoSectionHint": "PNG, JPEG o WebP. Senza logo, l'organizzazione riceve un'icona con le iniziali.",
+    "logoChooseButton": "Scegli logo",
+    "logoRemoveButton": "Rimuovi",
+    "logoInvalidType": "Scegli un'immagine PNG, JPEG o WebP.",
+    "logoTooLarge": "L'immagine non deve superare i 2 MB.",
+    "logoProcessingFailed": "Impossibile elaborare l'immagine."
   },
   "onboardingCreateOrgSuccess": {
     "title": "Pagamento riuscito",
     "bodyInProgress": "La tua organizzazione è in fase di attivazione... Potrebbe richiedere un momento.",
     "bodyDone": "La tua organizzazione è in fase di attivazione. Potrebbe richiedere un momento.",
-    "continueButton": "Continua verso FleetTrack"
+    "continueButton": "Continua verso FleetTrack",
+    "applyingLogo": "Applicazione del logo..."
   },
   "onboardingInvitations": {
     "backLink": "← Indietro",
@@ -622,6 +632,32 @@
     "SUBSCRIPTION_NO_STRIPE_SUBSCRIPTION": "Nessun abbonamento Stripe attivo trovato per questa organizzazione.",
     "SUBSCRIPTION_NO_STRIPE_CUSTOMER": "Questa organizzazione non ha ancora un cliente Stripe (piano Lieutenant/gratuito).",
     "SUBSCRIPTION_CHECKOUT_CREATE_FAILED": "Impossibile creare la sessione di checkout Stripe. Riprova.",
-    "SUBSCRIPTION_TIER_CHANGE_FAILED": "Impossibile completare il cambio di piano. Riprova o contatta il supporto."
+    "SUBSCRIPTION_TIER_CHANGE_FAILED": "Impossibile completare il cambio di piano. Riprova o contatta il supporto.",
+    "ORG_LOGO_INVALID": "L'immagine non è valida. Formati consentiti: PNG, JPEG o WebP (max 3 MB)."
+  },
+  "settingsOrganization": {
+    "title": "Organizzazione",
+    "subtitle": "Nome e logo della tua organizzazione. Solo il proprietario può modificarli.",
+    "logoSectionTitle": "Logo",
+    "logoSectionSubtitle": "Mostrato nella barra laterale accanto al nome dell'organizzazione.",
+    "logoHint": "PNG, JPEG o WebP, max 2 MB. L'immagine viene ritagliata in un quadrato.",
+    "chooseButton": "Carica logo",
+    "replaceButton": "Sostituisci logo",
+    "removeButton": "Rimuovi logo",
+    "uploading": "Caricamento...",
+    "removing": "Rimozione...",
+    "nameSectionTitle": "Nome",
+    "nameSectionSubtitle": "Il nome deve essere univoco tra tutte le organizzazioni.",
+    "nameLabel": "Nome dell'organizzazione",
+    "saveButton": "Salva",
+    "saving": "Salvataggio...",
+    "nameUpdateSuccess": "Nome aggiornato",
+    "logoUpdateSuccess": "Logo aggiornato",
+    "logoRemoveSuccess": "Logo rimosso",
+    "nameErrorGeneric": "Impossibile salvare il nome.",
+    "logoErrorGeneric": "Impossibile salvare il logo.",
+    "invalidImageType": "Scegli un'immagine PNG, JPEG o WebP.",
+    "imageTooLarge": "L'immagine non deve superare i 2 MB.",
+    "imageProcessingFailed": "Impossibile elaborare l'immagine."
   }
 }

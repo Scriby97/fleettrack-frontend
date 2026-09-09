@@ -1,12 +1,22 @@
 'use client'
 
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { createSelfServiceOrganization } from '@/lib/api/organizations'
+import {
+  createSelfServiceOrganization,
+  uploadOrganizationLogo,
+} from '@/lib/api/organizations'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
+import {
+  resizeToSquareWebp,
+  ImageValidationError,
+  blobToDataUrl,
+} from '@/lib/images/resizeImage'
+import { OrgAvatar } from '@/app/components/OrgAvatar'
+import { PENDING_ORG_LOGO_KEY } from '@/lib/organizations/pendingLogo'
 import type { SubscriptionTier } from '@/lib/types/user'
 
 interface PlanDefinition {
@@ -59,6 +69,49 @@ export default function CreateOrganizationOnboardingPage() {
   const [organizationName, setOrganizationName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [logoBlob, setLogoBlob] = useState<Blob | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [logoError, setLogoError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    // Vorherige Object-URL freigeben, sobald die Vorschau wechselt / die Seite
+    // verlassen wird - einzige Stelle, an der revoke() passiert.
+    if (!logoPreview) return
+    return () => URL.revokeObjectURL(logoPreview)
+  }, [logoPreview])
+
+  const handleLogoPicked = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    setLogoError(null)
+    try {
+      const blob = await resizeToSquareWebp(file)
+      setLogoBlob(blob)
+      setLogoPreview(URL.createObjectURL(blob))
+    } catch (err) {
+      if (err instanceof ImageValidationError) {
+        setLogoError(
+          err.message === 'unsupported-type'
+            ? t('logoInvalidType')
+            : err.message === 'too-large'
+              ? t('logoTooLarge')
+              : t('logoProcessingFailed'),
+        )
+      } else {
+        setLogoError(t('logoProcessingFailed'))
+      }
+    }
+  }
+
+  const clearLogo = () => {
+    setLogoBlob(null)
+    setLogoError(null)
+    setLogoPreview(null)
+  }
 
   const currentPlan = useMemo(
     () => plans.find((plan) => plan.id === selectedPlan) ?? plans[0],
@@ -77,15 +130,41 @@ export default function CreateOrganizationOnboardingPage() {
     setLoading(true)
 
     try {
+      const trimmedName = organizationName.trim()
       const result = await createSelfServiceOrganization({
-        name: organizationName.trim(),
+        name: trimmedName,
         tier: selectedPlan,
       })
 
       if (result.checkoutUrl) {
+        // Bezahlter Tarif: die Organisation entsteht erst nach erfolgreicher
+        // Zahlung im Stripe-Webhook. Das Logo überlebt die Weiterleitung zu
+        // Stripe hier im sessionStorage und wird auf der Success-Seite an die
+        // dann existierende Organisation hochgeladen.
+        if (logoBlob) {
+          try {
+            const dataUrl = await blobToDataUrl(logoBlob)
+            sessionStorage.setItem(
+              PENDING_ORG_LOGO_KEY,
+              JSON.stringify({ name: trimmedName, dataUrl }),
+            )
+          } catch {
+            // Zwischenspeichern fehlgeschlagen - Logo ist optional, in den
+            // Einstellungen nachholbar. Erstellung nicht blockieren.
+          }
+        }
         // Externe Weiterleitung zu Stripe Checkout - kein Next.js-Routing
         window.location.href = result.checkoutUrl
         return
+      }
+
+      // Kostenloser Tarif: Organisation existiert sofort, Logo direkt anhängen.
+      if (logoBlob && result.organization) {
+        try {
+          await uploadOrganizationLogo(result.organization.id, logoBlob)
+        } catch {
+          // Logo ist optional - Erstellung trotzdem abschliessen.
+        }
       }
 
       await refreshOrganizations()
@@ -168,6 +247,51 @@ export default function CreateOrganizationOnboardingPage() {
                 placeholder={t('namePlaceholder')}
               />
             </div>
+          </section>
+
+          <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">{t('logoSectionTitle')}</h2>
+              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t('logoSectionHint')}</p>
+            </div>
+
+            <div className="flex items-center gap-5">
+              <OrgAvatar
+                name={organizationName || 'FleetTrack'}
+                logoUrl={logoPreview}
+                size={72}
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-4 py-2 bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 text-zinc-900 dark:text-zinc-100 text-sm font-semibold rounded-lg transition-colors"
+                >
+                  {t('logoChooseButton')}
+                </button>
+                {logoBlob && (
+                  <button
+                    type="button"
+                    onClick={clearLogo}
+                    className="px-4 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                  >
+                    {t('logoRemoveButton')}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {logoError && (
+              <p className="text-sm text-red-700 dark:text-red-300">{logoError}</p>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={handleLogoPicked}
+            />
           </section>
 
           {error && (

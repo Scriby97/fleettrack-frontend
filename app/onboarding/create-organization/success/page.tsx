@@ -4,6 +4,15 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth/AuthProvider'
+import {
+  getMyOrganizations,
+  uploadOrganizationLogo,
+} from '@/lib/api/organizations'
+import { dataUrlToBlob } from '@/lib/images/resizeImage'
+import {
+  readPendingOrgLogo,
+  clearPendingOrgLogo,
+} from '@/lib/organizations/pendingLogo'
 
 const POLL_INTERVAL_MS = 1500
 const MAX_POLLS = 6
@@ -13,16 +22,49 @@ export default function CreateOrganizationSuccessPage() {
   const { refreshOrganizations } = useAuth()
   const t = useTranslations('onboardingCreateOrgSuccess')
   const [pollCount, setPollCount] = useState(0)
+  const [applyingLogo, setApplyingLogo] = useState(false)
   const finishedRef = useRef(false)
 
   useEffect(() => {
     let cancelled = false
+    const pending = readPendingOrgLogo()
+
+    const tryAttachLogo = async (): Promise<boolean> => {
+      if (!pending) return true
+      try {
+        const memberships = await getMyOrganizations()
+        const match = memberships.find(
+          (m) => m.organization?.name === pending.name,
+        )
+        if (!match) return false
+
+        setApplyingLogo(true)
+        const blob = await dataUrlToBlob(pending.dataUrl)
+        await uploadOrganizationLogo(match.organizationId, blob)
+        clearPendingOrgLogo()
+        return true
+      } catch {
+        // Logo ist optional und in den Einstellungen nachholbar - Stash
+        // trotzdem entfernen, damit es nicht bei einer späteren Erstellung
+        // fälschlich wiederverwendet wird.
+        clearPendingOrgLogo()
+        return true
+      }
+    }
 
     const poll = async () => {
       for (let i = 0; i < MAX_POLLS; i++) {
         if (cancelled) return
         await refreshOrganizations()
         if (cancelled) return
+
+        const done = await tryAttachLogo()
+        if (cancelled) return
+        if (done && pending) {
+          await refreshOrganizations()
+          break
+        }
+
         setPollCount(i + 1)
         await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))
       }
@@ -54,7 +96,11 @@ export default function CreateOrganizationSuccessPage() {
         </div>
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">{t('title')}</h1>
         <p className="text-zinc-600 dark:text-zinc-400 mb-6">
-          {pollCount > 0 && pollCount < MAX_POLLS ? t('bodyInProgress') : t('bodyDone')}
+          {applyingLogo
+            ? t('applyingLogo')
+            : pollCount > 0 && pollCount < MAX_POLLS
+              ? t('bodyInProgress')
+              : t('bodyDone')}
         </p>
 
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-6" />

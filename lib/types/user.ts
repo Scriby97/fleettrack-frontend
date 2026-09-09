@@ -3,6 +3,9 @@ export interface Organization {
   name: string
   subdomain?: string
   contactEmail?: string
+  // Öffentliche URL des Firmenlogos (Supabase Storage). null/undefined = kein
+  // Logo gewählt, das Frontend zeigt dann einen Initialen-Avatar.
+  logoUrl?: string | null
   isActive: boolean
   createdAt: string
   updatedAt: string

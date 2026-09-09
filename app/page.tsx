@@ -1,6 +1,5 @@
 'use client';
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import CreateUsage from "./components/createUsage";
@@ -8,6 +7,7 @@ import UebersichtEintraege from "./components/usages";
 import FlottenUebersicht from "./components/vehicles";
 import FahrzeugErfassen from "./components/createVehicle";
 import UserMenu from "./components/UserMenu";
+import { OrgAvatar } from "./components/OrgAvatar";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useOrganization } from "@/lib/contexts/OrganizationContext";
 import { InstallPrompt } from "./components/InstallPrompt";
@@ -20,10 +20,21 @@ export default function Home() {
   const t = useTranslations("nav");
   const [active, setActive] = useState<MenuKey>("nutzung");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { userProfile, hasOrganization } = useAuth();
+  const { userProfile, hasOrganization, organization } = useAuth();
   // Reagiert auf die im Menü AUSGEWÄHLTE Organisation, nicht nur auf die erste
   // Mitgliedschaft - wichtig, sobald man zwischen mehreren Organisationen wechselt.
-  const { canManageSelectedOrganization: canManageOrganization } = useOrganization();
+  const {
+    canManageSelectedOrganization: canManageOrganization,
+    organizations,
+    selectedOrgId,
+  } = useOrganization();
+
+  // Kopf der Seitenleiste zeigt die AKTUELL AUSGEWÄHLTE Organisation (Logo + Name),
+  // damit sofort klar ist, in welcher Organisation man sich befindet.
+  const selectedOrg =
+    organizations.find((org) => org.id === selectedOrgId) ?? organization;
+  const orgName = selectedOrg?.name ?? "FleetTrack";
+  const orgLogoUrl = selectedOrg?.logoUrl ?? null;
 
   useEffect(() => {
     if (userProfile && !hasOrganization) {
@@ -46,10 +57,9 @@ export default function Home() {
     <div className="flex min-h-screen bg-zinc-50 dark:bg-black font-sans">
       {/* Left menu - Hidden on mobile */}
       <aside className="hidden md:flex md:w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0b0b0b] px-6 py-8 flex-col h-screen sticky top-0">
-        <div className="flex items-center gap-2 mb-8 flex-shrink-0">
-          <Image src="/fleettrack-logo-light.svg" alt="FleetTrack Logo" width={36} height={36} className="dark:hidden" />
-          <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack Logo" width={36} height={36} className="hidden dark:block" />
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
+        <div className="flex items-center gap-2.5 mb-8 flex-shrink-0">
+          <OrgAvatar name={orgName} logoUrl={orgLogoUrl} size={36} />
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 truncate">{orgName}</h2>
         </div>
 
         <nav className="flex flex-col gap-2 flex-1 overflow-y-auto">
@@ -116,10 +126,9 @@ export default function Home() {
 
       {/* Mobile header */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-[#0b0b0b] border-b border-zinc-200 dark:border-zinc-800 px-5 py-4 flex items-center justify-between z-50">
-        <div className="flex items-center gap-1.5">
-          <Image src="/fleettrack-logo-light.svg" alt="FleetTrack Logo" width={28} height={28} className="dark:hidden" />
-          <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack Logo" width={28} height={28} className="hidden dark:block" />
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
+        <div className="flex items-center gap-2 min-w-0">
+          <OrgAvatar name={orgName} logoUrl={orgLogoUrl} size={28} />
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 truncate">{orgName}</h2>
         </div>
         <div className="flex items-center gap-2">
           <InstallPrompt />
@@ -151,10 +160,9 @@ export default function Home() {
               </svg>
             </button>
 
-            <div className="flex items-center gap-2 mb-8 mt-8">
-              <Image src="/fleettrack-logo-light.svg" alt="FleetTrack Logo" width={36} height={36} className="dark:hidden" />
-              <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack Logo" width={36} height={36} className="hidden dark:block" />
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
+            <div className="flex items-center gap-2.5 mb-8 mt-8 min-w-0">
+              <OrgAvatar name={orgName} logoUrl={orgLogoUrl} size={36} />
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 truncate">{orgName}</h2>
             </div>
 
             <nav className="flex flex-col gap-2">

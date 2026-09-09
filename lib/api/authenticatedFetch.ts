@@ -64,10 +64,15 @@ export async function authenticatedFetch(
       throw new Error('Keine aktive Session. Bitte zuerst anmelden.')
     }
 
+    // Bei FormData (Datei-Uploads) den Content-Type NICHT setzen - der Browser
+    // muss die multipart-Boundary selbst ergänzen.
+    const isFormData =
+      typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData
+
     const headers = {
       ...fetchOptions.headers,
       Authorization: `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     }
 
     let lastError: Error | null = null
