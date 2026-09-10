@@ -146,7 +146,11 @@
     "chartMetricFuel": "Treibstoff",
     "chartNoData": "Keine Nutzungen im gewählten Zeitraum.",
     "chartHoursUnit": "h",
-    "chartFuelUnit": "L"
+    "chartFuelUnit": "L",
+    "fleetGroupGroomer": "Pistenfahrzeuge",
+    "fleetGroupTransporter": "Transporter",
+    "fleetGroupQuad": "Quads",
+    "fleetGroupSkidoo": "Skidoos"
   },
   "createVehicle": {
     "title": "Fahrzeug erfassen",

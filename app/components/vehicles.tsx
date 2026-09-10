@@ -130,6 +130,14 @@ const TYPE_ORDER: Record<string, number> = { Pistenfahrzeug: 0, Quad: 2, Skidoo:
 const typeRank = (type?: string): number =>
   type && type in TYPE_ORDER ? TYPE_ORDER[type] : 1;
 
+// Gruppenüberschriften der Flottenliste, in Sortier-/Anzeigereihenfolge.
+const VEHICLE_GROUPS = [
+  { rank: 0, labelKey: 'fleetGroupGroomer' },
+  { rank: 1, labelKey: 'fleetGroupTransporter' },
+  { rank: 2, labelKey: 'fleetGroupQuad' },
+  { rank: 3, labelKey: 'fleetGroupSkidoo' },
+] as const;
+
 const sortVehicles = (list: Vehicle[]): Vehicle[] =>
   [...list].sort((a, b) => {
     const byType = typeRank(a.vehicleType) - typeRank(b.vehicleType);
@@ -308,10 +316,23 @@ const FlottenUebersicht: FC = () => {
       )}
 
       {!isLoading && vehicles.length > 0 ? (
-        <div className="grid gap-3">
-          {vehicles.map((vehicle) => (
-            <VehicleItem key={vehicle.id} vehicle={vehicle} onSelect={setSelectedVehicleId} />
-          ))}
+        <div className="space-y-6">
+          {VEHICLE_GROUPS.map((group) => {
+            const items = vehicles.filter((v) => typeRank(v.vehicleType) === group.rank);
+            if (items.length === 0) return null;
+            return (
+              <div key={group.rank} className="space-y-3">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  {t(group.labelKey)}
+                </h2>
+                <div className="grid gap-3">
+                  {items.map((vehicle) => (
+                    <VehicleItem key={vehicle.id} vehicle={vehicle} onSelect={setSelectedVehicleId} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
         !isLoading && (

@@ -146,7 +146,11 @@
     "chartMetricFuel": "Carburante",
     "chartNoData": "Nessun utilizzo nel periodo selezionato.",
     "chartHoursUnit": "h",
-    "chartFuelUnit": "L"
+    "chartFuelUnit": "L",
+    "fleetGroupGroomer": "Gatti delle nevi",
+    "fleetGroupTransporter": "Trasportatori",
+    "fleetGroupQuad": "Quad",
+    "fleetGroupSkidoo": "Motoslitte"
   },
   "createVehicle": {
     "title": "Aggiungi veicolo",

@@ -146,7 +146,11 @@
     "chartMetricFuel": "Fuel",
     "chartNoData": "No usages in the selected period.",
     "chartHoursUnit": "h",
-    "chartFuelUnit": "L"
+    "chartFuelUnit": "L",
+    "fleetGroupGroomer": "Snow groomers",
+    "fleetGroupTransporter": "Transporters",
+    "fleetGroupQuad": "Quads",
+    "fleetGroupSkidoo": "Snowmobiles"
   },
   "createVehicle": {
     "title": "Add vehicle",

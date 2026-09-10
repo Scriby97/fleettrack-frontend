@@ -146,7 +146,11 @@
     "chartMetricFuel": "Carburant",
     "chartNoData": "Aucune utilisation sur la période choisie.",
     "chartHoursUnit": "h",
-    "chartFuelUnit": "L"
+    "chartFuelUnit": "L",
+    "fleetGroupGroomer": "Dameuses",
+    "fleetGroupTransporter": "Transporteurs",
+    "fleetGroupQuad": "Quads",
+    "fleetGroupSkidoo": "Motoneiges"
   },
   "createVehicle": {
     "title": "Ajouter un véhicule",
