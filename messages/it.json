@@ -8,7 +8,8 @@
     "confirmationTitle": "Conferma",
     "pleaseWait": "Attendere prego...",
     "organizationLabel": "Organizzazione",
-    "unexpectedError": "Si è verificato un errore imprevisto"
+    "unexpectedError": "Si è verificato un errore imprevisto",
+    "switchOrganization": "Cambia organizzazione"
   },
   "nav": {
     "createUsage": "Registra utilizzo",
@@ -213,9 +214,7 @@
     "createOrgTitle": "Crea organizzazione",
     "createOrgDescription": "Crea una nuova organizzazione e diventane automaticamente proprietario.",
     "organizationProfileTitle": "Organizzazione",
-    "organizationProfileDescription": "Modifica il nome e il logo dell'organizzazione.",
-    "switchOrganizationTitle": "Cambia organizzazione",
-    "switchOrganizationDescription": "Scegli quale organizzazione viene mostrata nell'app."
+    "organizationProfileDescription": "Modifica il nome e il logo dell'organizzazione."
   },
   "settingsAccount": {
     "title": "Account",

@@ -33,13 +33,7 @@ function SettingsIcon({ children }: { children: ReactNode }) {
 export default function SettingsPage() {
   const router = useRouter()
   const { supabaseUser, loading: authLoading, isAdmin } = useAuth()
-  const {
-    canManageSelectedOrganization,
-    selectedOrganizationRole,
-    organizations,
-    selectedOrgId,
-    setSelectedOrgId,
-  } = useOrganization()
+  const { canManageSelectedOrganization, selectedOrganizationRole } = useOrganization()
   const { pendingInvites, hasPendingInvites } = usePendingInvites()
   const t = useTranslations('settings')
 
@@ -145,35 +139,6 @@ export default function SettingsPage() {
           <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {t('organizationSectionTitle')}
           </h2>
-
-          {/* Organisationswechsel - nur relevant, wenn der User in mehreren
-              Organisationen ist (die meisten haben nur eine). */}
-          {organizations.length > 1 && (
-            <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm">
-              <label
-                htmlFor="settings-org-switcher"
-                className="block text-lg font-semibold text-zinc-900 dark:text-zinc-50"
-              >
-                {t('switchOrganizationTitle')}
-              </label>
-              <p className="mt-1 mb-3 text-sm text-zinc-600 dark:text-zinc-400">
-                {t('switchOrganizationDescription')}
-              </p>
-              <select
-                id="settings-org-switcher"
-                value={selectedOrgId ?? ''}
-                onChange={(event) => setSelectedOrgId(event.target.value)}
-                className="w-full sm:max-w-sm px-3 py-2 text-sm font-medium border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500"
-              >
-                {organizations.map((org) => (
-                  <option key={org.id} value={org.id}>
-                    {org.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
           <div className="grid gap-4 sm:grid-cols-2">
             {selectedOrganizationRole === 'owner' && (
               <Link

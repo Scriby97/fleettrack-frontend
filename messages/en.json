@@ -8,7 +8,8 @@
     "confirmationTitle": "Confirmation",
     "pleaseWait": "Please wait...",
     "organizationLabel": "Organization",
-    "unexpectedError": "An unexpected error occurred"
+    "unexpectedError": "An unexpected error occurred",
+    "switchOrganization": "Switch organization"
   },
   "nav": {
     "createUsage": "Log usage",
@@ -213,9 +214,7 @@
     "createOrgTitle": "Create Organization",
     "createOrgDescription": "Create a new organization and automatically become its owner.",
     "organizationProfileTitle": "Organization",
-    "organizationProfileDescription": "Change the organization's name and logo.",
-    "switchOrganizationTitle": "Switch organization",
-    "switchOrganizationDescription": "Choose which organization the app shows."
+    "organizationProfileDescription": "Change the organization's name and logo."
   },
   "settingsAccount": {
     "title": "Account",

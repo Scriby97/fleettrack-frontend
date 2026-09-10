@@ -8,7 +8,8 @@
     "confirmationTitle": "Bestätigung",
     "pleaseWait": "Bitte warten...",
     "organizationLabel": "Organization",
-    "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten"
+    "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
+    "switchOrganization": "Organisation wechseln"
   },
   "nav": {
     "createUsage": "Nutzung erfassen",
@@ -213,9 +214,7 @@
     "createOrgTitle": "Organisation erstellen",
     "createOrgDescription": "Eine neue Organisation anlegen und automatisch Owner werden.",
     "organizationProfileTitle": "Organisation",
-    "organizationProfileDescription": "Name und Logo der Organisation ändern.",
-    "switchOrganizationTitle": "Organisation wechseln",
-    "switchOrganizationDescription": "Wähle, welche Organisation in der App angezeigt wird."
+    "organizationProfileDescription": "Name und Logo der Organisation ändern."
   },
   "settingsAccount": {
     "title": "Account",

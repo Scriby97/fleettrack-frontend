@@ -9,6 +9,7 @@ import FlottenUebersicht from "./components/vehicles";
 import FahrzeugErfassen from "./components/createVehicle";
 import UserMenu from "./components/UserMenu";
 import { OrgAvatar } from "./components/OrgAvatar";
+import { OrgSwitcher } from "./components/OrgSwitcher";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useOrganization } from "@/lib/contexts/OrganizationContext";
 import { InstallPrompt } from "./components/InstallPrompt";
@@ -65,10 +66,7 @@ export default function Home() {
             <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack" width={32} height={32} className="hidden dark:block" />
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
           </div>
-          <div className="flex items-center gap-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 px-2.5 py-2 min-w-0">
-            <OrgAvatar name={orgName} logoUrl={orgLogoUrl} size={24} />
-            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 truncate">{orgName}</span>
-          </div>
+          <OrgSwitcher />
         </div>
 
         <nav className="flex flex-col gap-2 flex-1 overflow-y-auto">
@@ -178,10 +176,7 @@ export default function Home() {
                 <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack" width={32} height={32} className="hidden dark:block" />
                 <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
               </div>
-              <div className="flex items-center gap-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 px-2.5 py-2 min-w-0">
-                <OrgAvatar name={orgName} logoUrl={orgLogoUrl} size={24} />
-                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 truncate">{orgName}</span>
-              </div>
+              <OrgSwitcher />
             </div>
 
             <nav className="flex flex-col gap-2">
