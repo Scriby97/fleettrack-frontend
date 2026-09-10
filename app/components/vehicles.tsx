@@ -123,6 +123,23 @@ const defaultRangeEnd = (): string => toDatetimeLocalValue(new Date());
 
 const RANGE_STORAGE_KEY = 'fleettrack:vehicleRange';
 
+// Sortierung der Flottenliste: zuerst nach Fahrzeugtyp in fester Reihenfolge
+// (Pistenfahrzeug, dann Transporter/ohne Typ, dann Quad, dann Skidoo), innerhalb
+// desselben Typs nach SNOWsat-Nummer (natürliche Zahlenreihenfolge).
+const TYPE_ORDER: Record<string, number> = { Pistenfahrzeug: 0, Quad: 2, Skidoo: 3 };
+const typeRank = (type?: string): number =>
+  type && type in TYPE_ORDER ? TYPE_ORDER[type] : 1;
+
+const sortVehicles = (list: Vehicle[]): Vehicle[] =>
+  [...list].sort((a, b) => {
+    const byType = typeRank(a.vehicleType) - typeRank(b.vehicleType);
+    if (byType !== 0) return byType;
+    const sa = a.snowsatNumber?.trim() ?? '';
+    const sb = b.snowsatNumber?.trim() ?? '';
+    if (!sa !== !sb) return sa ? -1 : 1; // Fahrzeuge ohne SNOWsat-Nr ans Ende
+    return sa.localeCompare(sb, undefined, { numeric: true, sensitivity: 'base' });
+  });
+
 const FlottenUebersicht: FC = () => {
   const { isAdmin } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
@@ -213,7 +230,7 @@ const FlottenUebersicht: FC = () => {
           throw new Error('Unexpected stats response format');
         }
 
-        setVehicles(list);
+        setVehicles(sortVehicles(list));
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         console.error('Fehler beim Laden der Fahrzeuge:', err);
