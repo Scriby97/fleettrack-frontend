@@ -53,7 +53,13 @@
     "offlineErrorMessage": "Keine Verbindung zum Server. Die Nutzung konnte nicht gespeichert werden. Deine Eingaben bleiben erhalten - bitte versuche es erneut, sobald du wieder online bist.",
     "saveErrorToast": "Fehler beim Speichern der Nutzung",
     "saveErrorGeneric": "Fehler beim Speichern des Eintrags",
-    "vehiclesLoadError": "Fehler beim Laden der Fahrzeuge"
+    "vehiclesLoadError": "Fehler beim Laden der Fahrzeuge",
+    "startKmLabel": "Start-Kilometerstand",
+    "endKmLabel": "End-Kilometerstand",
+    "endKmValidation": "End-Kilometerstand muss größer als Start-Kilometerstand sein",
+    "kmRequiredError": "Start- und End-Kilometerstand sind erforderlich",
+    "endKmMustBeGreaterError": "End-Kilometerstand muss größer als Start-Kilometerstand sein",
+    "totalDistance": "Gefahrene Strecke: {km} km"
   },
   "usagesOverview": {
     "title": "Übersicht Nutzungen",
@@ -88,7 +94,10 @@
     "startEndLabel": "Betriebsstunden:",
     "diffSuffix": "Differenz",
     "fuelSummaryLabel": "Treibstoff:",
-    "vehicleField": "Fahrzeug"
+    "vehicleField": "Fahrzeug",
+    "startEndKmLabel": "Kilometer:",
+    "startKmLabel": "Start-Kilometerstand",
+    "endKmLabel": "End-Kilometerstand"
   },
   "fleetOverview": {
     "title": "Flottenübersicht",
@@ -150,7 +159,11 @@
     "fleetGroupGroomer": "Pistenfahrzeuge",
     "fleetGroupTransporter": "Transporter",
     "fleetGroupQuad": "Quads",
-    "fleetGroupSkidoo": "Skidoos"
+    "fleetGroupSkidoo": "Skidoos",
+    "kmInRange": "Kilometer im Zeitraum",
+    "currentKm": "Kilometerstand",
+    "chartMetricKm": "Kilometer",
+    "chartKmUnit": "km"
   },
   "createVehicle": {
     "title": "Fahrzeug erfassen",

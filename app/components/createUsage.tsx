@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
+import { vehicleUsesKm } from '@/lib/vehicles/metric';
 import { ToastContainer } from './Toast';
 
 interface Vehicle {
@@ -16,6 +17,7 @@ interface Vehicle {
   name: string;
   plate: string;
   snowsatNumber?: string;
+  vehicleType?: string;
 }
 
 interface FormState {
@@ -106,6 +108,14 @@ const CreateUsage: FC = () => {
   // damit der Persistierungs-Effekt formData nie unter der falschen bzw. noch
   // nicht wiederhergestellten Organisation abspeichert.
   const [activeDraftOrgId, setActiveDraftOrgId] = useState<string | null>(null);
+
+  // Pistenfahrzeuge erfassen Betriebsstunden, alle anderen Typen Kilometer.
+  const usesKm = vehicleUsesKm(
+    vehicles.find((v) => v.id === formData.vehicleId)?.vehicleType,
+  );
+  const counterStep = usesKm ? '1' : '0.1';
+  const startLabel = usesKm ? t('startKmLabel') : t('startHoursLabel');
+  const endLabel = usesKm ? t('endKmLabel') : t('endHoursLabel');
 
   // Entwurf laden, sobald (und jedes Mal wenn) die ausgewaehlte Organisation
   // bekannt ist bzw. wechselt.
@@ -204,7 +214,7 @@ const CreateUsage: FC = () => {
     const parsedEnd = parseFloat(newValues.endOperatingHours);
     if (!Number.isNaN(parsedStart) && !Number.isNaN(parsedEnd)) {
       if (parsedEnd <= parsedStart) {
-        setTimeError(t('endHoursValidation'));
+        setTimeError(usesKm ? t('endKmValidation') : t('endHoursValidation'));
       } else {
         setTimeError(null);
       }
@@ -220,12 +230,16 @@ const CreateUsage: FC = () => {
 
     try {
       if (!formData.vehicleId) throw new Error(t('selectVehicleError'));
-      if (!formData.startOperatingHours || !formData.endOperatingHours) throw new Error(t('hoursRequiredError'));
+      if (!formData.startOperatingHours || !formData.endOperatingHours) {
+        throw new Error(usesKm ? t('kmRequiredError') : t('hoursRequiredError'));
+      }
 
       const parsedStart = parseFloat(formData.startOperatingHours);
       const parsedEnd = parseFloat(formData.endOperatingHours);
       if (Number.isNaN(parsedStart) || Number.isNaN(parsedEnd)) throw new Error(t('invalidNumberError'));
-      if (parsedEnd <= parsedStart) throw new Error(t('endMustBeGreaterError'));
+      if (parsedEnd <= parsedStart) {
+        throw new Error(usesKm ? t('endKmMustBeGreaterError') : t('endMustBeGreaterError'));
+      }
 
       const parsedFuel = formData.fuel.trim() === '' ? NaN : parseFloat(formData.fuel);
       const fuelLitersRefilled = Number.isNaN(parsedFuel) ? 0 : parsedFuel;
@@ -405,10 +419,10 @@ const CreateUsage: FC = () => {
           />
         </div>
 
-        {/* Start-Betriebsstunden */}
+        {/* Start-Zählerstand (Betriebsstunden oder Kilometer) */}
         <div className="space-y-2">
           <label htmlFor="startOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            {t('startHoursLabel')}
+            {startLabel}
             {loadingOperatingHours && <span className="ml-2 text-xs text-zinc-500">{t('loadingHours')}</span>}
           </label>
           <input
@@ -418,16 +432,16 @@ const CreateUsage: FC = () => {
             onChange={(e) => handleOperatingHoursChange('startOperatingHours', e.target.value)}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
             min="0"
-            step="0.1"
+            step={counterStep}
             required
             disabled={loadingOperatingHours}
           />
         </div>
 
-        {/* End-Betriebsstunden */}
+        {/* End-Zählerstand */}
         <div className="space-y-2">
           <label htmlFor="endOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            {t('endHoursLabel')}
+            {endLabel}
           </label>
           <input
             id="endOperatingHours"
@@ -436,7 +450,7 @@ const CreateUsage: FC = () => {
             onChange={(e) => handleOperatingHoursChange('endOperatingHours', e.target.value)}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
             min="0"
-            step="0.1"
+            step={counterStep}
             required
           />
           {timeError && (
@@ -444,11 +458,15 @@ const CreateUsage: FC = () => {
           )}
         </div>
 
-        {/* Dauer Anzeige */}
+        {/* Differenz-Anzeige (Dauer bzw. gefahrene Strecke) */}
         {calculatedHours !== null && (
           <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4">
             <p className="text-sm text-blue-900 dark:text-blue-100">
-              <span className="font-semibold">{t('totalDuration', { hours: calculatedHours.toFixed(1) })}</span>
+              <span className="font-semibold">
+                {usesKm
+                  ? t('totalDistance', { km: calculatedHours.toFixed(0) })
+                  : t('totalDuration', { hours: calculatedHours.toFixed(1) })}
+              </span>
             </p>
           </div>
         )}

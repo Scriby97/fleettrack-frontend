@@ -15,6 +15,7 @@ import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { ToastContainer } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import { VehicleTypeIcon } from './VehicleTypeIcon';
+import { vehicleUsesKm } from '@/lib/vehicles/metric';
 
 interface Report {
   id: number | string;
@@ -64,6 +65,11 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, 
     ? `${report.creatorFirstName || ''} ${report.creatorLastName || ''}`.trim()
     : report.creatorEmail ?? null;
 
+  // Pistenfahrzeuge: Betriebsstunden; alle anderen Typen: Kilometer.
+  const usesKm = vehicleUsesKm(report.vehicleType);
+  const unit = usesKm ? 'km' : 'h';
+  const fmt = (n: number) => (usesKm ? Math.round(n).toString() : n.toFixed(1));
+
   return (
   <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 hover:shadow-md transition-shadow flex justify-between items-start">
     <div className="flex-1">
@@ -84,8 +90,9 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, 
           </p>
         )}
         <p>
-          <span className="font-medium">{t('startEndLabel')}</span> {report.startOperatingHours.toFixed(1)} h — {report.endOperatingHours.toFixed(1)} h{' '}
-          <span className="font-medium">({(report.endOperatingHours - report.startOperatingHours).toFixed(1)} h {t('diffSuffix')})</span>
+          <span className="font-medium">{usesKm ? t('startEndKmLabel') : t('startEndLabel')}</span>{' '}
+          {fmt(report.startOperatingHours)} {unit} — {fmt(report.endOperatingHours)} {unit}{' '}
+          <span className="font-medium">({fmt(report.endOperatingHours - report.startOperatingHours)} {unit} {t('diffSuffix')})</span>
         </p>
         <p>
           <span className="font-medium">{t('fuelSummaryLabel')}</span> {report.fuel} L
@@ -179,12 +186,16 @@ const UebersichtEintraege: FC = () => {
 
   const calendarEvents = reports
     .filter((r) => r.usageDate)
-    .map((r) => ({
-      id: r.id,
-      title: `${r.vehicle}: ${r.endOperatingHours - r.startOperatingHours}h`,
-      start: r.usageDate!,
-      end: r.usageDate!,
-    }));
+    .map((r) => {
+      const diff = r.endOperatingHours - r.startOperatingHours;
+      const km = vehicleUsesKm(r.vehicleType);
+      return {
+        id: r.id,
+        title: `${r.vehicle}: ${km ? Math.round(diff) : diff}${km ? ' km' : ' h'}`,
+        start: r.usageDate!,
+        end: r.usageDate!,
+      };
+    });
 
   const handleEdit = (report: Report) => {
     setEditingReport(report);
@@ -409,6 +420,10 @@ const UebersichtEintraege: FC = () => {
       {/* Edit Modal */}
       {editingReport && (() => {
         const canEditEditingReport = canEditReport(editingReport);
+        const editUsesKm = vehicleUsesKm(
+          vehicles.find((v) => v.id === editForm.vehicleId)?.vehicleType ?? editingReport.vehicleType,
+        );
+        const editCounterStep = editUsesKm ? '1' : '0.1';
         return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-zinc-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
@@ -476,10 +491,10 @@ const UebersichtEintraege: FC = () => {
                 />
               </div>
 
-              {/* Start-Betriebsstunden */}
+              {/* Start-Zählerstand (Betriebsstunden oder Kilometer) */}
               <div className="space-y-2">
                 <label htmlFor="edit-startOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  {t('startHoursLabel')}
+                  {editUsesKm ? t('startKmLabel') : t('startHoursLabel')}
                 </label>
                 <input
                   id="edit-startOperatingHours"
@@ -488,16 +503,16 @@ const UebersichtEintraege: FC = () => {
                   onChange={(e) => setEditForm((prev) => ({ ...prev, startOperatingHours: e.target.value }))}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                   min="0"
-                  step="0.1"
+                  step={editCounterStep}
                   required
                   disabled={!canEditEditingReport}
                 />
               </div>
 
-              {/* End-Betriebsstunden */}
+              {/* End-Zählerstand */}
               <div className="space-y-2">
                 <label htmlFor="edit-endOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  {t('endHoursLabel')}
+                  {editUsesKm ? t('endKmLabel') : t('endHoursLabel')}
                 </label>
                 <input
                   id="edit-endOperatingHours"
@@ -506,7 +521,7 @@ const UebersichtEintraege: FC = () => {
                   onChange={(e) => setEditForm((prev) => ({ ...prev, endOperatingHours: e.target.value }))}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                   min="0"
-                  step="0.1"
+                  step={editCounterStep}
                   required
                   disabled={!canEditEditingReport}
                 />

@@ -53,7 +53,13 @@
     "offlineErrorMessage": "No connection to the server. The usage entry could not be saved. Your input is preserved - please try again once you're back online.",
     "saveErrorToast": "Error saving usage",
     "saveErrorGeneric": "Error saving entry",
-    "vehiclesLoadError": "Error loading vehicles"
+    "vehiclesLoadError": "Error loading vehicles",
+    "startKmLabel": "Start odometer",
+    "endKmLabel": "End odometer",
+    "endKmValidation": "End odometer must be greater than start odometer",
+    "kmRequiredError": "Start and end odometer are required",
+    "endKmMustBeGreaterError": "End odometer must be greater than start odometer",
+    "totalDistance": "Distance driven: {km} km"
   },
   "usagesOverview": {
     "title": "Usage overview",
@@ -88,7 +94,10 @@
     "startEndLabel": "Operating hours:",
     "diffSuffix": "difference",
     "fuelSummaryLabel": "Fuel:",
-    "vehicleField": "Vehicle"
+    "vehicleField": "Vehicle",
+    "startEndKmLabel": "Kilometres:",
+    "startKmLabel": "Start odometer",
+    "endKmLabel": "End odometer"
   },
   "fleetOverview": {
     "title": "Fleet overview",
@@ -150,7 +159,11 @@
     "fleetGroupGroomer": "Snow groomers",
     "fleetGroupTransporter": "Transporters",
     "fleetGroupQuad": "Quads",
-    "fleetGroupSkidoo": "Snowmobiles"
+    "fleetGroupSkidoo": "Snowmobiles",
+    "kmInRange": "Kilometres in period",
+    "currentKm": "Current odometer",
+    "chartMetricKm": "Kilometres",
+    "chartKmUnit": "km"
   },
   "createVehicle": {
     "title": "Add vehicle",

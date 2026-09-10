@@ -53,7 +53,13 @@
     "offlineErrorMessage": "Nessuna connessione al server. Non è stato possibile salvare l'utilizzo. I tuoi dati restano salvati - riprova non appena sei di nuovo online.",
     "saveErrorToast": "Errore durante il salvataggio dell'utilizzo",
     "saveErrorGeneric": "Errore durante il salvataggio",
-    "vehiclesLoadError": "Errore durante il caricamento dei veicoli"
+    "vehiclesLoadError": "Errore durante il caricamento dei veicoli",
+    "startKmLabel": "Contachilometri iniziale",
+    "endKmLabel": "Contachilometri finale",
+    "endKmValidation": "Il contachilometri finale deve essere maggiore di quello iniziale",
+    "kmRequiredError": "Contachilometri iniziale e finale sono obbligatori",
+    "endKmMustBeGreaterError": "Il contachilometri finale deve essere maggiore di quello iniziale",
+    "totalDistance": "Distanza percorsa: {km} km"
   },
   "usagesOverview": {
     "title": "Panoramica utilizzi",
@@ -88,7 +94,10 @@
     "startEndLabel": "Ore di esercizio:",
     "diffSuffix": "differenza",
     "fuelSummaryLabel": "Carburante:",
-    "vehicleField": "Veicolo"
+    "vehicleField": "Veicolo",
+    "startEndKmLabel": "Chilometri:",
+    "startKmLabel": "Contachilometri iniziale",
+    "endKmLabel": "Contachilometri finale"
   },
   "fleetOverview": {
     "title": "Panoramica flotta",
@@ -150,7 +159,11 @@
     "fleetGroupGroomer": "Gatti delle nevi",
     "fleetGroupTransporter": "Trasportatori",
     "fleetGroupQuad": "Quad",
-    "fleetGroupSkidoo": "Motoslitte"
+    "fleetGroupSkidoo": "Motoslitte",
+    "kmInRange": "Chilometri nel periodo",
+    "currentKm": "Contachilometri attuale",
+    "chartMetricKm": "Chilometri",
+    "chartKmUnit": "km"
   },
   "createVehicle": {
     "title": "Aggiungi veicolo",

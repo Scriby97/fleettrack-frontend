@@ -6,12 +6,15 @@ import type { UsageHistoryDay } from '@/lib/api/vehicles'
 
 interface ActivityBarChartProps {
   daily: UsageHistoryDay[]
+  /** 'hours' liest die Betriebsstunden-/Kilometer-Spalte, 'fuel' die Liter. */
   metric: 'hours' | 'fuel'
   /** datetime-local strings, e.g. "2026-01-01T00:00" */
   rangeStart: string
   rangeEnd: string
   unitLabel: string
   noDataLabel: string
+  /** Nachkommastellen für Werte (Stunden: 1, Kilometer/Liter: 0). */
+  decimals?: number
 }
 
 type Granularity = 'day' | 'week' | 'month'
@@ -81,7 +84,9 @@ export function ActivityBarChart({
   rangeEnd,
   unitLabel,
   noDataLabel,
+  decimals,
 }: ActivityBarChartProps) {
+  const valueDecimals = decimals ?? (metric === 'hours' ? 1 : 0)
   const dateLocale = useDateLocale()
   const [hovered, setHovered] = useState<number | null>(null)
 
@@ -146,8 +151,7 @@ export function ActivityBarChart({
     return [...set].sort((a, b) => a - b)
   }, [buckets.length])
 
-  const formatValue = (v: number) =>
-    metric === 'hours' ? v.toFixed(1) : String(Math.round(v))
+  const formatValue = (v: number) => v.toFixed(valueDecimals)
 
   const bucketLabel = (b: Bucket) => {
     if (granularity === 'day') return fmtFull.format(b.start)

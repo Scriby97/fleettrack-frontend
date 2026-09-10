@@ -11,6 +11,7 @@ import { ToastContainer } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import { VehicleTypeIcon } from './VehicleTypeIcon';
 import { ActivityBarChart } from './ActivityBarChart';
+import { vehicleUsesKm, counterDecimals } from '@/lib/vehicles/metric';
 import { getVehicleUsageHistory, type VehicleUsageHistory } from '@/lib/api/vehicles';
 
 export interface DetailVehicle {
@@ -76,6 +77,10 @@ const VehicleDetail = ({
     Boolean(rangeStart) && Boolean(rangeEnd) && new Date(rangeStart) > new Date(rangeEnd);
 
   const vehicle = history?.vehicle ?? initialVehicle;
+  // Pistenfahrzeuge: Betriebsstunden; alle anderen Typen: Kilometer.
+  const usesKm = vehicleUsesKm(vehicle.vehicleType);
+  const counterUnit = usesKm ? t('chartKmUnit') : t('chartHoursUnit');
+  const fmtCounter = (n: number) => (usesKm ? Math.round(n).toString() : n.toFixed(1));
 
   useEffect(() => {
     if (!rangeStart || !rangeEnd || rangeInvalid) return;
@@ -300,11 +305,14 @@ const VehicleDetail = ({
         <>
           {/* Kennzahlen */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatTile label={t('operatingHoursInRange')} value={`${totals.operatingHours.toFixed(1)} ${t('chartHoursUnit')}`} />
+            <StatTile
+              label={usesKm ? t('kmInRange') : t('operatingHoursInRange')}
+              value={`${fmtCounter(totals.operatingHours)} ${counterUnit}`}
+            />
             <StatTile label={t('fuelInRange')} value={`${Math.round(totals.fuelLiters)} ${t('chartFuelUnit')}`} />
             <StatTile
-              label={t('currentOperatingHours')}
-              value={totals.lastHours == null ? '—' : `${totals.lastHours.toFixed(1)} ${t('chartHoursUnit')}`}
+              label={usesKm ? t('currentKm') : t('currentOperatingHours')}
+              value={totals.lastHours == null ? '—' : `${fmtCounter(totals.lastHours)} ${counterUnit}`}
             />
             <StatTile label={t('usageCountLabel')} value={String(totals.usageCount)} />
           </div>
@@ -322,7 +330,7 @@ const VehicleDetail = ({
                       : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
                   }`}
                 >
-                  {t('chartMetricHours')}
+                  {usesKm ? t('chartMetricKm') : t('chartMetricHours')}
                 </button>
                 <button
                   onClick={() => setMetric('fuel')}
@@ -341,7 +349,8 @@ const VehicleDetail = ({
               metric={metric}
               rangeStart={rangeStart}
               rangeEnd={rangeEnd}
-              unitLabel={metric === 'hours' ? t('chartHoursUnit') : t('chartFuelUnit')}
+              unitLabel={metric === 'hours' ? counterUnit : t('chartFuelUnit')}
+              decimals={metric === 'fuel' ? 0 : counterDecimals(usesKm)}
               noDataLabel={t('chartNoData')}
             />
           </div>

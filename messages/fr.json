@@ -53,7 +53,13 @@
     "offlineErrorMessage": "Aucune connexion au serveur. L'utilisation n'a pas pu être enregistrée. Vos données sont conservées - veuillez réessayer une fois de nouveau en ligne.",
     "saveErrorToast": "Erreur lors de l'enregistrement de l'utilisation",
     "saveErrorGeneric": "Erreur lors de l'enregistrement",
-    "vehiclesLoadError": "Erreur lors du chargement des véhicules"
+    "vehiclesLoadError": "Erreur lors du chargement des véhicules",
+    "startKmLabel": "Compteur km au début",
+    "endKmLabel": "Compteur km à la fin",
+    "endKmValidation": "Le compteur km à la fin doit être supérieur à celui du début",
+    "kmRequiredError": "Le compteur km au début et à la fin sont requis",
+    "endKmMustBeGreaterError": "Le compteur km à la fin doit être supérieur à celui du début",
+    "totalDistance": "Distance parcourue : {km} km"
   },
   "usagesOverview": {
     "title": "Aperçu des utilisations",
@@ -88,7 +94,10 @@
     "startEndLabel": "Heures de service :",
     "diffSuffix": "différence",
     "fuelSummaryLabel": "Carburant :",
-    "vehicleField": "Véhicule"
+    "vehicleField": "Véhicule",
+    "startEndKmLabel": "Kilomètres :",
+    "startKmLabel": "Compteur km au début",
+    "endKmLabel": "Compteur km à la fin"
   },
   "fleetOverview": {
     "title": "Aperçu de la flotte",
@@ -150,7 +159,11 @@
     "fleetGroupGroomer": "Dameuses",
     "fleetGroupTransporter": "Transporteurs",
     "fleetGroupQuad": "Quads",
-    "fleetGroupSkidoo": "Motoneiges"
+    "fleetGroupSkidoo": "Motoneiges",
+    "kmInRange": "Kilomètres sur la période",
+    "currentKm": "Compteur kilométrique",
+    "chartMetricKm": "Kilomètres",
+    "chartKmUnit": "km"
   },
   "createVehicle": {
     "title": "Ajouter un véhicule",
