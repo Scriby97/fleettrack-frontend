@@ -132,7 +132,21 @@
     "filterEndLabel": "Fine",
     "startHoursLabel": "Ore di servizio - inizio",
     "endHoursLabel": "Ore di servizio - fine",
-    "invalidRangeError": "La data di inizio deve essere precedente alla data di fine."
+    "invalidRangeError": "La data di inizio deve essere precedente alla data di fine.",
+    "detailBackToList": "Torna alla flotta",
+    "detailAllInfoTitle": "Dati del veicolo",
+    "detailLoadingHistory": "Caricamento della cronologia di utilizzo...",
+    "historyLoadError": "Impossibile caricare la cronologia di utilizzo.",
+    "operatingHoursInRange": "Ore di esercizio nel periodo",
+    "fuelInRange": "Carburante rifornito nel periodo",
+    "currentOperatingHours": "Ore di esercizio attuali",
+    "usageCountLabel": "Utilizzi",
+    "chartTitle": "Attività",
+    "chartMetricHours": "Ore",
+    "chartMetricFuel": "Carburante",
+    "chartNoData": "Nessun utilizzo nel periodo selezionato.",
+    "chartHoursUnit": "h",
+    "chartFuelUnit": "L"
   },
   "createVehicle": {
     "title": "Aggiungi veicolo",

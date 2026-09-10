@@ -132,7 +132,21 @@
     "filterEndLabel": "Ende",
     "startHoursLabel": "Start-Betriebsstunden",
     "endHoursLabel": "End-Betriebsstunden",
-    "invalidRangeError": "Das Startdatum muss vor dem Enddatum liegen."
+    "invalidRangeError": "Das Startdatum muss vor dem Enddatum liegen.",
+    "detailBackToList": "Zurück zur Flotte",
+    "detailAllInfoTitle": "Fahrzeugdaten",
+    "detailLoadingHistory": "Nutzungsverlauf wird geladen...",
+    "historyLoadError": "Nutzungsverlauf konnte nicht geladen werden.",
+    "operatingHoursInRange": "Betriebsstunden im Zeitraum",
+    "fuelInRange": "Getankt im Zeitraum",
+    "currentOperatingHours": "Stand Betriebsstunden",
+    "usageCountLabel": "Nutzungen",
+    "chartTitle": "Aktivität",
+    "chartMetricHours": "Stunden",
+    "chartMetricFuel": "Treibstoff",
+    "chartNoData": "Keine Nutzungen im gewählten Zeitraum.",
+    "chartHoursUnit": "h",
+    "chartFuelUnit": "L"
   },
   "createVehicle": {
     "title": "Fahrzeug erfassen",

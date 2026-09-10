@@ -132,7 +132,21 @@
     "filterEndLabel": "End",
     "startHoursLabel": "Start operating hours",
     "endHoursLabel": "End operating hours",
-    "invalidRangeError": "The start date must be before the end date."
+    "invalidRangeError": "The start date must be before the end date.",
+    "detailBackToList": "Back to fleet",
+    "detailAllInfoTitle": "Vehicle details",
+    "detailLoadingHistory": "Loading usage history...",
+    "historyLoadError": "Could not load the usage history.",
+    "operatingHoursInRange": "Operating hours in period",
+    "fuelInRange": "Fuel added in period",
+    "currentOperatingHours": "Current operating hours",
+    "usageCountLabel": "Usages",
+    "chartTitle": "Activity",
+    "chartMetricHours": "Hours",
+    "chartMetricFuel": "Fuel",
+    "chartNoData": "No usages in the selected period.",
+    "chartHoursUnit": "h",
+    "chartFuelUnit": "L"
   },
   "createVehicle": {
     "title": "Add vehicle",
