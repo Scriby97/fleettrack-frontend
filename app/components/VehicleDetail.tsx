@@ -211,15 +211,19 @@ const VehicleDetail = ({
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <VehicleTypeIcon type={vehicle.vehicleType} className="w-10 h-10 shrink-0 text-blue-600 dark:text-blue-400" />
-          <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 truncate">
+          <div className="flex min-w-0 items-baseline gap-2">
+            {/* Name und "ausgemustert"-Hinweis bewusst getrennt: nur der Name
+                soll bei Platzmangel (v.a. Mobile) trunkieren - stünden beide im
+                selben truncate-Element, würde der Hinweis bei langen Namen
+                unsichtbar mit abgeschnitten. */}
+            <h1 className="min-w-0 truncate text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
               {vehicle.name}
-              {vehicle.isRetired && (
-                <span className="ml-2 align-middle text-sm font-normal text-red-600 dark:text-red-400">
-                  ({t('retiredLabel')})
-                </span>
-              )}
             </h1>
+            {vehicle.isRetired && (
+              <span className="shrink-0 text-sm font-normal text-red-600 dark:text-red-400">
+                ({t('retiredLabel')})
+              </span>
+            )}
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
@@ -319,7 +323,7 @@ const VehicleDetail = ({
 
           {/* Diagramm */}
           <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
-            <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{t('chartTitle')}</h2>
               <div className="flex rounded-lg border border-zinc-300 dark:border-zinc-600 overflow-hidden text-xs">
                 <button

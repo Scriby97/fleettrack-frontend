@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDateLocale } from '@/lib/i18n/formatDate'
 import type { UsageHistoryDay } from '@/lib/api/vehicles'
 
@@ -90,6 +90,25 @@ export function ActivityBarChart({
   const dateLocale = useDateLocale()
   const [hovered, setHovered] = useState<number | null>(null)
 
+  // Breite des Diagramms messen, damit die Anzahl der x-Achsen-Labels sich
+  // auf schmalen (v.a. mobilen) Bildschirmen reduziert statt sich zu
+  // überlappen. Fallback vor der ersten Messung ist bewusst grosszügig
+  // (Desktop-Verhalten unverändert), die Korrektur passiert quasi sofort
+  // nach dem Mount.
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [containerWidth, setContainerWidth] = useState(600)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width
+      if (width) setContainerWidth(width)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const { buckets, max, granularity, multiYear } = useMemo(() => {
     const start = new Date(rangeStart)
     const end = new Date(rangeEnd)
@@ -143,13 +162,16 @@ export function ActivityBarChart({
   const tickIndexes = useMemo(() => {
     const n = buckets.length
     if (n === 0) return []
-    const target = Math.min(6, n)
+    // ~64px Mindestabstand pro Label (Breite + Puffer), sonst überlappen sich
+    // die Beschriftungen auf schmalen Bildschirmen (siehe containerWidth oben).
+    const maxByWidth = Math.max(2, Math.floor(containerWidth / 64))
+    const target = Math.min(6, n, maxByWidth)
     const set = new Set<number>()
     for (let i = 0; i < target; i++) {
       set.add(Math.round((i * (n - 1)) / Math.max(1, target - 1)))
     }
     return [...set].sort((a, b) => a - b)
-  }, [buckets.length])
+  }, [buckets.length, containerWidth])
 
   const formatValue = (v: number) => v.toFixed(valueDecimals)
 
@@ -168,7 +190,7 @@ export function ActivityBarChart({
   }
 
   return (
-    <div>
+    <div ref={containerRef}>
       <div className="mb-1 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
         <span>
           {max} {unitLabel}
@@ -222,7 +244,7 @@ export function ActivityBarChart({
             return (
               <span
                 key={i}
-                className={`absolute ${align}`}
+                className={`absolute whitespace-nowrap ${align}`}
                 style={{ left: `${leftPct}%` }}
               >
                 {fmtTick.format(buckets[i].start)}
