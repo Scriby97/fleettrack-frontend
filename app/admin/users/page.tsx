@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth/AuthProvider'
 import { useOrganization } from '@/lib/contexts/OrganizationContext'
 import { createInvite, deleteInvite, getOrganizationInvites } from '@/lib/api/invites'
 import { getUsers, sendUserResetPassword } from '@/lib/api/users'
-import { getOrganizationMembers, updateMemberRole, transferOwnership } from '@/lib/api/organizationMembers'
+import { getOrganizationMembers, updateMemberRole, transferOwnership, removeMember } from '@/lib/api/organizationMembers'
 import type { InviteEntity, InviteStatus, OrganizationMemberDetail, User } from '@/lib/types/user'
 import { useDateLocale } from '@/lib/i18n/formatDate'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
@@ -60,6 +60,7 @@ export default function UsersPage() {
   const [memberActionId, setMemberActionId] = useState<string | null>(null)
   const [confirmDemoteMember, setConfirmDemoteMember] = useState<OrganizationMemberDetail | null>(null)
   const [confirmTransferMember, setConfirmTransferMember] = useState<OrganizationMemberDetail | null>(null)
+  const [confirmRemoveMember, setConfirmRemoveMember] = useState<OrganizationMemberDetail | null>(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -188,6 +189,24 @@ export default function UsersPage() {
       await refreshOrganizations()
     } catch (err) {
       const message = getApiErrorMessage(err, tMember('transferErrorGeneric'))
+      setMembersError(message)
+    } finally {
+      setMemberActionId(null)
+    }
+  }
+
+  const handleRemoveMember = async () => {
+    if (!confirmRemoveMember) return
+    const member = confirmRemoveMember
+    setMembersError(null)
+    setMemberActionId(member.id)
+    try {
+      await removeMember(member.organizationId, member.id)
+      setConfirmRemoveMember(null)
+      await refetchMembers()
+      await refreshOrganizations()
+    } catch (err) {
+      const message = getApiErrorMessage(err, tMember('removeErrorGeneric'))
       setMembersError(message)
     } finally {
       setMemberActionId(null)
@@ -597,6 +616,15 @@ export default function UsersPage() {
                                     {tMember('transferButton')}
                                   </button>
                                 )}
+                                {member.role !== 'owner' && !isSelf && (member.role === 'employee' || isOwner) && (
+                                  <button
+                                    onClick={() => setConfirmRemoveMember(member)}
+                                    disabled={isBusy}
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                                  >
+                                    {tMember('removeButton')}
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -660,6 +688,15 @@ export default function UsersPage() {
                               className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
                             >
                               {tMember('transferButton')}
+                            </button>
+                          )}
+                          {member.role !== 'owner' && !isSelf && (member.role === 'employee' || isOwner) && (
+                            <button
+                              onClick={() => setConfirmRemoveMember(member)}
+                              disabled={isBusy}
+                              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                            >
+                              {tMember('removeButton')}
                             </button>
                           )}
                         </div>
@@ -940,6 +977,37 @@ export default function UsersPage() {
                   disabled={memberActionId === confirmTransferMember.id}
                 >
                   {memberActionId === confirmTransferMember.id ? tMember('waitingLabel') : tMember('transferConfirmButton')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmRemoveMember && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-sm">
+            <div className="p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                {tMember('removeConfirmTitle')}
+              </h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                {tMember('removeConfirmMessage', { name: getMemberDisplayName(confirmRemoveMember) })}
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setConfirmRemoveMember(null)}
+                  className="px-4 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                  disabled={memberActionId === confirmRemoveMember.id}
+                >
+                  {tCommon('cancel')}
+                </button>
+                <button
+                  onClick={handleRemoveMember}
+                  className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700"
+                  disabled={memberActionId === confirmRemoveMember.id}
+                >
+                  {memberActionId === confirmRemoveMember.id ? tMember('waitingLabel') : tMember('removeConfirmButton')}
                 </button>
               </div>
             </div>

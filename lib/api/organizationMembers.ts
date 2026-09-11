@@ -45,6 +45,27 @@ export async function updateMemberRole(
 }
 
 /**
+ * Entfernt ein Mitglied aus der Organisation (kein Rollenwechsel, komplett
+ * raus). Nur Administratoren oder Org-Admins/Owner - der letzte Owner kann
+ * nicht entfernt werden (Backend liefert dann MEMBER_LAST_OWNER).
+ */
+export async function removeMember(
+  organizationId: string,
+  memberId: string
+): Promise<{ message: string; id: string }> {
+  const response = await authenticatedFetch(
+    buildApiUrl(`/organizations/${organizationId}/members/${memberId}`),
+    { method: 'DELETE' }
+  )
+
+  if (!response.ok) {
+    await throwApiError(response, 'Fehler beim Entfernen des Mitglieds')
+  }
+
+  return response.json()
+}
+
+/**
  * Übergibt die eigene Owner-Rolle an ein anderes Mitglied - der bisherige
  * Owner wird dabei automatisch Admin. Nur der aktuelle Owner darf das.
  */

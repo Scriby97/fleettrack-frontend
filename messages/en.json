@@ -566,7 +566,12 @@
     "demoteConfirmButton": "Demote",
     "transferConfirmTitle": "Transfer owner role",
     "transferConfirmMessage": "Do you want to transfer your owner role to {name}? You will become an admin of this organization afterwards.",
-    "transferConfirmButton": "Transfer"
+    "transferConfirmButton": "Transfer",
+    "removeButton": "Remove",
+    "removeErrorGeneric": "Error removing member",
+    "removeConfirmTitle": "Remove member",
+    "removeConfirmMessage": "{name} will be removed from the organization and will lose access immediately. Continue?",
+    "removeConfirmButton": "Remove"
   },
   "userManagement": {
     "title": "User Management",

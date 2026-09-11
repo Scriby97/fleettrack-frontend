@@ -566,7 +566,12 @@
     "demoteConfirmButton": "Rétrograder",
     "transferConfirmTitle": "Transférer le rôle de propriétaire",
     "transferConfirmMessage": "Veux-tu transférer ton rôle de propriétaire à {name} ? Tu deviendras ensuite admin de cette organisation.",
-    "transferConfirmButton": "Transférer"
+    "transferConfirmButton": "Transférer",
+    "removeButton": "Retirer",
+    "removeErrorGeneric": "Erreur lors du retrait du membre",
+    "removeConfirmTitle": "Retirer le membre",
+    "removeConfirmMessage": "{name} sera retiré·e de l'organisation et perdra immédiatement l'accès. Continuer ?",
+    "removeConfirmButton": "Retirer"
   },
   "userManagement": {
     "title": "Gestion des utilisateurs",

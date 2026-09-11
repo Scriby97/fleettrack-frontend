@@ -566,7 +566,12 @@
     "demoteConfirmButton": "Zurückstufen",
     "transferConfirmTitle": "Owner-Rolle übertragen",
     "transferConfirmMessage": "Möchtest du deine Owner-Rolle an {name} übertragen? Du wirst danach selbst Admin dieser Organisation.",
-    "transferConfirmButton": "Übertragen"
+    "transferConfirmButton": "Übertragen",
+    "removeButton": "Entfernen",
+    "removeErrorGeneric": "Fehler beim Entfernen des Mitglieds",
+    "removeConfirmTitle": "Mitglied entfernen",
+    "removeConfirmMessage": "{name} wird aus der Organisation entfernt und verliert damit sofort den Zugriff. Fortfahren?",
+    "removeConfirmButton": "Entfernen"
   },
   "userManagement": {
     "title": "User Management",
