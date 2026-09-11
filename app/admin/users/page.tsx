@@ -38,7 +38,7 @@ export default function UsersPage() {
     expired: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200',
   }
 
-  const [activeTab, setActiveTab] = useState<'invites' | 'members' | 'users'>('invites')
+  const [activeTab, setActiveTab] = useState<'invites' | 'members' | 'users'>('members')
   const [invites, setInvites] = useState<InviteEntity[]>([])
   const [loading, setLoading] = useState(true)
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -346,16 +346,6 @@ export default function UsersPage() {
 
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => setActiveTab('invites')}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
-              activeTab === 'invites'
-                ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
-                : 'border-zinc-200 text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-600'
-            }`}
-          >
-            {tInv('tabLabel')}
-          </button>
-          <button
             onClick={() => setActiveTab('members')}
             className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
               activeTab === 'members'
@@ -364,6 +354,16 @@ export default function UsersPage() {
             }`}
           >
             {tMember('tabLabel')}
+          </button>
+          <button
+            onClick={() => setActiveTab('invites')}
+            className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
+              activeTab === 'invites'
+                ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
+                : 'border-zinc-200 text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-600'
+            }`}
+          >
+            {tInv('tabLabel')}
           </button>
           {isAdmin && (
             <button
