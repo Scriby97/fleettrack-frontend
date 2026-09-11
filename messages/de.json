@@ -683,14 +683,14 @@
     "nameLabel": "Organisationsname",
     "saveButton": "Speichern",
     "saving": "Wird gespeichert...",
-    "nameUpdateSuccess": "Name aktualisiert",
-    "logoUpdateSuccess": "Logo aktualisiert",
-    "logoRemoveSuccess": "Logo entfernt",
     "nameErrorGeneric": "Der Name konnte nicht gespeichert werden.",
     "logoErrorGeneric": "Das Logo konnte nicht gespeichert werden.",
     "invalidImageType": "Bitte wähle ein PNG-, JPEG- oder WebP-Bild.",
     "imageTooLarge": "Das Bild darf höchstens 2 MB gross sein.",
-    "imageProcessingFailed": "Das Bild konnte nicht verarbeitet werden."
+    "imageProcessingFailed": "Das Bild konnte nicht verarbeitet werden.",
+    "saveSuccess": "Änderungen gespeichert",
+    "logoPendingHint": "Wird erst beim Speichern übernommen.",
+    "undoLogoChange": "Änderung verwerfen"
   },
   "notificationPrompt": {
     "title": "Erinnerungen aktivieren?",

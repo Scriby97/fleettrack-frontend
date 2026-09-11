@@ -683,14 +683,14 @@
     "nameLabel": "Nome dell'organizzazione",
     "saveButton": "Salva",
     "saving": "Salvataggio...",
-    "nameUpdateSuccess": "Nome aggiornato",
-    "logoUpdateSuccess": "Logo aggiornato",
-    "logoRemoveSuccess": "Logo rimosso",
     "nameErrorGeneric": "Impossibile salvare il nome.",
     "logoErrorGeneric": "Impossibile salvare il logo.",
     "invalidImageType": "Scegli un'immagine PNG, JPEG o WebP.",
     "imageTooLarge": "L'immagine non deve superare i 2 MB.",
-    "imageProcessingFailed": "Impossibile elaborare l'immagine."
+    "imageProcessingFailed": "Impossibile elaborare l'immagine.",
+    "saveSuccess": "Modifiche salvate",
+    "logoPendingHint": "Verrà applicato solo al salvataggio.",
+    "undoLogoChange": "Annulla modifica"
   },
   "notificationPrompt": {
     "title": "Attivare i promemoria?",

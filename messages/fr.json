@@ -683,14 +683,14 @@
     "nameLabel": "Nom de l'organisation",
     "saveButton": "Enregistrer",
     "saving": "Enregistrement...",
-    "nameUpdateSuccess": "Nom mis à jour",
-    "logoUpdateSuccess": "Logo mis à jour",
-    "logoRemoveSuccess": "Logo supprimé",
     "nameErrorGeneric": "Le nom n'a pas pu être enregistré.",
     "logoErrorGeneric": "Le logo n'a pas pu être enregistré.",
     "invalidImageType": "Choisis une image PNG, JPEG ou WebP.",
     "imageTooLarge": "L'image ne doit pas dépasser 2 Mo.",
-    "imageProcessingFailed": "L'image n'a pas pu être traitée."
+    "imageProcessingFailed": "L'image n'a pas pu être traitée.",
+    "saveSuccess": "Modifications enregistrées",
+    "logoPendingHint": "Ne sera appliqué qu'à l'enregistrement.",
+    "undoLogoChange": "Annuler la modification"
   },
   "notificationPrompt": {
     "title": "Activer les rappels ?",

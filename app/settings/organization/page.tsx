@@ -17,6 +17,11 @@ import { ToastContainer } from '@/app/components/Toast'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { OrgAvatar } from '@/app/components/OrgAvatar'
 
+type PendingLogo =
+  | { kind: 'none' }
+  | { kind: 'upload'; blob: Blob; previewUrl: string }
+  | { kind: 'remove' }
+
 export default function SettingsOrganizationPage() {
   const router = useRouter()
   const { supabaseUser, loading: authLoading, refreshOrganizations } = useAuth()
@@ -38,9 +43,11 @@ export default function SettingsOrganizationPage() {
   const isOwner = selectedOrganizationRole === 'owner'
 
   const [name, setName] = useState('')
-  const [nameSaving, setNameSaving] = useState(false)
   const [nameError, setNameError] = useState<string | null>(null)
-  const [logoBusy, setLogoBusy] = useState<'upload' | 'remove' | null>(null)
+  const [saving, setSaving] = useState(false)
+  // Logo-Änderungen werden erst beim Klick auf "Speichern" tatsächlich hoch-
+  // geladen/entfernt - bis dahin nur lokaler Vorschau-/Vormerk-Zustand.
+  const [pendingLogo, setPendingLogo] = useState<PendingLogo>({ kind: 'none' })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const initializedOrgId = useRef<string | null>(null)
 
@@ -63,66 +70,96 @@ export default function SettingsOrganizationPage() {
     }
   }, [selectedOrg])
 
-  const handleNameSave = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (!selectedOrg) return
-    setNameError(null)
-    setNameSaving(true)
-    try {
-      await updateOrganizationProfile(selectedOrg.id, { name: name.trim() })
-      await refreshOrganizations()
-      showToast(t('nameUpdateSuccess'), 'success')
-    } catch (err) {
-      const message = getApiErrorMessage(err, t('nameErrorGeneric'))
-      setNameError(message)
-      showToast(message, 'error')
-    } finally {
-      setNameSaving(false)
-    }
-  }
+  // Object-URL der Logo-Vorschau freigeben, sobald sie ersetzt/verworfen wird
+  // oder die Seite verlassen wird.
+  useEffect(() => {
+    if (pendingLogo.kind !== 'upload') return
+    const url = pendingLogo.previewUrl
+    return () => URL.revokeObjectURL(url)
+  }, [pendingLogo])
 
   const handleFilePicked = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = event.target.files?.[0]
     event.target.value = ''
-    if (!file || !selectedOrg) return
+    if (!file) return
 
-    setLogoBusy('upload')
     try {
       const blob = await resizeToSquareWebp(file)
-      await uploadOrganizationLogo(selectedOrg.id, blob)
-      await refreshOrganizations()
-      showToast(t('logoUpdateSuccess'), 'success')
+      setPendingLogo({ kind: 'upload', blob, previewUrl: URL.createObjectURL(blob) })
     } catch (err) {
-      let message: string
-      if (err instanceof ImageValidationError) {
-        message =
-          err.message === 'unsupported-type'
+      const message =
+        err instanceof ImageValidationError
+          ? err.message === 'unsupported-type'
             ? t('invalidImageType')
             : err.message === 'too-large'
               ? t('imageTooLarge')
               : t('imageProcessingFailed')
-      } else {
-        message = getApiErrorMessage(err, t('logoErrorGeneric'))
-      }
+          : t('imageProcessingFailed')
       showToast(message, 'error')
-    } finally {
-      setLogoBusy(null)
     }
   }
 
-  const handleLogoRemove = async () => {
-    if (!selectedOrg) return
-    setLogoBusy('remove')
+  const handleLogoRemove = () => {
+    setPendingLogo({ kind: 'remove' })
+  }
+
+  const handleUndoLogoChange = () => {
+    setPendingLogo({ kind: 'none' })
+  }
+
+  const effectiveLogoUrl =
+    pendingLogo.kind === 'upload'
+      ? pendingLogo.previewUrl
+      : pendingLogo.kind === 'remove'
+        ? null
+        : (selectedOrg?.logoUrl ?? null)
+  const hasEffectiveLogo = Boolean(effectiveLogoUrl)
+
+  const nameUnchanged = name.trim() === (selectedOrg?.name ?? '')
+  const nameTooShort = name.trim().length < 2
+  const nothingToSave = nameUnchanged && pendingLogo.kind === 'none'
+
+  const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selectedOrg || nothingToSave) return
+    setNameError(null)
+    setSaving(true)
+
     try {
-      await deleteOrganizationLogo(selectedOrg.id)
+      if (!nameUnchanged) {
+        try {
+          await updateOrganizationProfile(selectedOrg.id, { name: name.trim() })
+        } catch (err) {
+          const message = getApiErrorMessage(err, t('nameErrorGeneric'))
+          setNameError(message)
+          showToast(message, 'error')
+          return
+        }
+      }
+
+      if (pendingLogo.kind === 'upload') {
+        try {
+          await uploadOrganizationLogo(selectedOrg.id, pendingLogo.blob)
+        } catch (err) {
+          showToast(getApiErrorMessage(err, t('logoErrorGeneric')), 'error')
+          return
+        }
+      } else if (pendingLogo.kind === 'remove') {
+        try {
+          await deleteOrganizationLogo(selectedOrg.id)
+        } catch (err) {
+          showToast(getApiErrorMessage(err, t('logoErrorGeneric')), 'error')
+          return
+        }
+      }
+
       await refreshOrganizations()
-      showToast(t('logoRemoveSuccess'), 'success')
-    } catch (err) {
-      showToast(getApiErrorMessage(err, t('logoErrorGeneric')), 'error')
+      setPendingLogo({ kind: 'none' })
+      showToast(t('saveSuccess'), 'success')
     } finally {
-      setLogoBusy(null)
+      setSaving(false)
     }
   }
 
@@ -133,9 +170,6 @@ export default function SettingsOrganizationPage() {
       </div>
     )
   }
-
-  const nameUnchanged = name.trim() === selectedOrg.name
-  const nameTooShort = name.trim().length < 2
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 px-4 py-8">
@@ -158,7 +192,7 @@ export default function SettingsOrganizationPage() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-6 space-y-6">
+        <form onSubmit={handleSave} className="bg-white dark:bg-zinc-800 rounded-lg shadow p-6 space-y-6">
           {/* Logo */}
           <section className="space-y-4">
             <div>
@@ -173,36 +207,42 @@ export default function SettingsOrganizationPage() {
             <div className="flex items-center gap-5">
               <OrgAvatar
                 name={selectedOrg.name}
-                logoUrl={selectedOrg.logoUrl}
+                logoUrl={effectiveLogoUrl}
                 size={80}
               />
               <div className="space-y-2">
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={logoBusy !== null}
+                    disabled={saving}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {logoBusy === 'upload'
-                      ? t('uploading')
-                      : selectedOrg.logoUrl
-                        ? t('replaceButton')
-                        : t('chooseButton')}
+                    {hasEffectiveLogo ? t('replaceButton') : t('chooseButton')}
                   </button>
-                  {selectedOrg.logoUrl && (
+                  {hasEffectiveLogo && (
                     <button
                       type="button"
                       onClick={handleLogoRemove}
-                      disabled={logoBusy !== null}
+                      disabled={saving}
                       className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-900 dark:text-zinc-100 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {logoBusy === 'remove' ? t('removing') : t('removeButton')}
+                      {t('removeButton')}
+                    </button>
+                  )}
+                  {pendingLogo.kind !== 'none' && (
+                    <button
+                      type="button"
+                      onClick={handleUndoLogoChange}
+                      disabled={saving}
+                      className="px-2 py-2 text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors disabled:opacity-50"
+                    >
+                      {t('undoLogoChange')}
                     </button>
                   )}
                 </div>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {t('logoHint')}
+                  {pendingLogo.kind !== 'none' ? t('logoPendingHint') : t('logoHint')}
                 </p>
               </div>
             </div>
@@ -227,41 +267,39 @@ export default function SettingsOrganizationPage() {
               </p>
             </div>
 
-            <form onSubmit={handleNameSave} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="orgName"
-                  className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2"
-                >
-                  {t('nameLabel')}
-                </label>
-                <input
-                  id="orgName"
-                  type="text"
-                  required
-                  minLength={2}
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
-                />
-              </div>
-
-              {nameError && (
-                <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
-                  <p className="text-sm text-red-800 dark:text-red-200">{nameError}</p>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={nameSaving || nameUnchanged || nameTooShort}
-                className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            <div>
+              <label
+                htmlFor="orgName"
+                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2"
               >
-                {nameSaving ? t('saving') : t('saveButton')}
-              </button>
-            </form>
+                {t('nameLabel')}
+              </label>
+              <input
+                id="orgName"
+                type="text"
+                required
+                minLength={2}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
+              />
+            </div>
+
+            {nameError && (
+              <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
+                <p className="text-sm text-red-800 dark:text-red-200">{nameError}</p>
+              </div>
+            )}
           </section>
-        </div>
+
+          <button
+            type="submit"
+            disabled={saving || nothingToSave || nameTooShort}
+            className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? t('saving') : t('saveButton')}
+          </button>
+        </form>
       </div>
     </div>
   )
