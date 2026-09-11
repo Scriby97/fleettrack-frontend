@@ -38,8 +38,12 @@ export default function SettingsRemindersPage() {
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [enabled, setEnabled] = useState(false)
-  const [time, setTime] = useState('20:00')
+  // Default fuer einen User, der die Einstellungen noch nie gespeichert hat
+  // (siehe NotificationsService.getReminder im Backend) - wird gleich darauf
+  // vom Server ueberschrieben, hier nur, damit vor dem Laden nicht kurz der
+  // falsche (deaktivierte) Zustand aufblitzt.
+  const [enabled, setEnabled] = useState(true)
+  const [time, setTime] = useState('20:30')
   const [supported, setSupported] = useState(true)
 
   useEffect(() => {
