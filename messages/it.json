@@ -42,7 +42,7 @@
     "endHoursLabel": "Ore di esercizio finali",
     "endHoursValidation": "Le ore finali devono essere maggiori delle ore iniziali",
     "totalDuration": "Durata totale: {hours} ore",
-    "fuelLabel": "Carburante (L, opzionale)",
+    "fuelLabel": "Carburante rifornito (L)",
     "submitButton": "Salva utilizzo",
     "submitting": "Salvataggio in corso...",
     "selectVehicleError": "Seleziona un veicolo",

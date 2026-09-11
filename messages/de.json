@@ -42,7 +42,7 @@
     "endHoursLabel": "End-Betriebsstunden",
     "endHoursValidation": "End-Betriebsstunden müssen größer als Start-Betriebsstunden sein",
     "totalDuration": "Gesamtdauer: {hours} Stunden",
-    "fuelLabel": "Treibstoff (L, optional)",
+    "fuelLabel": "Treibstoff getankt (L)",
     "submitButton": "Nutzung speichern",
     "submitting": "Wird gespeichert...",
     "selectVehicleError": "Bitte ein Fahrzeug auswählen",

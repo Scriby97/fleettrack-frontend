@@ -42,7 +42,7 @@
     "endHoursLabel": "End operating hours",
     "endHoursValidation": "End operating hours must be greater than start operating hours",
     "totalDuration": "Total duration: {hours} hours",
-    "fuelLabel": "Fuel (L, optional)",
+    "fuelLabel": "Fuel added (L)",
     "submitButton": "Save usage",
     "submitting": "Saving...",
     "selectVehicleError": "Please select a vehicle",

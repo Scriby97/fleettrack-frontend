@@ -42,7 +42,7 @@
     "endHoursLabel": "Heures de service - fin",
     "endHoursValidation": "Les heures de fin doivent être supérieures aux heures de début",
     "totalDuration": "Durée totale : {hours} heures",
-    "fuelLabel": "Carburant (L, optionnel)",
+    "fuelLabel": "Carburant ajouté (L)",
     "submitButton": "Enregistrer l'utilisation",
     "submitting": "Enregistrement...",
     "selectVehicleError": "Veuillez sélectionner un véhicule",
