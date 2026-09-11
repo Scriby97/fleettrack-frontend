@@ -691,5 +691,13 @@
     "invalidImageType": "Choisis une image PNG, JPEG ou WebP.",
     "imageTooLarge": "L'image ne doit pas dépasser 2 Mo.",
     "imageProcessingFailed": "L'image n'a pas pu être traitée."
+  },
+  "notificationPrompt": {
+    "title": "Activer les rappels ?",
+    "body": "Reçois un rappel quotidien pour saisir ton trajet. N'apparaît que si tu n'as rien saisi durant les 4 dernières heures.",
+    "laterHint": "Tu peux modifier cela à tout moment dans les paramètres.",
+    "enableButton": "Activer",
+    "dismissButton": "Pas maintenant",
+    "genericError": "Une erreur s'est produite. Tu peux réessayer à tout moment dans les paramètres."
   }
 }

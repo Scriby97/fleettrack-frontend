@@ -691,5 +691,13 @@
     "invalidImageType": "Scegli un'immagine PNG, JPEG o WebP.",
     "imageTooLarge": "L'immagine non deve superare i 2 MB.",
     "imageProcessingFailed": "Impossibile elaborare l'immagine."
+  },
+  "notificationPrompt": {
+    "title": "Attivare i promemoria?",
+    "body": "Ricevi un promemoria giornaliero per registrare il tuo viaggio. Arriva solo se non hai registrato nulla nelle ultime 4 ore.",
+    "laterHint": "Puoi modificarlo in qualsiasi momento nelle impostazioni.",
+    "enableButton": "Attiva",
+    "dismissButton": "Non ora",
+    "genericError": "Qualcosa è andato storto. Puoi riprovare in qualsiasi momento nelle impostazioni."
   }
 }

@@ -691,5 +691,13 @@
     "invalidImageType": "Bitte wähle ein PNG-, JPEG- oder WebP-Bild.",
     "imageTooLarge": "Das Bild darf höchstens 2 MB gross sein.",
     "imageProcessingFailed": "Das Bild konnte nicht verarbeitet werden."
+  },
+  "notificationPrompt": {
+    "title": "Erinnerungen aktivieren?",
+    "body": "Erhalte eine tägliche Erinnerung, deine Fahrt zu erfassen. Kommt nur, wenn du in den letzten 4 Stunden noch nichts eingetragen hast.",
+    "laterHint": "Du kannst das jederzeit in den Einstellungen ändern.",
+    "enableButton": "Aktivieren",
+    "dismissButton": "Nicht jetzt",
+    "genericError": "Etwas ist schiefgelaufen. Du kannst es jederzeit in den Einstellungen erneut versuchen."
   }
 }

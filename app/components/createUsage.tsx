@@ -11,6 +11,7 @@ import { useToast } from '@/lib/hooks/useToast';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { vehicleUsesKm } from '@/lib/vehicles/metric';
 import { ToastContainer } from './Toast';
+import { NotificationPermissionPrompt } from './NotificationPermissionPrompt';
 
 interface Vehicle {
   id: string;
@@ -108,6 +109,13 @@ const CreateUsage: FC = () => {
   // damit der Persistierungs-Effekt formData nie unter der falschen bzw. noch
   // nicht wiederhergestellten Organisation abspeichert.
   const [activeDraftOrgId, setActiveDraftOrgId] = useState<string | null>(null);
+  // Erst nach der ersten erfolgreich gespeicherten Nutzung nach der
+  // Benachrichtigungs-Berechtigung fragen (siehe handleSubmit) - nicht schon
+  // beim blossen Oeffnen des Dashboards, wo der User noch keinen Nutzen der
+  // App gesehen hat. Bleibt danach fuer den Rest der Sitzung gemountet; die
+  // Komponente selbst blendet sich aus, sobald sie einmal beantwortet wurde
+  // (siehe NotificationPermissionPrompt).
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
 
   // Pistenfahrzeuge erfassen Betriebsstunden, alle anderen Typen Kilometer.
   const usesKm = vehicleUsesKm(
@@ -279,6 +287,7 @@ const CreateUsage: FC = () => {
       if (lastVehicleId) {
         fetchVehicleEndOperatingHours(lastVehicleId);
       }
+      setShowNotificationPrompt(true);
     } catch (err) {
       console.error('Fehler beim Speichern der Nutzung:', err);
 
@@ -510,6 +519,7 @@ const CreateUsage: FC = () => {
         </button>
       </form>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+      {showNotificationPrompt && <NotificationPermissionPrompt />}
     </section>
   );
 };

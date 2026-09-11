@@ -691,5 +691,13 @@
     "invalidImageType": "Please choose a PNG, JPEG or WebP image.",
     "imageTooLarge": "The image must be 2 MB or smaller.",
     "imageProcessingFailed": "The image could not be processed."
+  },
+  "notificationPrompt": {
+    "title": "Enable reminders?",
+    "body": "Get a daily reminder to log your trip. It only shows up if you haven't logged anything in the last 4 hours.",
+    "laterHint": "You can change this anytime in Settings.",
+    "enableButton": "Enable",
+    "dismissButton": "Not now",
+    "genericError": "Something went wrong. You can try again anytime in Settings."
   }
 }

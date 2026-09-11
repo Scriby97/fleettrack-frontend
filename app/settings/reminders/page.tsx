@@ -7,26 +7,9 @@ import { useAuth } from '@/lib/auth/AuthProvider'
 import { useToast } from '@/lib/hooks/useToast'
 import { ToastContainer } from '@/app/components/Toast'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
-import {
-  getReminderSettings,
-  updateReminderSettings,
-  getVapidPublicKey,
-  registerPushSubscription,
-} from '@/lib/api/notifications'
+import { getReminderSettings, updateReminderSettings } from '@/lib/api/notifications'
+import { ensurePushSubscription, PushPermissionError } from '@/lib/notifications/pushSubscription'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
-
-// Push-Server erwarten den VAPID Public Key als Uint8Array, Browser liefern ihn
-// aber nur als base64url-String - Standard-Konvertierung dafuer.
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
-  const rawData = window.atob(base64)
-  const outputArray = new Uint8Array(rawData.length)
-  for (let i = 0; i < rawData.length; i++) {
-    outputArray[i] = rawData.charCodeAt(i)
-  }
-  return outputArray
-}
 
 export default function SettingsRemindersPage() {
   const router = useRouter()
@@ -81,33 +64,10 @@ export default function SettingsRemindersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, supabaseUser])
 
-  const ensurePushSubscription = async () => {
-    if (Notification.permission === 'denied') {
-      throw new Error(t('permissionBlockedError'))
-    }
-
-    if (Notification.permission !== 'granted') {
-      const permission = await Notification.requestPermission()
-      if (permission !== 'granted') {
-        throw new Error(t('permissionDeniedError'))
-      }
-    }
-
-    const registration = await navigator.serviceWorker.ready
-    let subscription = await registration.pushManager.getSubscription()
-
-    if (!subscription) {
-      const publicKey = await getVapidPublicKey()
-      if (!publicKey) {
-        throw new Error(t('notConfiguredError'))
-      }
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
-      })
-    }
-
-    await registerPushSubscription(subscription.toJSON() as PushSubscriptionJSON)
+  const pushPermissionErrorMessage = (code: PushPermissionError['code']): string => {
+    if (code === 'blocked') return t('permissionBlockedError')
+    if (code === 'denied') return t('permissionDeniedError')
+    return t('notConfiguredError')
   }
 
   const handleSave = async () => {
@@ -119,7 +79,10 @@ export default function SettingsRemindersPage() {
       await updateReminderSettings(enabled, time)
       showToast(t('saveSuccess'), 'success')
     } catch (err) {
-      const message = getApiErrorMessage(err, t('saveErrorGeneric'))
+      const message =
+        err instanceof PushPermissionError
+          ? pushPermissionErrorMessage(err.code)
+          : getApiErrorMessage(err, t('saveErrorGeneric'))
       showToast(message, 'error')
       if (enabled) {
         // Aktivieren ist fehlgeschlagen (z.B. Berechtigung verweigert) - Toggle
