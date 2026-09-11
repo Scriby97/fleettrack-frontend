@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useOrganization } from '@/lib/contexts/OrganizationContext'
@@ -24,24 +24,22 @@ export function OrgSwitcher() {
   const canSwitch = organizations.length > 1
 
   const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
 
+  // Schliessen bei Escape. Das Schliessen bei Klick/Tap ausserhalb läuft
+  // bewusst NICHT über einen document-"mousedown"-Listener: Auf Touch-Geräten
+  // (v.a. iOS Safari) schluckt genau dieses Muster zuverlässig den eigentlichen
+  // Tap auf eine Option, weil der Listener vor deren onClick feuert - der
+  // Dropdown ging dann auf Mobile nicht auf bzw. eine Auswahl liess sich nicht
+  // antippen. Stattdessen gibt es unten einen unsichtbaren Vollbild-Backdrop
+  // (gleiches Muster wie das mobile Hauptmenü in app/page.tsx), der Taps
+  // ausserhalb sauber abfängt.
   useEffect(() => {
     if (!open) return
-    const onPointerDown = (event: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
-        setOpen(false)
-      }
-    }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false)
     }
-    document.addEventListener('mousedown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
+    return () => document.removeEventListener('keydown', onKeyDown)
   }, [open])
 
   const chipClass =
@@ -75,7 +73,7 @@ export function OrgSwitcher() {
   }
 
   return (
-    <div ref={rootRef} className="relative">
+    <div className="relative">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
@@ -88,49 +86,59 @@ export function OrgSwitcher() {
       </button>
 
       {open && (
-        <div
-          role="listbox"
-          aria-label={t('switchOrganization')}
-          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 py-1 shadow-lg"
-        >
-          {organizations.map((org) => {
-            const active = org.id === selectedOrgId
-            return (
-              <button
-                key={org.id}
-                type="button"
-                role="option"
-                aria-selected={active}
-                onClick={() => {
-                  setSelectedOrgId(org.id)
-                  setOpen(false)
-                }}
-                className={`flex w-full items-center gap-2 px-2.5 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
-                  active
-                    ? 'font-semibold text-zinc-900 dark:text-zinc-50'
-                    : 'text-zinc-700 dark:text-zinc-300'
-                }`}
-              >
-                <OrgAvatar name={org.name} logoUrl={org.logoUrl} size={22} />
-                <span className="flex-1 truncate">{org.name}</span>
-                {active && (
-                  <svg
-                    className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </button>
-            )
-          })}
-        </div>
+        <>
+          {/* Unsichtbarer Vollbild-Tap-Catcher zum Schliessen - liegt unter dem
+              Dropdown (z-20 < z-30), fängt Taps ausserhalb zuverlässig ab,
+              ohne mit dem Tap auf eine Option zu konkurrieren. */}
+          <div
+            className="fixed inset-0 z-20"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            role="listbox"
+            aria-label={t('switchOrganization')}
+            className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 py-1 shadow-lg"
+          >
+            {organizations.map((org) => {
+              const active = org.id === selectedOrgId
+              return (
+                <button
+                  key={org.id}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  onClick={() => {
+                    setSelectedOrgId(org.id)
+                    setOpen(false)
+                  }}
+                  className={`flex w-full items-center gap-2 px-2.5 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 ${
+                    active
+                      ? 'font-semibold text-zinc-900 dark:text-zinc-50'
+                      : 'text-zinc-700 dark:text-zinc-300'
+                  }`}
+                >
+                  <OrgAvatar name={org.name} logoUrl={org.logoUrl} size={22} />
+                  <span className="flex-1 truncate">{org.name}</span>
+                  {active && (
+                    <svg
+                      className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </>
       )}
     </div>
   )
