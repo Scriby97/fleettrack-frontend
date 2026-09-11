@@ -124,7 +124,12 @@ const CreateUsage: FC = () => {
 
     const draft = loadDraft(selectedOrgId);
     currentVehicleIdRef.current = draft?.vehicleId ?? '';
-    skipInitialFetchRef.current = Boolean(draft?.vehicleId);
+    // Nur ueberspringen, wenn der Entwurf einen tatsaechlich noch nicht
+    // gespeicherten Start-Zaehlerstand enthaelt (mitten in der Eingabe
+    // unterbrochen) - nach einem erfolgreichen Speichern ist das Fahrzeug im
+    // Entwurf zwar gesetzt (siehe handleSubmit), der Start-Zaehlerstand aber
+    // bewusst leer, damit er hier ganz normal frisch vom Server geladen wird.
+    skipInitialFetchRef.current = Boolean(draft?.vehicleId) && Boolean(draft?.startOperatingHours);
 
     setFormData({
       vehicleId: draft?.vehicleId ?? '',
@@ -263,9 +268,17 @@ const CreateUsage: FC = () => {
 
       await res.json();
 
-      setFormData({ vehicleId: vehicles[0]?.id ?? '', startOperatingHours: '', endOperatingHours: '', fuel: '', usageDate: getTodayDate() });
+      // Zuletzt gewaehltes Fahrzeug bleibt fuer die naechste Erfassung
+      // voreingestellt (statt auf das erste Fahrzeug der Liste zurueckzufallen) -
+      // Start-Zaehlerstand wird dafuer frisch vom Server nachgeladen, da sich
+      // dieser durch die soeben gespeicherte Nutzung veraendert hat.
+      const lastVehicleId = formData.vehicleId;
+      setFormData({ vehicleId: lastVehicleId, startOperatingHours: '', endOperatingHours: '', fuel: '', usageDate: getTodayDate() });
       setCalculatedHours(null);
       showToast(t('saveSuccess'), 'success');
+      if (lastVehicleId) {
+        fetchVehicleEndOperatingHours(lastVehicleId);
+      }
     } catch (err) {
       console.error('Fehler beim Speichern der Nutzung:', err);
 
