@@ -9,6 +9,7 @@ import { useOrganization } from '@/lib/contexts/OrganizationContext'
 import { createInvite, deleteInvite, getOrganizationInvites } from '@/lib/api/invites'
 import { getUsers, sendUserResetPassword } from '@/lib/api/users'
 import { getOrganizationMembers, updateMemberRole, transferOwnership, removeMember } from '@/lib/api/organizationMembers'
+import { canPromoteToAdmin, canDemoteToEmployee, canTransferOwnership, canRemoveMember } from '@/lib/permissions/organizationMembers'
 import type { InviteEntity, InviteStatus, OrganizationMemberDetail, User } from '@/lib/types/user'
 import { useDateLocale } from '@/lib/i18n/formatDate'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
@@ -18,7 +19,6 @@ export default function UsersPage() {
   const { loading: authLoading, isAdmin, userProfile, refreshOrganizations } = useAuth()
   const { organizations, selectedOrgId, canManageSelectedOrganization, selectedOrganizationRole, isLoading: orgLoading } = useOrganization()
   const selectedOrganization = organizations.find((org) => org.id === selectedOrgId)
-  const isOwner = selectedOrganizationRole === 'owner'
   const t = useTranslations('userManagement')
   const tInv = useTranslations('inviteManagement')
   const tMember = useTranslations('memberManagement')
@@ -589,7 +589,7 @@ export default function UsersPage() {
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex flex-wrap gap-2">
-                                {member.role === 'employee' && (
+                                {canPromoteToAdmin(member) && (
                                   <button
                                     onClick={() => handlePromoteToAdmin(member)}
                                     disabled={isBusy}
@@ -598,7 +598,7 @@ export default function UsersPage() {
                                     {isBusy ? tMember('waitingLabel') : tMember('promoteButton')}
                                   </button>
                                 )}
-                                {member.role === 'admin' && isOwner && (
+                                {canDemoteToEmployee(member, { currentUserRole: selectedOrganizationRole, isSelf }) && (
                                   <button
                                     onClick={() => setConfirmDemoteMember(member)}
                                     disabled={isBusy}
@@ -607,7 +607,7 @@ export default function UsersPage() {
                                     {tMember('demoteButton')}
                                   </button>
                                 )}
-                                {member.role !== 'owner' && isOwner && !isSelf && (
+                                {canTransferOwnership(member, { currentUserRole: selectedOrganizationRole, isSelf }) && (
                                   <button
                                     onClick={() => setConfirmTransferMember(member)}
                                     disabled={isBusy}
@@ -616,7 +616,7 @@ export default function UsersPage() {
                                     {tMember('transferButton')}
                                   </button>
                                 )}
-                                {member.role !== 'owner' && !isSelf && (member.role === 'employee' || isOwner) && (
+                                {canRemoveMember(member, { currentUserRole: selectedOrganizationRole, isSelf }) && (
                                   <button
                                     onClick={() => setConfirmRemoveMember(member)}
                                     disabled={isBusy}
@@ -663,7 +663,7 @@ export default function UsersPage() {
                           <span className="font-medium">{tMember('roleHeader')}:</span> {member.role}
                         </div>
                         <div className="flex flex-wrap gap-2 pt-1">
-                          {member.role === 'employee' && (
+                          {canPromoteToAdmin(member) && (
                             <button
                               onClick={() => handlePromoteToAdmin(member)}
                               disabled={isBusy}
@@ -672,7 +672,7 @@ export default function UsersPage() {
                               {isBusy ? tMember('waitingLabel') : tMember('promoteButton')}
                             </button>
                           )}
-                          {member.role === 'admin' && isOwner && (
+                          {canDemoteToEmployee(member, { currentUserRole: selectedOrganizationRole, isSelf }) && (
                             <button
                               onClick={() => setConfirmDemoteMember(member)}
                               disabled={isBusy}
@@ -681,7 +681,7 @@ export default function UsersPage() {
                               {tMember('demoteButton')}
                             </button>
                           )}
-                          {member.role !== 'owner' && isOwner && !isSelf && (
+                          {canTransferOwnership(member, { currentUserRole: selectedOrganizationRole, isSelf }) && (
                             <button
                               onClick={() => setConfirmTransferMember(member)}
                               disabled={isBusy}
@@ -690,7 +690,7 @@ export default function UsersPage() {
                               {tMember('transferButton')}
                             </button>
                           )}
-                          {member.role !== 'owner' && !isSelf && (member.role === 'employee' || isOwner) && (
+                          {canRemoveMember(member, { currentUserRole: selectedOrganizationRole, isSelf }) && (
                             <button
                               onClick={() => setConfirmRemoveMember(member)}
                               disabled={isBusy}
