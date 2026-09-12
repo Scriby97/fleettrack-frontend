@@ -150,7 +150,6 @@ const CreateUsage: FC = () => {
       draft ? calculateHoursDifference(draft.startOperatingHours ?? '', draft.endOperatingHours ?? '') : null
     );
     setActiveDraftOrgId(selectedOrgId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOrgId]);
 
   // Formular-Eingaben laufend zwischenspeichern (auch waehrend der Eingabe,
@@ -169,11 +168,6 @@ const CreateUsage: FC = () => {
       // localStorage nicht verfuegbar (z.B. Private Mode) - Entwurf wird dann nicht zwischengespeichert
     }
   }, [formData, selectedOrgId, activeDraftOrgId]);
-
-  const updateCalculatedHours = useCallback(() => {
-    const hours = calculateHoursDifference(formData.startOperatingHours, formData.endOperatingHours);
-    setCalculatedHours(hours);
-  }, [formData.startOperatingHours, formData.endOperatingHours]);
 
   const fetchVehicleEndOperatingHours = useCallback(async (vehicleId: string) => {
     const apiBaseUrl = getApiBaseUrlOrNull();
@@ -363,6 +357,7 @@ const CreateUsage: FC = () => {
     return () => {
       controller.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchVehicleEndOperatingHours, selectedOrgId]);
 
   return (

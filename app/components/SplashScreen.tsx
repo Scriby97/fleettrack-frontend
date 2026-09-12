@@ -65,9 +65,16 @@ export function SplashScreen({
         {/* Status Text */}
         <div className="text-center space-y-2 min-h-[60px]">
           {backendStarting && (
-            <p className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
-              Server wird hochgefahren{dots}
-            </p>
+            <>
+              <p className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
+                Server wird hochgefahren{dots}
+              </p>
+              {retryCount > 0 && (
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  Versuch {retryCount} von {maxRetries}
+                </p>
+              )}
+            </>
           )}
         </div>
       </div>

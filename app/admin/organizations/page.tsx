@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useRouter } from 'next/navigation'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { createOrganization, getAllOrganizations } from '@/lib/api/organizations'
 import { CreateOrganizationRequest, CreateOrganizationResponse, Organization, OrganizationRole } from '@/lib/types/user'
@@ -13,7 +13,7 @@ import { useDateLocale } from '@/lib/i18n/formatDate'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 
 export default function AdminOrganizationsPage() {
-  const { supabaseUser, isAdmin, loading: authLoading } = useAuth()
+  const { isAdmin, loading: authLoading } = useAuth()
   const router = useRouter()
   const { toasts, showToast, removeToast } = useToast()
   const t = useTranslations('adminOrganizations')
@@ -37,18 +37,7 @@ export default function AdminOrganizationsPage() {
     contactEmail: '',
   })
 
-  useEffect(() => {
-    if (!authLoading && !isAdmin) {
-      router.push('/')
-      return
-    }
-
-    if (!authLoading && isAdmin) {
-      loadOrganizations()
-    }
-  }, [authLoading, isAdmin, router])
-
-  const loadOrganizations = async () => {
+  const loadOrganizations = useCallback(async () => {
     try {
       setLoading(true)
       const data = await getAllOrganizations()
@@ -59,7 +48,18 @@ export default function AdminOrganizationsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [t, showToast])
+
+  useEffect(() => {
+    if (!authLoading && !isAdmin) {
+      router.push('/')
+      return
+    }
+
+    if (!authLoading && isAdmin) {
+      loadOrganizations()
+    }
+  }, [authLoading, isAdmin, router, loadOrganizations])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

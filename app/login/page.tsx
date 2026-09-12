@@ -73,7 +73,7 @@ const LoginPage: FC = () => {
         router.refresh()
         return
       }
-    } catch (err) {
+    } catch {
       setError(tCommon('unexpectedError'))
       setLoading(false)
     }

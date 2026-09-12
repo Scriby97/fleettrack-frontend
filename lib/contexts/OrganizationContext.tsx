@@ -82,6 +82,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       }
     };
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
 
   // Normale User: eigene Organisation(en) direkt aus den bereits geladenen

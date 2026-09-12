@@ -27,15 +27,6 @@ function addDays(date: Date, days: number) {
   return d;
 }
 
-function formatDayHeader(d: Date) {
-  return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
-}
-
-function sameDay(a: Date | null, b: Date | null) {
-  if (!a || !b) return false;
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
 export default function CalendarView({ events, onEventClick }: Props) {
   const [mode, setMode] = useState<'month' | 'week'>('month');
   const [cursor, setCursor] = useState<Date>(new Date());
