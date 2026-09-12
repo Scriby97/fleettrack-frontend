@@ -4,6 +4,7 @@ import { useState, type FC } from 'react';
 import { useTranslations } from 'next-intl';
 import { getVehicleUsageHistory } from '@/lib/api/vehicles';
 import { vehicleUsesKm } from '@/lib/vehicles/metric';
+import { csvRow } from '@/lib/csv/csv';
 import { useToast } from '@/lib/hooks/useToast';
 import { ToastContainer } from './Toast';
 import { typeRank, VEHICLE_GROUPS, type Vehicle } from './vehicles';
@@ -15,18 +16,6 @@ interface ExportFleetCsvModalProps {
   initialRangeEnd: string;
   onClose: () => void;
 }
-
-// Eine CSV-Zelle: in Anführungszeichen, falls sie Trennzeichen/Anführungszeichen/
-// Zeilenumbrüche enthält; enthaltene Anführungszeichen werden verdoppelt.
-const csvCell = (value: string): string => {
-  if (/[",\n]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
-};
-
-const csvRow = (cells: Array<string | number>): string =>
-  cells.map((c) => csvCell(String(c))).join(',');
 
 // Sanitized Datumsteil eines datetime-local-Werts ("YYYY-MM-DDTHH:mm" -> "YYYY-MM-DD") für den Dateinamen.
 const datePart = (value: string): string => value.slice(0, 10);
