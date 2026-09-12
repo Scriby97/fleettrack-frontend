@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { applyTheme, getStoredTheme, setStoredTheme, type ThemePreference } from '@/lib/theme'
-import { SUPPORTED_LOCALES, LOCALE_COOKIE_NAME, type AppLocale } from '@/i18n/locales'
+import { SUPPORTED_LOCALES, setLocaleCookie, type AppLocale } from '@/i18n/locales'
 import { useToast } from '@/lib/hooks/useToast'
 import { ToastContainer } from '@/app/components/Toast'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
@@ -44,9 +44,7 @@ export default function SettingsAppearancePage() {
   }
 
   const handleLanguageChange = (locale: AppLocale) => {
-    // 1 Jahr, wie next-intl's eigenes Cookie-Beispiel - reine UI-Einstellung,
-    // kein sensibler Wert.
-    document.cookie = `${LOCALE_COOKIE_NAME}=${locale}; path=/; max-age=31536000; SameSite=Lax`
+    setLocaleCookie(locale)
     showToast(t('languageSaveSuccess'), 'success')
     router.refresh()
   }

@@ -56,8 +56,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Ref to always hold the latest supabaseUser without being a useEffect dependency
   const supabaseUserRef = useRef(supabaseUser)
 
-  // Keep ref in sync with latest supabaseUser value
-  supabaseUserRef.current = supabaseUser
+  // Keep ref in sync with latest supabaseUser value - in an effect (not
+  // during render) since mutating a ref during render is a React anti-pattern
+  // the compiler flags (react-hooks/refs).
+  useEffect(() => {
+    supabaseUserRef.current = supabaseUser
+  }, [supabaseUser])
 
   // Compute derived values
   const isAdmin = userRole === 'administrator'

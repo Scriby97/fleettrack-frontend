@@ -23,9 +23,12 @@ export function InstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handler);
 
-    if (isStandalone) {
-      setIsInstallable(false);
-    } else if (isIOS) {
+    // Bewusst per Effect (nicht als useState-Lazy-Initializer) gesetzt: der
+    // Server rendert immer isInstallable=false (kein window/navigator dort),
+    // ein Lazy-Initializer wuerde auf iOS-Clients sofort true berechnen und
+    // damit einen Hydration-Mismatch verursachen.
+    if (!isStandalone && isIOS) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- s.o.
       setIsInstallable(true);
     }
 
