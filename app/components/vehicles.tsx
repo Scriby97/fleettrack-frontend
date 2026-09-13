@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, type FC } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
@@ -155,12 +156,23 @@ const FlottenUebersicht: FC = () => {
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
   const t = useTranslations('fleetOverview');
   const tCommon = useTranslations('common');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [showExportModal, setShowExportModal] = useState(false);
+
+  // Die Detailansicht wird bewusst über einen URL-Parameter (nicht lokalen
+  // State) gesteuert: so legt jeder Fahrzeug-Aufruf einen Browser-Verlauf-
+  // Eintrag an. Der "Zurück"-Swipe/-Button auf Android schliesst sonst die
+  // ganze App, statt (wie erwartet) zur Flottenliste zurückzukehren, weil es
+  // ohne History-Eintrag nichts zum "Zurückgehen" gibt.
+  const selectedVehicleId = searchParams.get('vehicleId');
+  const selectVehicle = (id: string) => router.push(`${pathname}?vehicleId=${id}`);
+  const backToList = () => router.back();
 
   // Zeitraum lebt hier (nicht in der Detailansicht), damit er beim Wechsel
   // zwischen Fahrzeugen erhalten bleibt; persistiert in localStorage, sobald
@@ -265,11 +277,11 @@ const FlottenUebersicht: FC = () => {
         rangeStart={range.start}
         rangeEnd={range.end}
         onRangeChange={handleRangeChange}
-        onBack={() => setSelectedVehicleId(null)}
+        onBack={backToList}
         onChanged={() => setReloadKey((k) => k + 1)}
         onDeleted={() => {
-          setSelectedVehicleId(null);
           setReloadKey((k) => k + 1);
+          backToList();
         }}
       />
     );
@@ -343,7 +355,7 @@ const FlottenUebersicht: FC = () => {
                 </h2>
                 <div className="grid gap-3">
                   {items.map((vehicle) => (
-                    <VehicleItem key={vehicle.id} vehicle={vehicle} onSelect={setSelectedVehicleId} />
+                    <VehicleItem key={vehicle.id} vehicle={vehicle} onSelect={selectVehicle} />
                   ))}
                 </div>
               </div>
