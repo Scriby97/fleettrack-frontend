@@ -180,7 +180,8 @@
     "exportColStatusRetired": "Hors service",
     "exportColHours": "Heures de service (h)",
     "exportColKm": "Kilomètres (km)",
-    "exportColFuel": "Carburant ravitaillé (L)"
+    "exportColFuel": "Carburant ravitaillé (L)",
+    "exportRangeLabel": "Période"
   },
   "createVehicle": {
     "title": "Ajouter un véhicule",

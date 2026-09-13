@@ -180,7 +180,8 @@
     "exportColStatusRetired": "Ausrangiert",
     "exportColHours": "Betriebsstunden (h)",
     "exportColKm": "Kilometer (km)",
-    "exportColFuel": "Getankt (L)"
+    "exportColFuel": "Getankt (L)",
+    "exportRangeLabel": "Zeitraum"
   },
   "createVehicle": {
     "title": "Fahrzeug erfassen",

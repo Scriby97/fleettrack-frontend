@@ -180,7 +180,8 @@
     "exportColStatusRetired": "Retired",
     "exportColHours": "Operating hours (h)",
     "exportColKm": "Kilometres (km)",
-    "exportColFuel": "Refuelled (L)"
+    "exportColFuel": "Refuelled (L)",
+    "exportRangeLabel": "Period"
   },
   "createVehicle": {
     "title": "Add vehicle",

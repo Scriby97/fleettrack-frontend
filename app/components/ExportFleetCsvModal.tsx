@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { getVehicleUsageHistory } from '@/lib/api/vehicles';
 import { vehicleUsesKm } from '@/lib/vehicles/metric';
 import { csvRow } from '@/lib/csv/csv';
+import { useDateLocale } from '@/lib/i18n/formatDate';
 import { useToast } from '@/lib/hooks/useToast';
 import { ToastContainer } from './Toast';
 import { typeRank, VEHICLE_GROUPS, type Vehicle } from './vehicles';
@@ -20,6 +21,11 @@ interface ExportFleetCsvModalProps {
 // Sanitized Datumsteil eines datetime-local-Werts ("YYYY-MM-DDTHH:mm" -> "YYYY-MM-DD") für den Dateinamen.
 const datePart = (value: string): string => value.slice(0, 10);
 
+// Lesbare Datum+Zeit-Darstellung eines datetime-local-Werts für die
+// Zeitraum-Zeile im Report (z.B. "01.01.2025, 00:00").
+const formatRangeValue = (value: string, locale: string): string =>
+  new Date(value).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' });
+
 const ExportFleetCsvModal: FC<ExportFleetCsvModalProps> = ({
   vehicles,
   organizationName,
@@ -29,6 +35,7 @@ const ExportFleetCsvModal: FC<ExportFleetCsvModalProps> = ({
 }) => {
   const t = useTranslations('fleetOverview');
   const tCommon = useTranslations('common');
+  const dateLocale = useDateLocale();
   const { toasts, showToast, removeToast } = useToast();
 
   const [rangeStart, setRangeStart] = useState(initialRangeStart);
@@ -80,6 +87,11 @@ const ExportFleetCsvModal: FC<ExportFleetCsvModalProps> = ({
         ),
       );
 
+      const rangeInfoRow = csvRow([
+        t('exportRangeLabel'),
+        `${formatRangeValue(rangeStart, dateLocale)} – ${formatRangeValue(rangeEnd, dateLocale)}`,
+      ]);
+
       const header = csvRow([
         t('exportColName'),
         t('exportColType'),
@@ -129,7 +141,7 @@ const ExportFleetCsvModal: FC<ExportFleetCsvModalProps> = ({
         ]);
       });
 
-      const csvContent = [header, ...rows].join('\r\n');
+      const csvContent = [rangeInfoRow, '', header, ...rows].join('\r\n');
       // BOM, damit Excel Umlaute (ä/ö/ü) korrekt als UTF-8 erkennt.
       const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
