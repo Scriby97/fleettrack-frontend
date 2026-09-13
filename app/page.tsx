@@ -13,12 +13,14 @@ import { OrgSwitcher } from "./components/OrgSwitcher";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useOrganization } from "@/lib/contexts/OrganizationContext";
 import { InstallPrompt } from "./components/InstallPrompt";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 type MenuKey = "nutzung" | "uebersichtEintraege" | "uebersicht" | "fahrzeug";
 
 export default function Home() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const t = useTranslations("nav");
   const [active, setActive] = useState<MenuKey>("nutzung");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -38,6 +40,18 @@ export default function Home() {
     organizations.find((org) => org.id === selectedOrgId) ?? organization;
   const orgName = selectedOrg?.name ?? "FleetTrack";
   const orgLogoUrl = selectedOrg?.logoUrl ?? null;
+
+  // Über die Nav (Tabs, Logo) - im Unterschied zum direkten Auswählen eines
+  // Fahrzeugs in der Flottenübersicht - immer sauber navigieren: ein evtl.
+  // noch in der URL stehender ?vehicleId= (von einer zuvor offenen
+  // Fahrzeug-Detailansicht) wird entfernt, damit der Flotte-Tab beim
+  // erneuten Öffnen wieder mit der Liste startet statt mit dem alten Detail.
+  const goToTab = (key: MenuKey) => {
+    setActive(key);
+    if (searchParams.get('vehicleId')) {
+      router.replace(pathname);
+    }
+  };
 
   useEffect(() => {
     if (userProfile && !hasOrganization) {
@@ -61,17 +75,21 @@ export default function Home() {
       {/* Left menu - Hidden on mobile */}
       <aside className="hidden md:flex md:w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0b0b0b] px-6 py-8 flex-col h-screen sticky top-0">
         <div className="mb-8 flex-shrink-0 space-y-3">
-          <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => goToTab("nutzung")}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
             <Image src="/fleettrack-logo-light.svg" alt="FleetTrack" width={32} height={32} className="dark:hidden" />
             <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack" width={32} height={32} className="hidden dark:block" />
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
-          </div>
+          </button>
           <OrgSwitcher />
         </div>
 
         <nav className="flex flex-col gap-2 flex-1 overflow-y-auto">
           <button
-            onClick={() => setActive("nutzung")}
+            onClick={() => goToTab("nutzung")}
             className={
               "text-left px-4 py-3 rounded-md transition-colors " +
               (active === "nutzung"
@@ -83,7 +101,7 @@ export default function Home() {
           </button>
 
           <button
-            onClick={() => setActive("uebersichtEintraege")}
+            onClick={() => goToTab("uebersichtEintraege")}
             className={
               "text-left px-4 py-3 rounded-md transition-colors " +
               (active === "uebersichtEintraege"
@@ -98,7 +116,7 @@ export default function Home() {
           {canManageOrganization && (
             <>
               <button
-                onClick={() => setActive("uebersicht")}
+                onClick={() => goToTab("uebersicht")}
                 className={
                   "text-left px-4 py-3 rounded-md transition-colors " +
                   (active === "uebersicht"
@@ -110,7 +128,7 @@ export default function Home() {
               </button>
 
               <button
-                onClick={() => setActive("fahrzeug")}
+                onClick={() => goToTab("fahrzeug")}
                 className={
                   "text-left px-4 py-3 rounded-md transition-colors " +
                   (active === "fahrzeug"
@@ -134,9 +152,15 @@ export default function Home() {
       {/* Mobile header */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-[#0b0b0b] border-b border-zinc-200 dark:border-zinc-800 px-5 py-4 flex items-center justify-between z-50">
         <div className="flex items-center gap-2 min-w-0">
-          <Image src="/fleettrack-logo-light.svg" alt="FleetTrack" width={26} height={26} className="dark:hidden" />
-          <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack" width={26} height={26} className="hidden dark:block" />
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
+          <button
+            type="button"
+            onClick={() => goToTab("nutzung")}
+            className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity"
+          >
+            <Image src="/fleettrack-logo-light.svg" alt="FleetTrack" width={26} height={26} className="dark:hidden" />
+            <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack" width={26} height={26} className="hidden dark:block" />
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
+          </button>
           <span className="mx-0.5 text-zinc-300 dark:text-zinc-600" aria-hidden="true">·</span>
           <OrgAvatar name={orgName} logoUrl={orgLogoUrl} size={22} />
         </div>
@@ -171,18 +195,25 @@ export default function Home() {
             </button>
 
             <div className="mb-8 mt-8 space-y-3">
-              <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  goToTab("nutzung");
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
                 <Image src="/fleettrack-logo-light.svg" alt="FleetTrack" width={32} height={32} className="dark:hidden" />
                 <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack" width={32} height={32} className="hidden dark:block" />
                 <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
-              </div>
+              </button>
               <OrgSwitcher />
             </div>
 
             <nav className="flex flex-col gap-2">
               <button
                 onClick={() => {
-                  setActive("nutzung");
+                  goToTab("nutzung");
                   setMobileMenuOpen(false);
                 }}
                 className={
@@ -197,7 +228,7 @@ export default function Home() {
 
               <button
                 onClick={() => {
-                  setActive("uebersichtEintraege");
+                  goToTab("uebersichtEintraege");
                   setMobileMenuOpen(false);
                 }}
                 className={
@@ -214,7 +245,7 @@ export default function Home() {
                 <>
                   <button
                     onClick={() => {
-                      setActive("uebersicht");
+                      goToTab("uebersicht");
                       setMobileMenuOpen(false);
                     }}
                     className={
@@ -229,7 +260,7 @@ export default function Home() {
 
                   <button
                     onClick={() => {
-                      setActive("fahrzeug");
+                      goToTab("fahrzeug");
                       setMobileMenuOpen(false);
                     }}
                     className={
