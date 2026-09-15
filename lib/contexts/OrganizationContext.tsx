@@ -73,7 +73,21 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       try {
         const orgs = await getAllOrganizations();
         setOrganizations(orgs);
-        setSelectedOrgIdState((current) => current ?? orgs[0]?.id ?? null);
+        setSelectedOrgIdState((current) => {
+          if (current) return current;
+
+          let stored: string | null = null;
+          try {
+            stored = window.localStorage.getItem(SELECTED_ORG_STORAGE_KEY);
+          } catch {
+            // ignore
+          }
+          if (stored && orgs.some((org) => org.id === stored)) {
+            return stored;
+          }
+
+          return orgs[0]?.id ?? null;
+        });
       } catch (err) {
         console.error('Fehler beim Laden der Organisationen:', err);
         setError(getApiErrorMessage(err, 'Fehler beim Laden der Organisationen'));
