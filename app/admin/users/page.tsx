@@ -38,6 +38,17 @@ export default function UsersPage() {
     expired: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200',
   }
 
+  const ORG_ROLE_LABELS: Record<'employee' | 'admin' | 'owner', string> = {
+    employee: tInv('employeeOption'),
+    admin: tInv('adminOption'),
+    owner: tInv('ownerOption'),
+  }
+
+  const USER_ROLE_LABELS: Record<User['role'], string> = {
+    user: t('roleUser'),
+    administrator: t('roleAdministrator'),
+  }
+
   const [activeTab, setActiveTab] = useState<'invites' | 'members' | 'users'>('members')
   const [invites, setInvites] = useState<InviteEntity[]>([])
   const [loading, setLoading] = useState(true)
@@ -442,8 +453,8 @@ export default function UsersPage() {
                             <td className="px-4 py-3 text-zinc-900 dark:text-zinc-100 font-medium">
                               {invite.email}
                             </td>
-                            <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 capitalize">
-                              {invite.role}
+                            <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                              {ORG_ROLE_LABELS[invite.role]}
                             </td>
                             <td className="px-4 py-3">
                               <span className={`px-2 py-1 text-xs font-semibold rounded-full ${STATUS_CLASSES[status]}`}>
@@ -502,8 +513,8 @@ export default function UsersPage() {
                             <p className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                               {invite.email}
                             </p>
-                            <p className="text-sm text-zinc-600 dark:text-zinc-400 capitalize mt-1">
-                              {tInv('roleColumnLabel')} {invite.role}
+                            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+                              {tInv('roleColumnLabel')} {ORG_ROLE_LABELS[invite.role]}
                             </p>
                           </div>
                           <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${STATUS_CLASSES[status]}`}>
@@ -584,8 +595,8 @@ export default function UsersPage() {
                             <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
                               {member.user.email}
                             </td>
-                            <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 capitalize">
-                              {member.role}
+                            <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                              {ORG_ROLE_LABELS[member.role]}
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex flex-wrap gap-2">
@@ -659,8 +670,8 @@ export default function UsersPage() {
                             {member.user.email}
                           </p>
                         </div>
-                        <div className="text-sm text-zinc-600 dark:text-zinc-400 capitalize">
-                          <span className="font-medium">{tMember('roleHeader')}:</span> {member.role}
+                        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                          <span className="font-medium">{tMember('roleHeader')}:</span> {ORG_ROLE_LABELS[member.role]}
                         </div>
                         <div className="flex flex-wrap gap-2 pt-1">
                           {canPromoteToAdmin(member) && (
@@ -764,8 +775,8 @@ export default function UsersPage() {
                           <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
                             {user.email}
                           </td>
-                          <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 capitalize">
-                            {user.role.replace('_', ' ')}
+                          <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                            {USER_ROLE_LABELS[user.role]}
                           </td>
                           <td className="px-4 py-3">
                             <button
@@ -803,8 +814,8 @@ export default function UsersPage() {
                           {user.email}
                         </p>
                       </div>
-                      <div className="text-sm text-zinc-600 dark:text-zinc-400 capitalize">
-                        <span className="font-medium">{tMember('roleHeader')}:</span> {user.role.replace('_', ' ')}
+                      <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                        <span className="font-medium">{tMember('roleHeader')}:</span> {USER_ROLE_LABELS[user.role]}
                       </div>
                       <div className="pt-1">
                         <button

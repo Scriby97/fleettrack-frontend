@@ -550,6 +550,7 @@
     "roleLabel": "Rolle",
     "employeeOption": "Mitarbeiter",
     "adminOption": "Admin",
+    "ownerOption": "Eigentümer",
     "creatingLabel": "Erstelle...",
     "createSubmitButton": "Einladung erstellen",
     "allOrganizationsOption": "Alle Organizations",
@@ -605,7 +606,9 @@
     "loadInvitesError": "Fehler beim Laden der Einladungen",
     "noUsersFound": "Keine Benutzer gefunden.",
     "searchPlaceholder": "Suche...",
-    "resetSuccessNotice": "Reset Email gesendet an {email}"
+    "resetSuccessNotice": "Reset Email gesendet an {email}",
+    "roleUser": "Benutzer",
+    "roleAdministrator": "Administrator"
   },
   "adminAllUsers": {
     "title": "Alle Benutzer",
@@ -625,7 +628,9 @@
     "resetErrorGeneric": "Fehler beim Senden der Reset-Email",
     "loadDataError": "Fehler beim Laden der Daten",
     "resetConfirmTitle": "Reset Email senden",
-    "resetConfirmMessage": "Reset Email an {email} senden?"
+    "resetConfirmMessage": "Reset Email an {email} senden?",
+    "roleUser": "Benutzer",
+    "roleAdministrator": "Administrator"
   },
   "errors": {
     "VALIDATION_BAD_REQUEST_GENERIC": "Ungültige Anfrage.",

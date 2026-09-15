@@ -550,6 +550,7 @@
     "roleLabel": "Ruolo",
     "employeeOption": "Collaboratore",
     "adminOption": "Admin",
+    "ownerOption": "Proprietario",
     "creatingLabel": "Creazione in corso...",
     "createSubmitButton": "Crea invito",
     "allOrganizationsOption": "Tutte le organizzazioni",
@@ -605,7 +606,9 @@
     "loadInvitesError": "Errore durante il caricamento degli inviti",
     "noUsersFound": "Nessun utente trovato.",
     "searchPlaceholder": "Cerca...",
-    "resetSuccessNotice": "Email di reimpostazione inviata a {email}"
+    "resetSuccessNotice": "Email di reimpostazione inviata a {email}",
+    "roleUser": "Utente",
+    "roleAdministrator": "Amministratore"
   },
   "adminAllUsers": {
     "title": "Tutti gli utenti",
@@ -625,7 +628,9 @@
     "resetErrorGeneric": "Errore durante l'invio dell'e-mail di ripristino",
     "loadDataError": "Errore durante il caricamento dei dati",
     "resetConfirmTitle": "Invia email di reimpostazione",
-    "resetConfirmMessage": "Inviare l'email di reimpostazione a {email}?"
+    "resetConfirmMessage": "Inviare l'email di reimpostazione a {email}?",
+    "roleUser": "Utente",
+    "roleAdministrator": "Amministratore"
   },
   "errors": {
     "VALIDATION_BAD_REQUEST_GENERIC": "Richiesta non valida.",

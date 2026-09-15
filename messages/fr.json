@@ -550,6 +550,7 @@
     "roleLabel": "Rôle",
     "employeeOption": "Employé·e",
     "adminOption": "Admin",
+    "ownerOption": "Propriétaire",
     "creatingLabel": "Création...",
     "createSubmitButton": "Créer l'invitation",
     "allOrganizationsOption": "Toutes les organisations",
@@ -605,7 +606,9 @@
     "loadInvitesError": "Erreur lors du chargement des invitations",
     "noUsersFound": "Aucun utilisateur trouvé.",
     "searchPlaceholder": "Rechercher...",
-    "resetSuccessNotice": "E-mail de réinitialisation envoyé à {email}"
+    "resetSuccessNotice": "E-mail de réinitialisation envoyé à {email}",
+    "roleUser": "Utilisateur·rice",
+    "roleAdministrator": "Administrateur"
   },
   "adminAllUsers": {
     "title": "Tous les utilisateurs",
@@ -625,7 +628,9 @@
     "resetErrorGeneric": "Erreur lors de l'envoi de l'e-mail de réinitialisation",
     "loadDataError": "Erreur lors du chargement des données",
     "resetConfirmTitle": "Envoyer l'e-mail de réinitialisation",
-    "resetConfirmMessage": "Envoyer l'e-mail de réinitialisation à {email} ?"
+    "resetConfirmMessage": "Envoyer l'e-mail de réinitialisation à {email} ?",
+    "roleUser": "Utilisateur·rice",
+    "roleAdministrator": "Administrateur"
   },
   "errors": {
     "VALIDATION_BAD_REQUEST_GENERIC": "Requête invalide.",

@@ -550,6 +550,7 @@
     "roleLabel": "Role",
     "employeeOption": "Employee",
     "adminOption": "Admin",
+    "ownerOption": "Owner",
     "creatingLabel": "Creating...",
     "createSubmitButton": "Create invitation",
     "allOrganizationsOption": "All organizations",
@@ -605,7 +606,9 @@
     "loadInvitesError": "Error loading invitations",
     "noUsersFound": "No users found.",
     "searchPlaceholder": "Search...",
-    "resetSuccessNotice": "Reset email sent to {email}"
+    "resetSuccessNotice": "Reset email sent to {email}",
+    "roleUser": "User",
+    "roleAdministrator": "Administrator"
   },
   "adminAllUsers": {
     "title": "All Users",
@@ -625,7 +628,9 @@
     "resetErrorGeneric": "Error sending the reset email",
     "loadDataError": "Error loading the data",
     "resetConfirmTitle": "Send reset email",
-    "resetConfirmMessage": "Send reset email to {email}?"
+    "resetConfirmMessage": "Send reset email to {email}?",
+    "roleUser": "User",
+    "roleAdministrator": "Administrator"
   },
   "errors": {
     "VALIDATION_BAD_REQUEST_GENERIC": "Invalid request.",
