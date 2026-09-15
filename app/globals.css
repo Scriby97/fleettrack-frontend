@@ -27,3 +27,21 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Einheitlicher Auswahlpfeil für alle <select>-Elemente der App - ersetzt die
+   native Browser-Grafik, die je nach Feldgrösse und Browser unterschiedlich
+   aussieht. Steht bewusst ausserhalb von @layer: unlayered CSS gewinnt laut
+   Cascade-Layers-Spezifikation immer gegen die in @layer utilities liegenden
+   Tailwind-Klassen (z.B. px-*), auch ohne !important. */
+select {
+  appearance: none;
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1rem;
+  padding-right: 2.25rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+.dark select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
