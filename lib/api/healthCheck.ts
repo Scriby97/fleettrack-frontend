@@ -5,7 +5,7 @@
  * Industry best practice for startup/readiness probes.
  */
 
-import { getApiBaseUrlOrNull, getBackendRootUrlOrNull } from './url'
+import { getApiBaseUrlOrNull } from './url'
 
 interface HealthCheckOptions {
   retries?: number
@@ -34,8 +34,7 @@ let healthCheckCache: {
 const CACHE_DURATION_MS = 30000 // 30 seconds
 
 /**
- * Check if backend is available using /health endpoint.
- * Handles API URLs with and without a trailing /api segment.
+ * Check if backend is available using the /api/health endpoint.
  * Results are cached for 30 seconds to avoid unnecessary checks.
  */
 export async function checkBackendHealth(
@@ -58,19 +57,11 @@ export async function checkBackendHealth(
   } = options
 
   const apiBaseUrl = getApiBaseUrlOrNull()
-  const backendRootUrl = getBackendRootUrlOrNull()
   if (!apiBaseUrl) {
     return { available: false, retryCount: 0, error: 'API URL nicht konfiguriert' }
   }
 
-  // The backend health endpoint is expected under the API prefix, while the
-  // root endpoint remains as a compatibility fallback for older deployments.
-  const healthEndpoints = Array.from(
-    new Set([
-      `${apiBaseUrl}/health`,
-      ...(backendRootUrl ? [`${backendRootUrl}/health`] : []),
-    ])
-  )
+  const healthEndpoint = `${apiBaseUrl}/health`
 
   let lastError: string | undefined
   let retryCount = 0
@@ -78,27 +69,25 @@ export async function checkBackendHealth(
   for (let attempt = 0; attempt <= retries; attempt++) {
     retryCount = attempt
 
-    for (const endpoint of healthEndpoints) {
-      try {
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 5000)
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-        const response = await fetch(endpoint, {
-          method: 'GET',
-          signal: controller.signal,
-          headers: { 'Content-Type': 'application/json' },
-        })
+      const response = await fetch(healthEndpoint, {
+        method: 'GET',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' },
+      })
 
-        clearTimeout(timeoutId)
+      clearTimeout(timeoutId)
 
-        if (response.ok) {
-          const result: HealthCheckResult = { available: true, retryCount }
-          healthCheckCache = { result, timestamp: Date.now() }
-          return result
-        }
-      } catch (error) {
-        lastError = error instanceof Error ? error.message : 'Unbekannter Fehler'
+      if (response.ok) {
+        const result: HealthCheckResult = { available: true, retryCount }
+        healthCheckCache = { result, timestamp: Date.now() }
+        return result
       }
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : 'Unbekannter Fehler'
     }
 
     if (attempt >= retries) break

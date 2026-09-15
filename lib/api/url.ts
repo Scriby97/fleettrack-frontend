@@ -24,11 +24,3 @@ export function buildApiUrl(path: string): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   return `${getApiBaseUrl()}${normalizedPath}`
 }
-
-export function getBackendRootUrlOrNull(): string | null {
-  const apiBaseUrl = getApiBaseUrlOrNull()
-  if (!apiBaseUrl) {
-    return null
-  }
-  return apiBaseUrl.replace(/\/api$/, '')
-}
