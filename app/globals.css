@@ -3,8 +3,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbfcfe;
+  --foreground: #101b30;
   color-scheme: light;
 }
 
@@ -12,20 +12,61 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-plex-mono);
+  --font-display: var(--font-big-shoulders);
 }
 
+/* FleetTrack-Markenpalette (Richtung D: Navy/Eisblau/Signalorange) - ersetzt
+   Tailwinds Standard-Skalen fuer blue/zinc, damit jede bestehende Klasse wie
+   bg-blue-600 oder text-zinc-900 automatisch in der neuen Farbe aufloest,
+   ohne dass jede der ~40 Komponenten einzeln angefasst werden muss. */
+@theme {
+  --color-blue-50: #eef4fd;
+  --color-blue-100: #dbe8fb;
+  --color-blue-200: #b9d4f6;
+  --color-blue-300: #8fbdf0;
+  --color-blue-400: #6fb7ff;
+  --color-blue-500: #4a96e8;
+  --color-blue-600: #2f6fd1;
+  --color-blue-700: #2559ac;
+  --color-blue-800: #1d4480;
+  --color-blue-900: #17284a;
+  --color-blue-950: #101b30;
+
+  --color-zinc-50: #fbfcfe;
+  --color-zinc-100: #eef1f7;
+  --color-zinc-200: #e1e5ee;
+  --color-zinc-300: #c9d0dd;
+  --color-zinc-400: #8b97ab;
+  --color-zinc-500: #64708a;
+  --color-zinc-600: #4d5a72;
+  --color-zinc-700: #2a3550;
+  --color-zinc-800: #17284a;
+  --color-zinc-900: #101b30;
+  --color-zinc-950: #0a1222;
+
+  --color-signal-50: #fdf1ea;
+  --color-signal-100: #fbe0cd;
+  --color-signal-200: #f6bd97;
+  --color-signal-300: #f0995f;
+  --color-signal-400: #e87a38;
+  --color-signal-500: #e56a22;
+  --color-signal-600: #e0590c;
+  --color-signal-700: #c94c09;
+  --color-signal-800: #a53e08;
+  --color-signal-900: #7d2f06;
+  --color-signal-950: #5c2305;
+}
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #0a1222;
+  --foreground: #fbfcfe;
   color-scheme: dark;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
 
 /* Einheitlicher Auswahlpfeil für alle <select>-Elemente der App - ersetzt die
@@ -39,9 +80,9 @@ select {
   background-position: right 0.7rem center;
   background-size: 1rem;
   padding-right: 2.25rem;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364708a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
 }
 
 .dark select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b97ab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
 }

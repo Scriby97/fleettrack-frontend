@@ -3,8 +3,8 @@
   "short_name": "FleetTrack",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0b0b0b",
-  "theme_color": "#6366f1",
+  "background_color": "#0a1222",
+  "theme_color": "#0a1222",
   "icons": [
     {
       "src": "/icon-192x192.png",

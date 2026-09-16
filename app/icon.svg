@@ -1,18 +1,11 @@
 <svg width="32" height="32" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-  <!-- FleetTrack Favicon - Schneeflocke (wie Hauptlogo), feste dunkle Markenfarbe -->
-  <g fill="#0B1830" stroke="#0B1830">
-    <line x1="200.0" y1="162.0" x2="200.0" y2="88.0" stroke-width="9" stroke-linecap="round"/>
-    <line x1="232.91" y1="181.0" x2="296.99" y2="144.0" stroke-width="9" stroke-linecap="round"/>
-    <line x1="232.91" y1="219.0" x2="296.99" y2="256.0" stroke-width="9" stroke-linecap="round"/>
-    <line x1="200.0" y1="238.0" x2="200.0" y2="312.0" stroke-width="9" stroke-linecap="round"/>
-    <line x1="167.09" y1="219.0" x2="103.01" y2="256.0" stroke-width="9" stroke-linecap="round"/>
-    <line x1="167.09" y1="181.0" x2="103.01" y2="144.0" stroke-width="9" stroke-linecap="round"/>
-    <polygon points="200.0,160.0 234.64,180.0 234.64,220.0 200.0,240.0 165.36,220.0 165.36,180.0" stroke="none"/>
-    <circle cx="200.0" cy="72.0" r="18" stroke="none"/>
-    <circle cx="310.85" cy="136.0" r="18" stroke="none"/>
-    <circle cx="310.85" cy="264.0" r="18" stroke="none"/>
-    <circle cx="200.0" cy="328.0" r="18" stroke="none"/>
-    <circle cx="89.15" cy="264.0" r="18" stroke="none"/>
-    <circle cx="89.15" cy="136.0" r="18" stroke="none"/>
+  <!-- FleetTrack Favicon - FT-Monogramm, feste dunkle Markenfarbe (Ink/Navy),
+       einfarbig fuer maximale Lesbarkeit im Browser-Tab. -->
+  <g fill="#101b30">
+    <rect x="60" y="80" width="42" height="240"/>
+    <rect x="60" y="80" width="130" height="42"/>
+    <rect x="60" y="172" width="106" height="42"/>
+    <rect x="210" y="80" width="130" height="42"/>
+    <rect x="254" y="80" width="42" height="240"/>
   </g>
 </svg>

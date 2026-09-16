@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body{ margin:0; font-family:'Source Sans 3',-apple-system,sans-serif; }
+    a{ color:#8A5A2B; } a:hover{ color:#6E4622; }
+    .mono{ font-family:'JetBrains Mono','SFMono-Regular',monospace; }
+  </style>
+</helmet>
+
+<div style="width:440px; min-height:900px; background:#EAE6DD; padding:28px 0 40px; display:flex; flex-direction:column; align-items:center; box-sizing:border-box;">
+
+  <div style="width:392px; margin-bottom:16px;">
+    <div class="mono" style="font-size:11px; letter-spacing:0.12em; color:#8A5A2B; font-weight:600;">RICHTUNG B &middot; ALPINE TOPOGRAFIE</div>
+    <div style="font-size:13px; color:#5B5747; margin-top:2px;">Ruhig, hell, kartografisch &mdash; Schweizer Reliefkarten als Vorbild.</div>
+  </div>
+
+  <div style="width:390px; background:#FAF7F0; border-radius:28px; box-shadow:0 30px 60px -30px rgba(38,36,31,0.35), 0 1px 0 rgba(38,36,31,0.06); overflow:hidden; border:1px solid #E4DFD1;">
+
+    <!-- top bar -->
+    <div style="padding:20px 20px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid #ECE7D9;">
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+        <circle cx="15" cy="15" r="13.5" fill="none" stroke="#8A5A2B" stroke-width="1.3" opacity="0.35"></circle>
+        <circle cx="15" cy="15" r="9.5" fill="none" stroke="#8A5A2B" stroke-width="1.3" opacity="0.55"></circle>
+        <path d="M9 18 L13.5 10 L17 15 L21 8" stroke="#3B5D42" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+        <circle cx="21" cy="8" r="1.6" fill="#8A5A2B"></circle>
+      </svg>
+      <div style="display:flex; flex-direction:column; line-height:1.15;">
+        <span style="font-weight:700; font-size:16px; color:#26241F; letter-spacing:-0.01em;">FleetTrack</span>
+        <span class="mono" style="font-size:10px; color:#8B8672; letter-spacing:0.04em;">BDG &middot; BERGBAHNEN GSTAAD</span>
+      </div>
+      <div style="margin-left:auto; width:30px; height:30px; border-radius:50%; background:#3B5D42; color:#F5F1E6; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600;">NB</div>
+    </div>
+
+    <!-- page head -->
+    <div style="padding:20px 20px 6px;">
+      <div style="font-size:20px; font-weight:700; color:#26241F;">Flottenübersicht</div>
+      <div class="mono" style="font-size:11px; color:#8B8672; margin-top:2px; letter-spacing:0.03em;">10 FAHRZEUGE &middot; PISTENFAHRZEUGE</div>
+    </div>
+
+    <!-- list -->
+    <div style="padding:14px 14px 20px; display:flex; flex-direction:column; gap:10px;">
+
+      <div style="background:#FFFFFF; border:1px solid #ECE7D9; border-radius:14px; padding:14px 14px; display:flex; align-items:center; gap:12px;">
+        <div style="width:38px; height:38px; border-radius:10px; background:#F1ECDD; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B5D42" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="11" width="14" height="7" rx="1.5"></rect><circle cx="6" cy="19" r="1.8"></circle><circle cx="13" cy="19" r="1.8"></circle><path d="M16 13h4l2 3v2h-2"></path></svg>
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; font-size:14.5px; color:#26241F;">LT Leitwolf Solo</div>
+          <div class="mono" style="font-size:11px; color:#8B8672; margin-top:2px;">SLG_09 &middot; BE873</div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B8AF95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #ECE7D9; border-radius:14px; padding:14px 14px; display:flex; align-items:center; gap:12px;">
+        <div style="width:38px; height:38px; border-radius:10px; background:#F1ECDD; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B5D42" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="11" width="14" height="7" rx="1.5"></rect><circle cx="6" cy="19" r="1.8"></circle><circle cx="13" cy="19" r="1.8"></circle><path d="M16 13h4l2 3v2h-2"></path></svg>
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; font-size:14.5px; color:#26241F;">Pistenbully 600 W Polar</div>
+          <div class="mono" style="font-size:11px; color:#8B8672; margin-top:2px;">SST_01 &middot; BE753</div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B8AF95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #ECE7D9; border-radius:14px; padding:14px 14px; display:flex; align-items:center; gap:12px;">
+        <div style="width:38px; height:38px; border-radius:10px; background:#F1ECDD; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B5D42" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="11" width="14" height="7" rx="1.5"></rect><circle cx="6" cy="19" r="1.8"></circle><circle cx="13" cy="19" r="1.8"></circle><path d="M16 13h4l2 3v2h-2"></path></svg>
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; font-size:14.5px; color:#26241F;">Prinoth Husky X</div>
+          <div class="mono" style="font-size:11px; color:#8B8672; margin-top:2px;">SLG_08 &middot; BE</div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B8AF95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #ECE7D9; border-radius:14px; padding:14px 14px; display:flex; align-items:center; gap:12px;">
+        <div style="width:38px; height:38px; border-radius:10px; background:#F1ECDD; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B5D42" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="11" width="14" height="7" rx="1.5"></rect><circle cx="6" cy="19" r="1.8"></circle><circle cx="13" cy="19" r="1.8"></circle><path d="M16 13h4l2 3v2h-2"></path></svg>
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; font-size:14.5px; color:#26241F;">LT Leitwolf W Power</div>
+          <div class="mono" style="font-size:11px; color:#8B8672; margin-top:2px;">SLG_10 &middot; BE</div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B8AF95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+      </div>
+
+    </div>
+
+    <!-- bottom nav -->
+    <div style="border-top:1px solid #ECE7D9; padding:10px 24px 16px; display:flex; justify-content:space-between;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A5A2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v14M5 10l7-7 7 7"></path><rect x="5" y="17" width="14" height="4" rx="1"></rect></svg>
+        <span class="mono" style="font-size:9px; color:#8A5A2B;">ERFASSEN</span>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B8AF95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>
+        <span class="mono" style="font-size:9px; color:#B8AF95;">NUTZUNGEN</span>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B5D42" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="18" height="8" rx="2"></rect><circle cx="7.5" cy="18" r="1.6"></circle><circle cx="15.5" cy="18" r="1.6"></circle></svg>
+        <span class="mono" style="font-size:9px; color:#3B5D42; font-weight:700;">FLOTTE</span>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B8AF95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"></circle><path d="M5 20c0-3.8 3.1-6.5 7-6.5s7 2.7 7 6.5"></path></svg>
+        <span class="mono" style="font-size:9px; color:#B8AF95;">KONTO</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

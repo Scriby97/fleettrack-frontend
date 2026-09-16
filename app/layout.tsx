@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Big_Shoulders, IBM_Plex_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
@@ -18,8 +18,15 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const bigShoulders = Big_Shoulders({
+  variable: "--font-big-shoulders",
+  weight: ["600", "700", "900"],
+  subsets: ["latin"],
+});
+
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  weight: ["500", "600", "700"],
   subsets: ["latin"],
 });
 
@@ -28,7 +35,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: "#6366f1",
+  themeColor: "#0a1222",
 };
 
 export const metadata: Metadata = {
@@ -65,7 +72,7 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${bigShoulders.variable} ${plexMono.variable} antialiased`}
       >
         <NextIntlClientProvider messages={messages}>
           <ServiceWorkerRegistration />
