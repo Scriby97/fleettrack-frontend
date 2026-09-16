@@ -329,7 +329,7 @@ const FlottenUebersicht: FC<FlottenUebersichtProps> = ({ onAddVehicle }) => {
           {onAddVehicle && (
             <button
               onClick={onAddVehicle}
-              className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+              className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg bg-signal-600 hover:bg-signal-700 text-white transition-colors"
               aria-label={tNav('createVehicle')}
               title={tNav('createVehicle')}
             >
