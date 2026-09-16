@@ -8,8 +8,8 @@ import UebersichtEintraege from "./components/usages";
 import FlottenUebersicht from "./components/vehicles";
 import FahrzeugErfassen from "./components/createVehicle";
 import UserMenu from "./components/UserMenu";
-import { OrgAvatar } from "./components/OrgAvatar";
 import { OrgSwitcher } from "./components/OrgSwitcher";
+import { BottomNav } from "./components/BottomNav";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useOrganization } from "@/lib/contexts/OrganizationContext";
 import { InstallPrompt } from "./components/InstallPrompt";
@@ -23,23 +23,8 @@ export default function Home() {
   const searchParams = useSearchParams();
   const t = useTranslations("nav");
   const [active, setActive] = useState<MenuKey>("nutzung");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { userProfile, hasOrganization, organization } = useAuth();
-  // Reagiert auf die im Menü AUSGEWÄHLTE Organisation, nicht nur auf die erste
-  // Mitgliedschaft - wichtig, sobald man zwischen mehreren Organisationen wechselt.
-  const {
-    canManageSelectedOrganization: canManageOrganization,
-    organizations,
-    selectedOrgId,
-  } = useOrganization();
-
-  // Kopf der Seitenleiste zeigt die App-Marke (FleetTrack) UND darunter die
-  // AKTUELL AUSGEWÄHLTE Organisation (Logo + Name), damit auf einen Blick klar
-  // ist, in welcher App und in welcher Organisation man sich befindet.
-  const selectedOrg =
-    organizations.find((org) => org.id === selectedOrgId) ?? organization;
-  const orgName = selectedOrg?.name ?? "FleetTrack";
-  const orgLogoUrl = selectedOrg?.logoUrl ?? null;
+  const { userProfile, hasOrganization } = useAuth();
+  const { canManageSelectedOrganization: canManageOrganization } = useOrganization();
 
   // Über die Nav (Tabs, Logo) - im Unterschied zum direkten Auswählen eines
   // Fahrzeugs in der Flottenübersicht - immer sauber navigieren: ein evtl.
@@ -151,145 +136,35 @@ export default function Home() {
 
       {/* Mobile header */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-[#0b0b0b] border-b border-zinc-200 dark:border-zinc-800 px-5 py-4 flex items-center justify-between z-50">
-        <div className="flex items-center gap-2 min-w-0">
-          <button
-            type="button"
-            onClick={() => goToTab("nutzung")}
-            className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity"
-          >
-            <Image src="/fleettrack-logo-light.svg" alt="FleetTrack" width={26} height={26} className="dark:hidden" />
-            <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack" width={26} height={26} className="hidden dark:block" />
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
-          </button>
-          <span className="mx-0.5 text-zinc-300 dark:text-zinc-600" aria-hidden="true">·</span>
-          <OrgAvatar name={orgName} logoUrl={orgLogoUrl} size={22} />
-        </div>
-        <div className="flex items-center gap-2">
-          <InstallPrompt />
-          <button 
-            onClick={() => setMobileMenuOpen(true)}
-            className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md transition-colors"
-            aria-label={t("openMenu")}
-            aria-expanded={mobileMenuOpen}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => goToTab("nutzung")}
+          className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity"
+        >
+          <Image src="/fleettrack-logo-light.svg" alt="FleetTrack" width={26} height={26} className="dark:hidden" />
+          <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack" width={26} height={26} className="hidden dark:block" />
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
+        </button>
+        <OrgSwitcher />
       </div>
 
-      {/* Mobile menu overlay */}
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute right-0 top-0 bottom-0 w-64 bg-white dark:bg-[#0b0b0b] border-l border-zinc-200 dark:border-zinc-800 px-6 py-8 flex flex-col">
-            <button 
-              onClick={() => setMobileMenuOpen(false)}
-              className="absolute top-4 right-4 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md transition-colors"
-              aria-label={t("closeMenu")}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            <div className="mb-8 mt-8 space-y-3">
-              <button
-                type="button"
-                onClick={() => {
-                  goToTab("nutzung");
-                  setMobileMenuOpen(false);
-                }}
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-              >
-                <Image src="/fleettrack-logo-light.svg" alt="FleetTrack" width={32} height={32} className="dark:hidden" />
-                <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack" width={32} height={32} className="hidden dark:block" />
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
-              </button>
-              <OrgSwitcher />
-            </div>
-
-            <nav className="flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  goToTab("nutzung");
-                  setMobileMenuOpen(false);
-                }}
-                className={
-                  "text-left px-4 py-3 rounded-md transition-colors " +
-                  (active === "nutzung"
-                    ? "bg-foreground text-background font-medium"
-                    : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
-                }
-              >
-                {t("createUsage")}
-              </button>
-
-              <button
-                onClick={() => {
-                  goToTab("uebersichtEintraege");
-                  setMobileMenuOpen(false);
-                }}
-                className={
-                  "text-left px-4 py-3 rounded-md transition-colors " +
-                  (active === "uebersichtEintraege"
-                    ? "bg-foreground text-background font-medium"
-                    : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
-                }
-              >
-                {t("usagesOverview")}
-              </button>
-
-              {canManageOrganization && (
-                <>
-                  <button
-                    onClick={() => {
-                      goToTab("uebersicht");
-                      setMobileMenuOpen(false);
-                    }}
-                    className={
-                      "text-left px-4 py-3 rounded-md transition-colors " +
-                      (active === "uebersicht"
-                        ? "bg-foreground text-background font-medium"
-                        : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
-                    }
-                  >
-                    {t("fleetOverview")}
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      goToTab("fahrzeug");
-                      setMobileMenuOpen(false);
-                    }}
-                    className={
-                      "text-left px-4 py-3 rounded-md transition-colors " +
-                      (active === "fahrzeug"
-                        ? "bg-foreground text-background font-medium"
-                        : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
-                    }
-                  >
-                    {t("createVehicle")}
-                  </button>
-                </>
-              )}
-            </nav>
-
-            <div className="mt-auto pt-4 border-t border-zinc-200 dark:border-zinc-800">
-              <UserMenu />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main content */}
-      <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-10 pt-20 md:pt-10">
+      <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-10 pt-20 md:pt-10 pb-24 md:pb-10">
+        <div className="md:hidden mb-4">
+          <InstallPrompt />
+        </div>
         {active === "nutzung" && <CreateUsage />}
         {active === "uebersichtEintraege" && <UebersichtEintraege />}
-        {active === "uebersicht" && (canManageOrganization ? <FlottenUebersicht /> : <AccessDenied />)}
+        {active === "uebersicht" && (canManageOrganization ? (
+          <FlottenUebersicht
+            onNavigateToUsage={() => goToTab("nutzung")}
+            onAddVehicle={() => goToTab("fahrzeug")}
+          />
+        ) : <AccessDenied />)}
         {active === "fahrzeug" && (canManageOrganization ? <FahrzeugErfassen /> : <AccessDenied />)}
       </main>
+
+      <BottomNav active={active} onNavigate={goToTab} />
     </div>
   );
 }

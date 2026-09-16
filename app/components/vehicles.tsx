@@ -85,10 +85,12 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onSelect }) => {
       onClick={() => onSelect(vehicle.id)}
       className="w-full text-left rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all flex items-center gap-3"
     >
-      <VehicleTypeIcon
-        type={vehicle.vehicleType}
-        className="w-8 h-8 shrink-0 text-blue-600 dark:text-blue-400"
-      />
+      <span className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+        <VehicleTypeIcon
+          type={vehicle.vehicleType}
+          className="w-5 h-5 text-blue-600 dark:text-blue-400"
+        />
+      </span>
       <div className="min-w-0 flex-1">
         <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 truncate">
           {vehicle.name}
@@ -151,11 +153,17 @@ const sortVehicles = (list: Vehicle[]): Vehicle[] =>
     return sa.localeCompare(sb, undefined, { numeric: true, sensitivity: 'base' });
   });
 
-const FlottenUebersicht: FC = () => {
+interface FlottenUebersichtProps {
+  onNavigateToUsage?: () => void;
+  onAddVehicle?: () => void;
+}
+
+const FlottenUebersicht: FC<FlottenUebersichtProps> = ({ onNavigateToUsage, onAddVehicle }) => {
   const { isAdmin } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
   const t = useTranslations('fleetOverview');
   const tCommon = useTranslations('common');
+  const tNav = useTranslations('nav');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -318,17 +326,31 @@ const FlottenUebersicht: FC = () => {
             </p>
           </div>
         </div>
-        {vehicles.length > 0 && (
-          <button
-            onClick={() => setShowExportModal(true)}
-            className="shrink-0 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 15V3m0 12l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
-            </svg>
-            {t('exportButton')}
-          </button>
-        )}
+        <div className="shrink-0 flex items-center gap-2">
+          {onAddVehicle && (
+            <button
+              onClick={onAddVehicle}
+              className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+              aria-label={tNav('createVehicle')}
+              title={tNav('createVehicle')}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+          )}
+          {vehicles.length > 0 && (
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 15V3m0 12l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+              </svg>
+              {t('exportButton')}
+            </button>
+          )}
+        </div>
       </div>
 
       {isLoading && (
@@ -378,6 +400,18 @@ const FlottenUebersicht: FC = () => {
           initialRangeEnd={range.end}
           onClose={() => setShowExportModal(false)}
         />
+      )}
+
+      {onNavigateToUsage && (
+        <button
+          onClick={onNavigateToUsage}
+          className="md:hidden fixed bottom-24 right-4 z-30 inline-flex items-center gap-2 pl-4 pr-5 py-3 rounded-full bg-signal-600 hover:bg-signal-700 text-white text-sm font-semibold shadow-lg shadow-signal-950/30 transition-colors"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          {tNav('createUsage')}
+        </button>
       )}
     </section>
   );
