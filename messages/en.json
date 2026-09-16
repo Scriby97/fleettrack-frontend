@@ -221,7 +221,8 @@
     "registerLink": "Register",
     "forgotPasswordLink": "Forgot password?",
     "redirecting": "Redirecting...",
-    "registeredSuccessMessage": "Registration successful. You can now sign in."
+    "registeredSuccessMessage": "Registration successful. You can now sign in.",
+    "impressumLink": "Legal Notice"
   },
   "register": {
     "title": "Register",
@@ -263,7 +264,18 @@
     "createOrgTitle": "Create Organization",
     "createOrgDescription": "Create a new organization and automatically become its owner.",
     "organizationProfileTitle": "Organization",
-    "organizationProfileDescription": "Change the organization's name and logo."
+    "organizationProfileDescription": "Change the organization's name and logo.",
+    "infoSectionTitle": "Info",
+    "impressumTitle": "Legal Notice",
+    "impressumDescription": "Legal information about the provider of this app."
+  },
+  "impressum": {
+    "title": "Legal Notice",
+    "providerTitle": "Provider",
+    "contactTitle": "Contact",
+    "developedByTitle": "Development",
+    "developedByText": "FleetTrack is developed by",
+    "backToApp": "Back to the app"
   },
   "settingsAccount": {
     "title": "Account",

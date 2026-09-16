@@ -184,6 +184,15 @@ const LoginPage: FC = () => {
             </Link>
           </div>
         </div>
+
+        <div className="text-center">
+          <Link
+            href="/impressum"
+            className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+          >
+            {t('impressumLink')}
+          </Link>
+        </div>
       </div>
     </div>
   )

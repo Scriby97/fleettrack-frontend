@@ -247,6 +247,28 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
+
+        {/* Info: rechtliche Angaben, fuer alle sichtbar */}
+        <div className="space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            {t('infoSectionTitle')}
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Link
+              href="/impressum"
+              className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+            >
+              <SettingsIcon>
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4M12 8h.01" />
+              </SettingsIcon>
+              <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('impressumTitle')}</div>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                {t('impressumDescription')}
+              </p>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   )
