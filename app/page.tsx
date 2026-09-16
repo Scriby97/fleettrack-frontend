@@ -145,14 +145,14 @@ export default function Home() {
           <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack" width={26} height={26} className="hidden dark:block" />
           <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
         </button>
-        <OrgSwitcher />
+        <div className="flex items-center gap-2 shrink-0">
+          <InstallPrompt />
+          <OrgSwitcher />
+        </div>
       </div>
 
       {/* Main content */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-10 pt-20 md:pt-10 pb-24 md:pb-10">
-        <div className="md:hidden mb-4">
-          <InstallPrompt />
-        </div>
         {active === "nutzung" && <CreateUsage />}
         {active === "uebersichtEintraege" && <UebersichtEintraege />}
         {active === "uebersicht" && (canManageOrganization ? (
