@@ -55,6 +55,7 @@ export default function Home() {
     const previousOrgId = previousOrgIdRef.current;
     previousOrgIdRef.current = selectedOrgId;
     if (previousOrgId !== null && selectedOrgId !== null && selectedOrgId !== previousOrgId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- s.o.
       setActive("nutzung");
     }
   }, [selectedOrgId]);
