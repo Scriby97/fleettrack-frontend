@@ -1,7 +1,7 @@
 'use client';
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import CreateUsage from "./components/createUsage";
 import UebersichtEintraege from "./components/usages";
@@ -24,7 +24,7 @@ export default function Home() {
   const t = useTranslations("nav");
   const [active, setActive] = useState<MenuKey>("nutzung");
   const { userProfile, hasOrganization } = useAuth();
-  const { canManageSelectedOrganization: canManageOrganization } = useOrganization();
+  const { canManageSelectedOrganization: canManageOrganization, selectedOrgId } = useOrganization();
 
   // Über die Nav (Tabs, Logo) - im Unterschied zum direkten Auswählen eines
   // Fahrzeugs in der Flottenübersicht - immer sauber navigieren: ein evtl.
@@ -43,6 +43,21 @@ export default function Home() {
       router.replace('/onboarding');
     }
   }, [userProfile, hasOrganization, router]);
+
+  // Beim Wechsel der Organisation zurück auf "Nutzung erfassen" springen: die
+  // Tabs "Flotte"/"Fahrzeug erfassen" sind nur für Admins der jeweiligen Org
+  // sichtbar - ohne diesen Reset könnte man sonst nach dem Wechsel auf einem
+  // Tab landen, für den man in der neuen Organisation keine Berechtigung hat
+  // ("Zugriff verweigert"). Der erste Durchlauf (initiales Laden der
+  // gespeicherten Auswahl, null -> erste Org) zählt bewusst nicht als Wechsel.
+  const previousOrgIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const previousOrgId = previousOrgIdRef.current;
+    previousOrgIdRef.current = selectedOrgId;
+    if (previousOrgId !== null && selectedOrgId !== null && selectedOrgId !== previousOrgId) {
+      setActive("nutzung");
+    }
+  }, [selectedOrgId]);
 
   if (userProfile && !hasOrganization) {
     return (
