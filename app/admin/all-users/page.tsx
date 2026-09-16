@@ -285,7 +285,7 @@ export default function AdminAllUsersPage() {
           {activeTab === 'invites' && (
             <button
               onClick={() => setShowInviteModal(true)}
-              className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 text-sm font-semibold rounded-lg bg-signal-600 text-white hover:bg-signal-700 transition-colors"
             >
               {tInv('createButton')}
             </button>
@@ -387,7 +387,7 @@ export default function AdminAllUsersPage() {
                         <td className="px-4 py-3">
                           <button
                             onClick={() => handleResetRequest(user)}
-                            className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                            className="px-3 py-2 text-xs font-semibold rounded-lg bg-signal-600 text-white hover:bg-signal-700 transition-colors"
                             disabled={submittingId === user.id}
                           >
                             {submittingId === user.id ? t('sendingLabel') : t('resetPasswordButton')}
@@ -431,7 +431,7 @@ export default function AdminAllUsersPage() {
                     <div className="pt-1">
                       <button
                         onClick={() => handleResetRequest(user)}
-                        className="w-full px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                        className="w-full px-3 py-2 text-xs font-semibold rounded-lg bg-signal-600 text-white hover:bg-signal-700 transition-colors"
                         disabled={submittingId === user.id}
                       >
                         {submittingId === user.id ? t('sendingLabel') : t('resetPasswordButton')}
@@ -522,7 +522,7 @@ export default function AdminAllUsersPage() {
                                         <button
                                           onClick={() => handleCopyLink(link, invite.id)}
                                           disabled={isCopyDisabled}
-                                          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                                          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-signal-600 text-white hover:bg-signal-700 disabled:opacity-50"
                                         >
                                           {copiedId === invite.id ? tInv('copiedLabel') : tInv('copyLinkButton')}
                                         </button>
@@ -584,7 +584,7 @@ export default function AdminAllUsersPage() {
                               <button
                                 onClick={() => handleCopyLink(link, invite.id)}
                                 disabled={isCopyDisabled}
-                                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-signal-600 text-white hover:bg-signal-700 disabled:opacity-50"
                               >
                                 {copiedId === invite.id ? tInv('copiedLabel') : tInv('copyLinkButton')}
                               </button>
@@ -630,7 +630,7 @@ export default function AdminAllUsersPage() {
                 </button>
                 <button
                   onClick={handleConfirmReset}
-                  className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                  className="px-4 py-2 text-sm rounded-lg bg-signal-600 text-white hover:bg-signal-700"
                   disabled={submittingId === confirmUser.id}
                 >
                   {submittingId === confirmUser.id ? t('sendingLabel') : t('resetPasswordButton')}
@@ -716,7 +716,7 @@ export default function AdminAllUsersPage() {
                   <button
                     type="submit"
                     disabled={inviteSubmitting}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
+                    className="flex-1 px-4 py-2 bg-signal-600 text-white rounded-lg hover:bg-signal-700 transition-colors disabled:opacity-60"
                   >
                     {inviteSubmitting ? tInv('creatingLabel') : tInv('createSubmitButton')}
                   </button>

@@ -148,7 +148,7 @@ export function NotificationPermissionPrompt() {
               <button
                 onClick={handleEnable}
                 disabled={phase === 'busy'}
-                className="px-4 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm rounded-lg bg-signal-600 hover:bg-signal-700 text-white font-medium transition-colors disabled:opacity-50"
               >
                 {phase === 'busy' ? tCommon('pleaseWait') : t('enableButton')}
               </button>

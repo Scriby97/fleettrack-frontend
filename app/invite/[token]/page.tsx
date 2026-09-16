@@ -110,7 +110,7 @@ export default function InvitePage() {
             <p className="text-zinc-600 dark:text-zinc-400 mb-6">{error}</p>
             <button
               onClick={() => router.push('/login')}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-6 py-2 bg-signal-600 text-white rounded-lg hover:bg-signal-700 transition-colors"
             >
               {t('loginButton')}
             </button>
@@ -235,7 +235,7 @@ export default function InvitePage() {
               type={isUnauthorized ? 'button' : 'submit'}
               disabled={submitting}
               onClick={isUnauthorized ? () => router.push('/login') : undefined}
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 bg-signal-600 hover:bg-signal-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isUnauthorized ? t('loginButton') : (submitting ? t('submitCreating') : t('submitButton'))}
             </button>

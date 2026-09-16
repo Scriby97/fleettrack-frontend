@@ -154,11 +154,10 @@ const sortVehicles = (list: Vehicle[]): Vehicle[] =>
   });
 
 interface FlottenUebersichtProps {
-  onNavigateToUsage?: () => void;
   onAddVehicle?: () => void;
 }
 
-const FlottenUebersicht: FC<FlottenUebersichtProps> = ({ onNavigateToUsage, onAddVehicle }) => {
+const FlottenUebersicht: FC<FlottenUebersichtProps> = ({ onAddVehicle }) => {
   const { isAdmin } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
   const t = useTranslations('fleetOverview');
@@ -402,17 +401,6 @@ const FlottenUebersicht: FC<FlottenUebersichtProps> = ({ onNavigateToUsage, onAd
         />
       )}
 
-      {onNavigateToUsage && (
-        <button
-          onClick={onNavigateToUsage}
-          className="md:hidden fixed bottom-24 right-4 z-30 inline-flex items-center gap-2 pl-4 pr-5 py-3 rounded-full bg-signal-600 hover:bg-signal-700 text-white text-sm font-semibold shadow-lg shadow-signal-950/30 transition-colors"
-        >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          {tNav('createUsage')}
-        </button>
-      )}
     </section>
   );
 };

@@ -156,10 +156,7 @@ export default function Home() {
         {active === "nutzung" && <CreateUsage />}
         {active === "uebersichtEintraege" && <UebersichtEintraege />}
         {active === "uebersicht" && (canManageOrganization ? (
-          <FlottenUebersicht
-            onNavigateToUsage={() => goToTab("nutzung")}
-            onAddVehicle={() => goToTab("fahrzeug")}
-          />
+          <FlottenUebersicht onAddVehicle={() => goToTab("fahrzeug")} />
         ) : <AccessDenied />)}
         {active === "fahrzeug" && (canManageOrganization ? <FahrzeugErfassen /> : <AccessDenied />)}
       </main>

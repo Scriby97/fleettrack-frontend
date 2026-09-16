@@ -71,7 +71,7 @@ export function BackendLoadingWrapper({ children }: { children: React.ReactNode 
               <button
                 onClick={handleRetry}
                 disabled={retrying}
-                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-2.5 px-4 bg-signal-600 hover:bg-signal-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {retrying ? 'Wird erneut versucht...' : 'Erneut versuchen'}
               </button>

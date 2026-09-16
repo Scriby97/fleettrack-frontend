@@ -107,7 +107,7 @@ export default function CreateOrganizationSuccessPage() {
 
         <button
           onClick={handleContinue}
-          className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+          className="w-full py-3 px-4 bg-signal-600 hover:bg-signal-700 text-white font-medium rounded-lg transition-colors"
         >
           {t('continueButton')}
         </button>

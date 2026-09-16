@@ -303,7 +303,7 @@ export default function CreateOrganizationOnboardingPage() {
           <button
             type="submit"
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-signal-600 hover:bg-signal-700 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading
               ? t('submitCreating')

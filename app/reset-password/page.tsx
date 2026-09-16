@@ -154,7 +154,7 @@ const ResetPasswordPage: FC = () => {
             <p className="text-zinc-600 dark:text-zinc-400 mb-6">{message}</p>
             <button
               onClick={handleGoToLogin}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-6 py-2 bg-signal-600 text-white rounded-lg hover:bg-signal-700 transition-colors"
             >
               {t('goToLoginButton')}
             </button>
@@ -180,7 +180,7 @@ const ResetPasswordPage: FC = () => {
             </p>
             <button
               onClick={handleGoToLogin}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-6 py-2 bg-signal-600 text-white rounded-lg hover:bg-signal-700 transition-colors"
             >
               {t('goToLoginButton')}
             </button>
@@ -247,7 +247,7 @@ const ResetPasswordPage: FC = () => {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-signal-600 hover:bg-signal-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? t('submitting') : t('submitButton')}
             </button>

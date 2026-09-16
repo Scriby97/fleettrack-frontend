@@ -176,7 +176,7 @@ export default function SettingsRemindersPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-5 py-2.5 bg-signal-600 text-white font-semibold rounded-lg hover:bg-signal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? t('saving') : t('saveButton')}
               </button>

@@ -260,7 +260,7 @@ export default function SettingsBillingPage() {
                           isCurrent
                             ? 'bg-zinc-100 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400'
                             : plan.paid
-                              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                              ? 'bg-signal-600 hover:bg-signal-700 text-white'
                               : 'bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-900 dark:text-zinc-100',
                         ].join(' ')}
                       >

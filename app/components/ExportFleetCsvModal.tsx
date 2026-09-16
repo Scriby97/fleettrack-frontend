@@ -253,7 +253,7 @@ const ExportFleetCsvModal: FC<ExportFleetCsvModalProps> = ({
               type="button"
               onClick={handleExport}
               disabled={isExporting || rangeInvalid || selectedRanks.size === 0}
-              className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
+              className="flex-1 rounded-lg bg-signal-600 hover:bg-signal-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
             >
               {isExporting ? t('exportGenerating') : t('exportSubmitButton')}
             </button>

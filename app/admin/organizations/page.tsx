@@ -145,7 +145,7 @@ export default function AdminOrganizationsPage() {
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="px-4 py-2 bg-signal-600 text-white rounded-lg hover:bg-signal-700 transition-colors font-medium"
           >
             {t('createButton')}
           </button>
@@ -394,7 +394,7 @@ export default function AdminOrganizationsPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    className="px-4 py-2 bg-signal-600 text-white rounded-lg hover:bg-signal-700 transition-colors font-medium"
                   >
                     {t('createSubmitButton')}
                   </button>
@@ -471,7 +471,7 @@ export default function AdminOrganizationsPage() {
                       />
                       <button
                         onClick={() => handleCopyLink(createdResult.invite.link, 'created')}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium whitespace-nowrap"
+                        className="flex items-center gap-1.5 px-4 py-2 bg-signal-600 text-white rounded-lg hover:bg-signal-700 transition-colors font-medium whitespace-nowrap"
                       >
                         {copiedId === 'created' ? (
                           <>
@@ -507,7 +507,7 @@ export default function AdminOrganizationsPage() {
                 <div className="flex justify-end pt-4">
                   <button
                     onClick={closeCreateModal}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    className="px-4 py-2 bg-signal-600 text-white rounded-lg hover:bg-signal-700 transition-colors font-medium"
                   >
                     {tCommon('close')}
                   </button>

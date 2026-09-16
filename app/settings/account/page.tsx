@@ -168,7 +168,7 @@ export default function SettingsAccountPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-5 py-2.5 bg-signal-600 text-white font-semibold rounded-lg hover:bg-signal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? t('submitting') : t('submitButton')}
               </button>

@@ -216,7 +216,7 @@ export default function SettingsOrganizationPage() {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={saving}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-signal-600 hover:bg-signal-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {hasEffectiveLogo ? t('replaceButton') : t('chooseButton')}
                   </button>
@@ -295,7 +295,7 @@ export default function SettingsOrganizationPage() {
           <button
             type="submit"
             disabled={saving || nothingToSave || nameTooShort}
-            className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-5 py-2.5 bg-signal-600 text-white font-semibold rounded-lg hover:bg-signal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? t('saving') : t('saveButton')}
           </button>

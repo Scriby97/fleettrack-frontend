@@ -151,7 +151,7 @@ export const InvitePopup: FC = () => {
                 <button
                   onClick={() => handleAccept(invite.token)}
                   disabled={processingToken === invite.token}
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 bg-signal-600 hover:bg-signal-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {processingToken === invite.token ? t('accepting') : t('acceptButton')}
                 </button>

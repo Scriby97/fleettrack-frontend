@@ -508,7 +508,7 @@ const CreateUsage: FC = () => {
         <button
           type="submit"
           disabled={isSubmitting || !!timeError}
-          className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
+          className="w-full rounded-lg bg-signal-600 hover:bg-signal-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2.5 font-medium text-white transition-colors"
         >
           {isSubmitting ? t('submitting') : t('submitButton')}
         </button>
