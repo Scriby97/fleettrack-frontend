@@ -69,9 +69,13 @@ function isLikelyOfflineError(err: unknown): boolean {
   return false;
 }
 
-const CreateUsage: FC = () => {
+interface CreateUsageProps {
+  onNavigateToAddVehicle?: () => void;
+}
+
+const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
   const { isAdmin } = useAuth();
-  const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
+  const { organizations, selectedOrgId, setSelectedOrgId, canManageSelectedOrganization } = useOrganization();
   const { toasts, showToast, removeToast } = useToast();
   const t = useTranslations('createUsage');
   const tCommon = useTranslations('common');
@@ -116,6 +120,13 @@ const CreateUsage: FC = () => {
   // Komponente selbst blendet sich aus, sobald sie einmal beantwortet wurde
   // (siehe NotificationPermissionPrompt).
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
+  // Hinweis-Dialog, wenn die Organisation noch keine Fahrzeuge hat (sonst
+  // steht man vor einem Formular, dessen Fahrzeug-Auswahl leer ist, ohne zu
+  // wissen warum). Schliessen gilt nur fuer die aktuelle Organisation - beim
+  // Wechsel (siehe Entwurf-Lade-Effekt oben) wird wieder neu geprueft.
+  const [dismissedNoVehiclesDialog, setDismissedNoVehiclesDialog] = useState(false);
+  const showNoVehiclesDialog =
+    !vehiclesLoading && !vehiclesError && vehicles.length === 0 && !!selectedOrgId && !dismissedNoVehiclesDialog;
 
   // Pistenfahrzeuge erfassen Betriebsstunden, alle anderen Typen Kilometer.
   const usesKm = vehicleUsesKm(
@@ -129,6 +140,8 @@ const CreateUsage: FC = () => {
   // bekannt ist bzw. wechselt.
   useEffect(() => {
     if (!selectedOrgId) return;
+
+    setDismissedNoVehiclesDialog(false);
 
     const draft = loadDraft(selectedOrgId);
     currentVehicleIdRef.current = draft?.vehicleId ?? '';
@@ -515,6 +528,43 @@ const CreateUsage: FC = () => {
       </form>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       {showNotificationPrompt && <NotificationPermissionPrompt />}
+
+      {showNoVehiclesDialog && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="no-vehicles-dialog-title"
+        >
+          <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 max-w-sm w-full shadow-xl space-y-4">
+            <h3 id="no-vehicles-dialog-title" className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+              {t('noVehiclesDialogTitle')}
+            </h3>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              {canManageSelectedOrganization ? t('noVehiclesDialogAdminMessage') : t('noVehiclesDialogEmployeeMessage')}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDismissedNoVehiclesDialog(true)}
+                className="px-4 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+              >
+                {tCommon('close')}
+              </button>
+              {canManageSelectedOrganization && onNavigateToAddVehicle && (
+                <button
+                  onClick={() => {
+                    setDismissedNoVehiclesDialog(true);
+                    onNavigateToAddVehicle();
+                  }}
+                  className="px-4 py-2 text-sm rounded-lg bg-signal-600 hover:bg-signal-700 text-white font-medium transition-colors"
+                >
+                  {t('noVehiclesDialogAddVehicleButton')}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

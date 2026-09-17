@@ -64,7 +64,11 @@
     "endKmValidation": "End odometer must be greater than start odometer",
     "kmRequiredError": "Start and end odometer are required",
     "endKmMustBeGreaterError": "End odometer must be greater than start odometer",
-    "totalDistance": "Distance driven: {km} km"
+    "totalDistance": "Distance driven: {km} km",
+    "noVehiclesDialogTitle": "No vehicles yet",
+    "noVehiclesDialogEmployeeMessage": "Your organization admin needs to add vehicles first before you can log usage.",
+    "noVehiclesDialogAdminMessage": "Add your vehicles first, before you and your team can log usage.",
+    "noVehiclesDialogAddVehicleButton": "Add vehicle now"
   },
   "usagesOverview": {
     "title": "Usage overview",

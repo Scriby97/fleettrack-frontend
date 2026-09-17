@@ -64,7 +64,11 @@
     "endKmValidation": "Il contachilometri finale deve essere maggiore di quello iniziale",
     "kmRequiredError": "Contachilometri iniziale e finale sono obbligatori",
     "endKmMustBeGreaterError": "Il contachilometri finale deve essere maggiore di quello iniziale",
-    "totalDistance": "Distanza percorsa: {km} km"
+    "totalDistance": "Distanza percorsa: {km} km",
+    "noVehiclesDialogTitle": "Nessun veicolo ancora",
+    "noVehiclesDialogEmployeeMessage": "Il tuo amministratore dell'organizzazione deve prima aggiungere dei veicoli prima che tu possa registrare utilizzi.",
+    "noVehiclesDialogAdminMessage": "Aggiungi prima i vostri veicoli, prima che tu e il tuo team possiate registrare utilizzi.",
+    "noVehiclesDialogAddVehicleButton": "Aggiungi veicolo ora"
   },
   "usagesOverview": {
     "title": "Panoramica utilizzi",

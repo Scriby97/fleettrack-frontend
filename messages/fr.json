@@ -64,7 +64,11 @@
     "endKmValidation": "Le compteur km à la fin doit être supérieur à celui du début",
     "kmRequiredError": "Le compteur km au début et à la fin sont requis",
     "endKmMustBeGreaterError": "Le compteur km à la fin doit être supérieur à celui du début",
-    "totalDistance": "Distance parcourue : {km} km"
+    "totalDistance": "Distance parcourue : {km} km",
+    "noVehiclesDialogTitle": "Aucun véhicule pour l'instant",
+    "noVehiclesDialogEmployeeMessage": "Ton administrateur d'organisation doit d'abord ajouter des véhicules avant que tu puisses saisir des utilisations.",
+    "noVehiclesDialogAdminMessage": "Ajoute d'abord vos véhicules, avant que toi et ton équipe puissiez saisir des utilisations.",
+    "noVehiclesDialogAddVehicleButton": "Ajouter un véhicule maintenant"
   },
   "usagesOverview": {
     "title": "Aperçu des utilisations",

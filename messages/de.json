@@ -64,7 +64,11 @@
     "endKmValidation": "End-Kilometerstand muss größer als Start-Kilometerstand sein",
     "kmRequiredError": "Start- und End-Kilometerstand sind erforderlich",
     "endKmMustBeGreaterError": "End-Kilometerstand muss größer als Start-Kilometerstand sein",
-    "totalDistance": "Gefahrene Strecke: {km} km"
+    "totalDistance": "Gefahrene Strecke: {km} km",
+    "noVehiclesDialogTitle": "Noch keine Fahrzeuge erfasst",
+    "noVehiclesDialogEmployeeMessage": "Dein Organisationsadministrator muss zuerst Fahrzeuge erfassen, bevor du Nutzungen erfassen kannst.",
+    "noVehiclesDialogAdminMessage": "Erfasse zuerst eure Fahrzeuge, bevor du und deine Mitarbeiter Nutzungen erfassen könnt.",
+    "noVehiclesDialogAddVehicleButton": "Jetzt Fahrzeug erfassen"
   },
   "usagesOverview": {
     "title": "Übersicht Nutzungen",

@@ -168,7 +168,7 @@ export default function Home() {
 
       {/* Main content */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-10 pt-20 md:pt-10 pb-24 md:pb-10">
-        {active === "nutzung" && <CreateUsage />}
+        {active === "nutzung" && <CreateUsage onNavigateToAddVehicle={() => goToTab("fahrzeug")} />}
         {active === "uebersichtEintraege" && <UebersichtEintraege />}
         {active === "uebersicht" && (canManageOrganization ? (
           <FlottenUebersicht onAddVehicle={() => goToTab("fahrzeug")} />
