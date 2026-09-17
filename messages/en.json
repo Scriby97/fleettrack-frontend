@@ -571,6 +571,8 @@
     "expiryColumnLabel": "Expiry:",
     "copiedLabel": "Copied",
     "copyLinkButton": "Copy link",
+    "inviteInfoBanner": "The invited person just needs to log in or register with FleetTrack (using the same email address) – their invite will then appear automatically.",
+    "shareAppButton": "Share app",
     "deleteButton": "Delete",
     "pendingStatus": "Pending",
     "usedStatus": "Used",

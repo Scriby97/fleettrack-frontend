@@ -571,6 +571,8 @@
     "expiryColumnLabel": "Scade il:",
     "copiedLabel": "Copiato",
     "copyLinkButton": "Copia link",
+    "inviteInfoBanner": "La persona invitata deve semplicemente accedere o registrarsi su FleetTrack (con lo stesso indirizzo e-mail) – l'invito apparirà quindi automaticamente.",
+    "shareAppButton": "Condividi app",
     "deleteButton": "Elimina",
     "pendingStatus": "In sospeso",
     "usedStatus": "Utilizzato",

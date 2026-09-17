@@ -1,49 +1,7 @@
 import { authenticatedFetch } from './authenticatedFetch'
 import { buildApiUrl } from './url'
 import { throwApiError } from './ApiError'
-import type { InviteInfo, InviteEntity, PendingInvite } from '@/lib/types/user'
-
-/**
- * Get invite information by token (public endpoint - no auth required)
- */
-export async function getInviteByToken(token: string): Promise<InviteInfo> {
-  const response = await fetch(buildApiUrl(`/invites/${token}`))
-  
-  if (!response.ok) {
-    await throwApiError(response, 'Ungültige oder abgelaufene Einladung')
-  }
-  
-  return response.json()
-}
-
-/**
- * Accept an invite and create a new user account
- */
-export async function acceptInvite(data: {
-  token: string
-  email: string
-  password: string
-  firstName: string
-  lastName: string
-}): Promise<{
-  message: string
-  user: { id: string; email: string } | null
-  session: { access_token: string; refresh_token: string; token_type?: string } | null
-}> {
-  const response = await fetch(buildApiUrl('/invites/accept'), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  })
-  
-  if (!response.ok) {
-    await throwApiError(response, 'Fehler beim Annehmen der Einladung')
-  }
-  
-  return response.json()
-}
+import type { InviteEntity, PendingInvite } from '@/lib/types/user'
 
 /**
  * Create a new invite for a user (requires authentication)

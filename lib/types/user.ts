@@ -109,13 +109,6 @@ export interface User {
   name?: string
 }
 
-export interface InviteInfo {
-  email: string
-  role: OrganizationRole
-  organization: Organization
-  expiresAt: string
-}
-
 export interface InviteEntity {
   id: string
   token: string

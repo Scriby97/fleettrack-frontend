@@ -66,13 +66,6 @@ export default function AdminAllUsersPage() {
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [inviteSubmitting, setInviteSubmitting] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
-  const [origin, setOrigin] = useState('')
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setOrigin(window.location.origin)
-    }
-  }, [])
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -182,11 +175,6 @@ export default function AdminAllUsersPage() {
     return 'pending'
   }
 
-  const inviteLinkForToken = (token: string) => {
-    if (!origin) return ''
-    return `${origin}/invite/${token}`
-  }
-
   const sortedInvites = useMemo(() => {
     const filtered = inviteOrgId
       ? allInvites.filter((i) => String(i.organizationId) === String(inviteOrgId))
@@ -230,10 +218,19 @@ export default function AdminAllUsersPage() {
     }
   }
 
-  const handleCopyLink = async (link: string, id: string) => {
+  const handleShareApp = async () => {
+    const url = 'https://fleettrack.ch'
+    if (navigator.share) {
+      try {
+        await navigator.share({ url, title: 'FleetTrack' })
+      } catch {
+        // Nutzer hat den Teilen-Dialog abgebrochen - kein Fehlerfall
+      }
+      return
+    }
     try {
-      await navigator.clipboard.writeText(link)
-      setCopiedId(id)
+      await navigator.clipboard.writeText(url)
+      setCopiedId('share-app-url')
       setTimeout(() => setCopiedId(null), 2000)
     } catch (err) {
       const message = getApiErrorMessage(err, tInv('copyErrorGeneric'))
@@ -511,6 +508,16 @@ export default function AdminAllUsersPage() {
               </select>
             </div>
 
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-lg bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 p-4">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">{tInv('inviteInfoBanner')}</p>
+              <button
+                onClick={handleShareApp}
+                className="shrink-0 px-4 py-2 text-sm font-semibold rounded-lg bg-signal-600 text-white hover:bg-signal-700 transition-colors"
+              >
+                {copiedId === 'share-app-url' ? tInv('copiedLabel') : tInv('shareAppButton')}
+              </button>
+            </div>
+
             {invitesError && (
               <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
                 <p className="text-sm text-red-800 dark:text-red-200">{invitesError}</p>
@@ -543,8 +550,6 @@ export default function AdminAllUsersPage() {
                       ) : (
                         sortedInvites.map((invite) => {
                           const status = getInviteStatus(invite)
-                          const link = inviteLinkForToken(invite.token)
-                          const isCopyDisabled = !link
 
                           return (
                             <tr key={invite.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
@@ -564,16 +569,6 @@ export default function AdminAllUsersPage() {
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex flex-wrap gap-2">
-                                      {status === 'pending' && (
-                                        <button
-                                          onClick={() => handleCopyLink(link, invite.id)}
-                                          disabled={isCopyDisabled}
-                                          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-signal-600 text-white hover:bg-signal-700 disabled:opacity-50"
-                                        >
-                                          {copiedId === invite.id ? tInv('copiedLabel') : tInv('copyLinkButton')}
-                                        </button>
-                                      )}
-
                                       {(status === 'pending' || status === 'used') && (
                                         <button
                                           onClick={() => handleDeleteInvite(invite.id)}
@@ -601,8 +596,6 @@ export default function AdminAllUsersPage() {
                   ) : (
                     sortedInvites.map((invite) => {
                       const status = getInviteStatus(invite)
-                      const link = inviteLinkForToken(invite.token)
-                      const isCopyDisabled = !link
 
                       return (
                         <div
@@ -626,16 +619,6 @@ export default function AdminAllUsersPage() {
                             <span className="font-medium">{tInv('expiryColumnLabel')}</span> {new Date(invite.expiresAt).toLocaleDateString(dateLocale)}
                           </div>
                           <div className="flex flex-wrap gap-2 pt-1">
-                            {status === 'pending' && (
-                              <button
-                                onClick={() => handleCopyLink(link, invite.id)}
-                                disabled={isCopyDisabled}
-                                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-signal-600 text-white hover:bg-signal-700 disabled:opacity-50"
-                              >
-                                {copiedId === invite.id ? tInv('copiedLabel') : tInv('copyLinkButton')}
-                              </button>
-                            )}
-
                             {(status === 'pending' || status === 'used') && (
                               <button
                                 onClick={() => handleDeleteInvite(invite.id)}

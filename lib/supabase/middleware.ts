@@ -36,13 +36,11 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protected routes - redirect to login if not authenticated
-  // Allow /invite routes to be public
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/register') &&
     !request.nextUrl.pathname.startsWith('/auth') &&
-    !request.nextUrl.pathname.startsWith('/invite') &&
     !request.nextUrl.pathname.startsWith('/reset-password') &&
     !request.nextUrl.pathname.startsWith('/impressum')
   ) {
