@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, type FC } from 'react';
+import { useEffect, useState, type FC } from 'react';
 
 interface ConfirmDialogProps {
   // Kein deutscher Default mehr - Aufrufer muessen die Labels immer explizit
@@ -12,6 +12,11 @@ interface ConfirmDialogProps {
   cancelLabel: string;
   onConfirm: () => void;
   onCancel: () => void;
+  // Für besonders schwerwiegende Aktionen (z.B. Organisation löschen): der
+  // Bestätigen-Button bleibt disabled, bis der User diesen exakten Text in
+  // ein Eingabefeld getippt hat.
+  requireTypedConfirmation?: string;
+  typedConfirmationLabel?: string;
 }
 
 /**
@@ -25,7 +30,11 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
   cancelLabel,
   onConfirm,
   onCancel,
+  requireTypedConfirmation,
+  typedConfirmationLabel,
 }) => {
+  const [typedValue, setTypedValue] = useState('');
+
   // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -34,6 +43,9 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onCancel]);
+
+  const isConfirmDisabled =
+    requireTypedConfirmation !== undefined && typedValue !== requireTypedConfirmation;
 
   return (
     <div
@@ -50,6 +62,22 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
           {title}
         </h3>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">{message}</p>
+        {requireTypedConfirmation !== undefined && (
+          <div>
+            {typedConfirmationLabel && (
+              <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
+                {typedConfirmationLabel}
+              </label>
+            )}
+            <input
+              type="text"
+              value={typedValue}
+              onChange={(event) => setTypedValue(event.target.value)}
+              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg text-sm dark:bg-zinc-700 dark:text-zinc-100"
+              autoComplete="off"
+            />
+          </div>
+        )}
         <div className="flex gap-3 justify-end">
           <button
             onClick={onCancel}
@@ -60,7 +88,8 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 text-sm rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
+            disabled={isConfirmDisabled}
+            className="px-4 py-2 text-sm rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {confirmLabel}
           </button>

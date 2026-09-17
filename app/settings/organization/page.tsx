@@ -9,6 +9,7 @@ import {
   updateOrganizationProfile,
   uploadOrganizationLogo,
   deleteOrganizationLogo,
+  deleteOwnOrganization,
 } from '@/lib/api/organizations'
 import { resizeToSquareWebp, ImageValidationError } from '@/lib/images/resizeImage'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
@@ -16,6 +17,7 @@ import { useToast } from '@/lib/hooks/useToast'
 import { ToastContainer } from '@/app/components/Toast'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { OrgAvatar } from '@/app/components/OrgAvatar'
+import { ConfirmDialog } from '@/app/components/ConfirmDialog'
 
 type PendingLogo =
   | { kind: 'none' }
@@ -50,6 +52,9 @@ export default function SettingsOrganizationPage() {
   const [pendingLogo, setPendingLogo] = useState<PendingLogo>({ kind: 'none' })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const initializedOrgId = useRef<string | null>(null)
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // Nicht eingeloggt -> Login; eingeloggt aber kein Owner -> zurück zu Settings.
   useEffect(() => {
@@ -160,6 +165,20 @@ export default function SettingsOrganizationPage() {
       showToast(t('saveSuccess'), 'success')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDeleteOrganization = async () => {
+    if (!selectedOrg || deleting) return
+    setDeleting(true)
+    try {
+      await deleteOwnOrganization(selectedOrg.id)
+      const remaining = await refreshOrganizations()
+      router.replace(remaining.length === 0 ? '/onboarding' : '/')
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('deleteErrorGeneric')), 'error')
+      setDeleting(false)
+      setShowDeleteDialog(false)
     }
   }
 
@@ -300,7 +319,38 @@ export default function SettingsOrganizationPage() {
             {saving ? t('saving') : t('saveButton')}
           </button>
         </form>
+
+        <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-6 space-y-4 border border-red-200 dark:border-red-900/50">
+          <div>
+            <h2 className="text-lg font-semibold text-red-700 dark:text-red-400">
+              {t('dangerZoneTitle')}
+            </h2>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              {t('dangerZoneSubtitle')}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowDeleteDialog(true)}
+            className="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
+          >
+            {t('deleteButton')}
+          </button>
+        </div>
       </div>
+
+      {showDeleteDialog && (
+        <ConfirmDialog
+          title={t('deleteConfirmTitle')}
+          message={t('deleteConfirmMessage', { name: selectedOrg.name })}
+          confirmLabel={deleting ? t('deleting') : t('deleteConfirmLabel')}
+          cancelLabel={t('deleteConfirmCancelLabel')}
+          requireTypedConfirmation={selectedOrg.name}
+          typedConfirmationLabel={t('deleteConfirmTypedLabel', { name: selectedOrg.name })}
+          onConfirm={handleDeleteOrganization}
+          onCancel={() => setShowDeleteDialog(false)}
+        />
+      )}
     </div>
   )
 }

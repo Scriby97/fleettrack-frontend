@@ -31,7 +31,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, metadata?: { firstName?: string, lastName?: string, role?: string }) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   refreshUserRole: () => Promise<void>
-  refreshOrganizations: () => Promise<void>
+  refreshOrganizations: () => Promise<OrganizationMembership[]>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -78,9 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const memberships = await getMyOrganizations()
       setOrganizationMemberships(memberships)
+      return memberships
     } catch (error) {
       console.error('Fehler beim Abrufen der Organisationen:', error)
       setOrganizationMemberships([])
+      return []
     }
   }, [])
 

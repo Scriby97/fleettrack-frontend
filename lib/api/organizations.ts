@@ -185,3 +185,35 @@ export async function createBillingPortalSession(
 
   return response.json()
 }
+
+/**
+ * The owner deletes their own organization (soft delete - members and
+ * vehicles are archived, the organization itself stays visible to global
+ * administrators until they hard-delete it). Owner only.
+ */
+export async function deleteOwnOrganization(organizationId: string): Promise<void> {
+  const response = await authenticatedFetch(
+    buildApiUrl(`/organizations/${organizationId}/self-delete`),
+    { method: 'DELETE' }
+  )
+
+  if (!response.ok) {
+    await throwApiError(response, 'Fehler beim Löschen der Organisation')
+  }
+}
+
+/**
+ * Permanently deletes an organization and all its data (Super Admin only).
+ * Only allowed once the owner has released the organization for deletion
+ * via deleteOwnOrganization.
+ */
+export async function hardDeleteOrganization(organizationId: string): Promise<void> {
+  const response = await authenticatedFetch(
+    buildApiUrl(`/organizations/${organizationId}/hard`),
+    { method: 'DELETE' }
+  )
+
+  if (!response.ok) {
+    await throwApiError(response, 'Fehler beim endgültigen Löschen der Organisation')
+  }
+}

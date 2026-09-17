@@ -5,11 +5,13 @@ import { useAuth } from '@/lib/auth/AuthProvider'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
-import { getAllOrganizations } from '@/lib/api/organizations'
+import { getAllOrganizations, hardDeleteOrganization } from '@/lib/api/organizations'
 import { Organization, SubscriptionStatus } from '@/lib/types/user'
 import { useToast } from '@/lib/hooks/useToast'
 import { ToastContainer } from '@/app/components/Toast'
 import { useDateLocale } from '@/lib/i18n/formatDate'
+import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
+import { ConfirmDialog } from '@/app/components/ConfirmDialog'
 
 export default function AdminOrganizationsPage() {
   const { isAdmin, loading: authLoading } = useAuth()
@@ -19,9 +21,12 @@ export default function AdminOrganizationsPage() {
   const tSettings = useTranslations('settings')
   const tBilling = useTranslations('settingsBilling')
   const dateLocale = useDateLocale()
+  const getApiErrorMessage = useApiErrorMessage()
 
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [loading, setLoading] = useState(true)
+  const [hardDeleteTarget, setHardDeleteTarget] = useState<Organization | null>(null)
+  const [hardDeleting, setHardDeleting] = useState(false)
 
   const subscriptionStatusLabel = (status: SubscriptionStatus) => {
     if (status === 'past_due') return tBilling('statusPastDue')
@@ -58,6 +63,21 @@ export default function AdminOrganizationsPage() {
       loadOrganizations()
     }
   }, [authLoading, isAdmin, router, loadOrganizations])
+
+  const handleHardDelete = async () => {
+    if (!hardDeleteTarget || hardDeleting) return
+    setHardDeleting(true)
+    try {
+      await hardDeleteOrganization(hardDeleteTarget.id)
+      setHardDeleteTarget(null)
+      showToast(t('hardDeleteSuccess'), 'success')
+      await loadOrganizations()
+    } catch (error) {
+      showToast(getApiErrorMessage(error, t('hardDeleteErrorGeneric')), 'error')
+    } finally {
+      setHardDeleting(false)
+    }
+  }
 
   if (authLoading || loading) {
     return (
@@ -126,12 +146,15 @@ export default function AdminOrganizationsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
                     {t('createdHeader')}
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
+                    {t('actionsHeader')}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
                 {organizations.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-6 py-8 text-center text-zinc-500 dark:text-zinc-400">
+                    <td colSpan={10} className="px-6 py-8 text-center text-zinc-500 dark:text-zinc-400">
                       {t('noOrgsFound')}
                     </td>
                   </tr>
@@ -155,6 +178,11 @@ export default function AdminOrganizationsPage() {
                         }`}>
                           {org.isActive ? t('activeLabel') : t('inactiveLabel')}
                         </span>
+                        {org.deletionRequestedAt && (
+                          <span className="block mt-1 px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 whitespace-nowrap">
+                            {t('deletedByOwnerLabel', { date: new Date(org.deletionRequestedAt).toLocaleDateString(dateLocale) })}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-400 capitalize">
                         {org.subscription?.tier ?? '-'}
@@ -181,6 +209,15 @@ export default function AdminOrganizationsPage() {
                       <td className="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-400">
                         {new Date(org.createdAt).toLocaleDateString(dateLocale)}
                       </td>
+                      <td className="px-6 py-4 text-sm">
+                        <button
+                          onClick={() => setHardDeleteTarget(org)}
+                          disabled={!org.deletionRequestedAt}
+                          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {t('hardDeleteButton')}
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -201,13 +238,20 @@ export default function AdminOrganizationsPage() {
                     <p className="font-semibold text-zinc-900 dark:text-zinc-100 break-words">
                       {org.name}
                     </p>
-                    <span className={`shrink-0 px-2 py-1 text-xs font-semibold rounded-full ${
-                      org.isActive
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
-                    }`}>
-                      {org.isActive ? t('activeLabel') : t('inactiveLabel')}
-                    </span>
+                    <div className="shrink-0 flex flex-col items-end gap-1">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
+                        org.isActive
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
+                      }`}>
+                        {org.isActive ? t('activeLabel') : t('inactiveLabel')}
+                      </span>
+                      {org.deletionRequestedAt && (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 whitespace-nowrap">
+                          {t('deletedByOwnerLabel', { date: new Date(org.deletionRequestedAt).toLocaleDateString(dateLocale) })}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="text-sm text-zinc-600 dark:text-zinc-400 space-y-1">
                     <p><span className="font-medium">{t('subdomainHeader')}:</span> {org.subdomain || '-'}</p>
@@ -234,6 +278,14 @@ export default function AdminOrganizationsPage() {
                     </p>
                     <p><span className="font-medium">{t('createdLabel')}</span> {new Date(org.createdAt).toLocaleDateString(dateLocale)}</p>
                   </div>
+                  {org.deletionRequestedAt && (
+                    <button
+                      onClick={() => setHardDeleteTarget(org)}
+                      className="w-full px-3 py-2 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700"
+                    >
+                      {t('hardDeleteButton')}
+                    </button>
+                  )}
                 </div>
               ))
             )}
@@ -241,6 +293,19 @@ export default function AdminOrganizationsPage() {
         </div>
       </div>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+      {hardDeleteTarget && (
+        <ConfirmDialog
+          title={t('hardDeleteConfirmTitle')}
+          message={t('hardDeleteConfirmMessage', { name: hardDeleteTarget.name })}
+          confirmLabel={hardDeleting ? t('hardDeleting') : t('hardDeleteConfirmLabel')}
+          cancelLabel={t('hardDeleteConfirmCancelLabel')}
+          requireTypedConfirmation={hardDeleteTarget.name}
+          typedConfirmationLabel={t('hardDeleteConfirmTypedLabel', { name: hardDeleteTarget.name })}
+          onConfirm={handleHardDelete}
+          onCancel={() => setHardDeleteTarget(null)}
+        />
+      )}
     </div>
   )
 }

@@ -7,6 +7,9 @@ export interface Organization {
   // Logo gewählt, das Frontend zeigt dann einen Initialen-Avatar.
   logoUrl?: string | null
   isActive: boolean
+  // Gesetzt, wenn der Owner die Organisation selbst zur Löschung freigegeben
+  // hat (Soft-Delete, null/undefined = aktiv). Nur für die Admin-Übersicht relevant.
+  deletionRequestedAt?: string | null
   createdAt: string
   updatedAt: string
   // Nur von GET /organizations (Admin-Übersicht) mitgeliefert.
