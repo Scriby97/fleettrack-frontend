@@ -363,7 +363,7 @@ const CreateUsage: FC = () => {
   return (
     <section className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
           {t('title')}
         </h1>
         {isAdmin && organizations.length > 0 && (
