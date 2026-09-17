@@ -6,6 +6,7 @@
     { "file": "DirectionD.dc.html", "x": 1560, "y": 0, "w": 440, "h": 920 },
     { "file": "TopBarDark.dc.html", "x": 2080, "y": 0, "w": 440, "h": 990 },
     { "file": "ActionsMenu.dc.html", "x": 2600, "y": 0, "w": 440, "h": 730 },
+    { "file": "ActionsMenuWithFab.dc.html", "x": 3120, "y": 0, "w": 440, "h": 730 },
     { "file": "Logo.dc.html", "x": 0, "y": 1040, "w": 1040, "h": 950 },
     { "file": "LogoAlternatives.dc.html", "x": 1120, "y": 1040, "w": 1040, "h": 1180 }
   ],

@@ -350,8 +350,9 @@ const FlottenUebersicht: FC<FlottenUebersichtProps> = ({ onAddVehicle }) => {
             </button>
           )}
 
-          {/* Mobile: beide Aktionen hinter einem "..."-Menü statt zwei nebeneinanderstehenden Buttons */}
-          {(onAddVehicle || vehicles.length > 0) && (
+          {/* Mobile: CSV-Export hinter einem "..."-Menü. "Fahrzeug hinzufügen" lebt
+              stattdessen als schwebender Button (siehe weiter unten). */}
+          {vehicles.length > 0 && (
             <div className="relative md:hidden">
               <button
                 type="button"
@@ -378,44 +379,24 @@ const FlottenUebersicht: FC<FlottenUebersichtProps> = ({ onAddVehicle }) => {
                   />
                   <div
                     role="menu"
-                    className="absolute right-0 top-full z-30 mt-1 w-56 overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg"
+                    className="absolute right-0 top-full z-30 mt-1 w-52 overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg"
                   >
-                    {onAddVehicle && (
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          setShowActionsMenu(false);
-                          onAddVehicle();
-                        }}
-                        className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-sm font-medium text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800"
-                      >
-                        <span className="flex items-center justify-center w-[26px] h-[26px] rounded-md bg-signal-600 shrink-0">
-                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 5v14M5 12h14" />
-                          </svg>
-                        </span>
-                        {tNav('createVehicle')}
-                      </button>
-                    )}
-                    {vehicles.length > 0 && (
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          setShowActionsMenu(false);
-                          setShowExportModal(true);
-                        }}
-                        className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-sm font-medium text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                      >
-                        <span className="flex items-center justify-center w-[26px] h-[26px] rounded-md bg-zinc-100 dark:bg-zinc-800 shrink-0">
-                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 15V3m0 12l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
-                          </svg>
-                        </span>
-                        {t('exportButton')}
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShowActionsMenu(false);
+                        setShowExportModal(true);
+                      }}
+                      className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-sm font-medium text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                    >
+                      <span className="flex items-center justify-center w-[26px] h-[26px] rounded-md bg-zinc-100 dark:bg-zinc-800 shrink-0">
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 15V3m0 12l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+                        </svg>
+                      </span>
+                      {t('exportButton')}
+                    </button>
                   </div>
                 </>
               )}
@@ -423,6 +404,21 @@ const FlottenUebersicht: FC<FlottenUebersichtProps> = ({ onAddVehicle }) => {
           )}
         </div>
       </div>
+
+      {/* Schwebender "Fahrzeug hinzufügen"-Button (nur Mobile, oberhalb der BottomNav) */}
+      {onAddVehicle && (
+        <button
+          type="button"
+          onClick={onAddVehicle}
+          className="md:hidden fixed bottom-24 right-4 z-30 flex items-center justify-center w-14 h-14 rounded-full bg-signal-600 hover:bg-signal-700 text-white shadow-lg shadow-signal-950/30 transition-colors"
+          aria-label={tNav('createVehicle')}
+          title={tNav('createVehicle')}
+        >
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+      )}
 
       {isLoading && (
         <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
