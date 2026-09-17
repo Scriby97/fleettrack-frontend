@@ -177,7 +177,7 @@ export default function Home() {
         {active === "fahrzeug" && (canManageOrganization ? <FahrzeugErfassen /> : <AccessDenied />)}
       </main>
 
-      <BottomNav active={active} onNavigate={goToTab} />
+      <BottomNav active={active} onNavigate={goToTab} showFleetTab={canManageOrganization} />
     </div>
   );
 }
