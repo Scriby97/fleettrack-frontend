@@ -32,6 +32,7 @@ export default function SettingsOrganizationPage() {
     selectedOrgId,
     selectedOrganizationRole,
     isLoading: orgLoading,
+    refetchOrganizations,
   } = useOrganization()
   const { toasts, showToast, removeToast } = useToast()
   const t = useTranslations('settingsOrganization')
@@ -160,7 +161,7 @@ export default function SettingsOrganizationPage() {
         }
       }
 
-      await refreshOrganizations()
+      await refetchOrganizations()
       setPendingLogo({ kind: 'none' })
       showToast(t('saveSuccess'), 'success')
     } finally {

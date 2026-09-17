@@ -23,12 +23,23 @@ interface OrganizationContextType {
   canManageSelectedOrganization: boolean;
   isLoading: boolean;
   error: string | null;
+  // Laedt die Organisationsliste neu - fuer normale User genuegt
+  // AuthProvider.refreshOrganizations() (aktualisiert organizationMemberships,
+  // von dem "organizations" unten abgeleitet wird), aber fuer globale
+  // Administratoren wird "organizations" NICHT davon abgeleitet, sondern
+  // einmalig separat ueber getAllOrganizations() geladen (s.u.) - ohne diese
+  // Funktion wuerden Aenderungen, die ein Admin an einer Organisation
+  // vornimmt (z.B. eigenes Logo als Owner), nach dem Speichern nicht sichtbar
+  // werden, bis die Seite neu geladen wird. Konsumenten, die nach einer
+  // Mutation "organizations"/"selectedOrg" aktuell sehen muessen, sollten
+  // diese Funktion statt AuthProvider.refreshOrganizations() direkt aufrufen.
+  refetchOrganizations: () => Promise<void>;
 }
 
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
-  const { isAdmin, organizationId, organizationMemberships, loading: authLoading } = useAuth();
+  const { isAdmin, organizationId, organizationMemberships, loading: authLoading, refreshOrganizations: refreshAuthOrganizations } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrgId, setSelectedOrgIdState] = useState<string | null>(null);
   // Startet bewusst auf true (nicht false) - Konsumenten mit einem
@@ -63,41 +74,53 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   // Administratoren (Entwickler-Accounts): alle Organisationen system-weit laden,
   // unabhängig von eigenen Mitgliedschaften (Administratoren müssen keiner
   // Organisation angehören, um auf sie zugreifen zu können).
+  const loadAdminOrganizations = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const orgs = await getAllOrganizations();
+      setOrganizations(orgs);
+      setSelectedOrgIdState((current) => {
+        if (current) return current;
+
+        let stored: string | null = null;
+        try {
+          stored = window.localStorage.getItem(SELECTED_ORG_STORAGE_KEY);
+        } catch {
+          // ignore
+        }
+        if (stored && orgs.some((org) => org.id === stored)) {
+          return stored;
+        }
+
+        return orgs[0]?.id ?? null;
+      });
+    } catch (err) {
+      console.error('Fehler beim Laden der Organisationen:', err);
+      setError(getApiErrorMessage(err, 'Fehler beim Laden der Organisationen'));
+    } finally {
+      setIsLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (!isAdmin || hasLoadedRef.current) return;
     hasLoadedRef.current = true;
+    loadAdminOrganizations();
+  }, [isAdmin, loadAdminOrganizations]);
 
-    const load = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const orgs = await getAllOrganizations();
-        setOrganizations(orgs);
-        setSelectedOrgIdState((current) => {
-          if (current) return current;
-
-          let stored: string | null = null;
-          try {
-            stored = window.localStorage.getItem(SELECTED_ORG_STORAGE_KEY);
-          } catch {
-            // ignore
-          }
-          if (stored && orgs.some((org) => org.id === stored)) {
-            return stored;
-          }
-
-          return orgs[0]?.id ?? null;
-        });
-      } catch (err) {
-        console.error('Fehler beim Laden der Organisationen:', err);
-        setError(getApiErrorMessage(err, 'Fehler beim Laden der Organisationen'));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin]);
+  // Einheitlicher Refresh-Einstiegspunkt fuer Konsumenten (s. Kommentar am
+  // Typ oben): Admins bekommen ihre separat geladene All-Orgs-Liste neu
+  // geladen, normale User laufen ueber den bestehenden
+  // organizationMemberships-Ableitungspfad.
+  const refetchOrganizations = useCallback(async () => {
+    if (isAdmin) {
+      await loadAdminOrganizations();
+    } else {
+      await refreshAuthOrganizations();
+    }
+  }, [isAdmin, loadAdminOrganizations, refreshAuthOrganizations]);
 
   // Normale User: eigene Organisation(en) direkt aus den bereits geladenen
   // Memberships übernehmen - kein zusätzlicher API-Call nötig, und reagiert
@@ -171,6 +194,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       canManageSelectedOrganization,
       isLoading,
       error,
+      refetchOrganizations,
     }}>
       {children}
     </OrganizationContext.Provider>
