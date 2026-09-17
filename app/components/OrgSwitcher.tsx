@@ -57,7 +57,7 @@ export function OrgSwitcher({ onDark = false }: OrgSwitcherProps = {}) {
   const chipInner = (
     <>
       <OrgAvatar name={name} logoUrl={logoUrl} size={24} />
-      <span className={`flex-1 truncate text-left text-sm font-medium ${onDark ? 'text-zinc-50' : 'text-zinc-700 dark:text-zinc-300'}`}>
+      <span className={`min-w-0 flex-1 truncate text-left text-sm font-medium ${onDark ? 'text-zinc-50' : 'text-zinc-700 dark:text-zinc-300'}`}>
         {name}
       </span>
       {canSwitch && (
@@ -78,11 +78,11 @@ export function OrgSwitcher({ onDark = false }: OrgSwitcherProps = {}) {
   )
 
   if (!canSwitch) {
-    return <div className={chipClass}>{chipInner}</div>
+    return <div className={`min-w-0 ${chipClass}`}>{chipInner}</div>
   }
 
   return (
-    <div className="relative">
+    <div className="relative min-w-0">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}

@@ -15,8 +15,10 @@ export function MobileHeader() {
         <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack" width={26} height={26} />
         <h2 className="text-base font-semibold text-zinc-50">FleetTrack</h2>
       </Link>
-      <div className="flex items-center gap-2 shrink-0">
-        <InstallPrompt />
+      <div className="flex items-center gap-2 min-w-0 flex-1 justify-end">
+        <div className="shrink-0">
+          <InstallPrompt />
+        </div>
         <OrgSwitcher onDark />
       </div>
     </div>
