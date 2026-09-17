@@ -103,7 +103,7 @@ export default function SettingsRemindersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 px-4 py-8">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 px-4 pt-20 pb-24 md:pt-8 md:pb-8">
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="max-w-3xl mx-auto space-y-6">
         <Breadcrumbs

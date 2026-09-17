@@ -10,6 +10,7 @@ import FahrzeugErfassen from "./components/createVehicle";
 import UserMenu from "./components/UserMenu";
 import { OrgSwitcher } from "./components/OrgSwitcher";
 import { BottomNav } from "./components/BottomNav";
+import { MobileHeader } from "./components/MobileHeader";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useOrganization } from "@/lib/contexts/OrganizationContext";
 import { InstallPrompt } from "./components/InstallPrompt";
@@ -150,21 +151,7 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* Mobile header - bewusst immer Navy (wie BottomNav), unabhaengig vom Theme */}
-      <div className="md:hidden fixed top-0 left-0 right-0 bg-zinc-950 border-b border-zinc-800 px-5 py-4 flex items-center justify-between z-50">
-        <button
-          type="button"
-          onClick={() => goToTab("nutzung")}
-          className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity"
-        >
-          <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack" width={26} height={26} />
-          <h2 className="text-base font-semibold text-zinc-50">FleetTrack</h2>
-        </button>
-        <div className="flex items-center gap-2 shrink-0">
-          <InstallPrompt />
-          <OrgSwitcher onDark />
-        </div>
-      </div>
+      <MobileHeader />
 
       {/* Main content */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-10 pt-20 md:pt-10 pb-24 md:pb-10">

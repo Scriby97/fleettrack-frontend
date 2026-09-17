@@ -2,15 +2,23 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useOrganization } from "@/lib/contexts/OrganizationContext";
 
 type MenuKey = "nutzung" | "uebersichtEintraege" | "uebersicht" | "fahrzeug";
 
 interface BottomNavProps {
-  active: MenuKey;
-  onNavigate: (key: MenuKey) => void;
+  // Nur relevant, wenn die BottomNav auf "/" gerendert wird: steuert, welcher
+  // der vier Haupt-Tabs aktuell hervorgehoben ist, und onNavigate wechselt
+  // dort nur den lokalen Tab-State (kein Routenwechsel). Fehlt onNavigate
+  // (Aufruf ausserhalb von "/", z.B. von Settings/Admin-Seiten via
+  // AppChrome), navigiert ein Klick auf einen Haupt-Tab stattdessen wirklich
+  // zu "/" (landet dort auf dem Standard-Tab "Nutzung erfassen").
+  active?: MenuKey;
+  onNavigate?: (key: MenuKey) => void;
   // Der "Flotte"-Tab fuehrt fuer Mitarbeiter ohne Verwaltungsrechte nur zur
   // "Zugriff verweigert"-Seite - daher fuer sie gar nicht erst anzeigen.
-  showFleetTab: boolean;
+  // Fehlt der Prop, wird er selbst aus dem OrganizationContext abgeleitet.
+  showFleetTab?: boolean;
 }
 
 // Untere Tab-Leiste fuer Mobile - ersetzt den bisherigen Hamburger-Drawer.
@@ -21,7 +29,17 @@ export function BottomNav({ active, onNavigate, showFleetTab }: BottomNavProps) 
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("nav");
-  const accountActive = pathname.startsWith("/settings");
+  const { canManageSelectedOrganization } = useOrganization();
+  const accountActive = pathname.startsWith("/settings") || pathname.startsWith("/admin");
+  const effectiveShowFleetTab = showFleetTab ?? canManageSelectedOrganization;
+
+  const handleTabClick = (key: MenuKey) => {
+    if (onNavigate) {
+      onNavigate(key);
+    } else {
+      router.push("/");
+    }
+  };
 
   const itemClass = (isActive: boolean) =>
     `flex flex-col items-center gap-1 py-1.5 px-3 ${isActive ? "text-signal-600" : "text-zinc-400"}`;
@@ -33,7 +51,7 @@ export function BottomNav({ active, onNavigate, showFleetTab }: BottomNavProps) 
       className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-zinc-950 border-t border-zinc-800 flex items-stretch justify-between px-2 pt-1.5"
       style={{ paddingBottom: "max(0.375rem, env(safe-area-inset-bottom))" }}
     >
-      <button type="button" onClick={() => onNavigate("nutzung")} className={itemClass(active === "nutzung" && !accountActive)}>
+      <button type="button" onClick={() => handleTabClick("nutzung")} className={itemClass(active === "nutzung" && !accountActive)}>
         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 3v14M5 10l7-7 7 7" />
           <rect x="5" y="17" width="14" height="4" rx="1" />
@@ -41,15 +59,15 @@ export function BottomNav({ active, onNavigate, showFleetTab }: BottomNavProps) 
         <span className={labelClass(active === "nutzung" && !accountActive)}>{t("tabCreateUsage")}</span>
       </button>
 
-      <button type="button" onClick={() => onNavigate("uebersichtEintraege")} className={itemClass(active === "uebersichtEintraege" && !accountActive)}>
+      <button type="button" onClick={() => handleTabClick("uebersichtEintraege")} className={itemClass(active === "uebersichtEintraege" && !accountActive)}>
         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 6h16M4 12h16M4 18h10" />
         </svg>
         <span className={labelClass(active === "uebersichtEintraege" && !accountActive)}>{t("tabUsages")}</span>
       </button>
 
-      {showFleetTab && (
-        <button type="button" onClick={() => onNavigate("uebersicht")} className={itemClass(active === "uebersicht" && !accountActive)}>
+      {effectiveShowFleetTab && (
+        <button type="button" onClick={() => handleTabClick("uebersicht")} className={itemClass(active === "uebersicht" && !accountActive)}>
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <rect x="2" y="11" width="14" height="7" rx="1.5" />
             <circle cx="6" cy="19" r="1.8" />

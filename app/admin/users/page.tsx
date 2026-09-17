@@ -347,7 +347,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 p-4 sm:p-8">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 p-4 pt-20 pb-24 sm:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
         <Breadcrumbs
           items={[
