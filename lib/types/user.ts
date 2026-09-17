@@ -9,6 +9,13 @@ export interface Organization {
   isActive: boolean
   createdAt: string
   updatedAt: string
+  // Nur von GET /organizations (Admin-Übersicht) mitgeliefert.
+  subscription?: {
+    tier: SubscriptionTier
+    status: SubscriptionStatus
+    currentPeriodEnd?: string
+  } | null
+  owner?: { email: string; name?: string } | null
 }
 
 export type OrganizationRole = 'employee' | 'admin' | 'owner'

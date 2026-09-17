@@ -466,6 +466,11 @@
     "closeButton": "Close",
     "laterButton": "Later"
   },
+  "pastDueBanner": {
+    "message": "The last payment for your subscription could not be processed.",
+    "actionLabel": "Check payment method",
+    "dismissLabel": "Dismiss"
+  },
   "invite": {
     "loadingText": "Loading invitation...",
     "invalidLinkError": "Invalid or expired invitation link",
@@ -504,6 +509,10 @@
     "subdomainHeader": "Subdomain",
     "contactEmailHeader": "Contact email",
     "statusHeader": "Status",
+    "tierHeader": "Plan",
+    "subscriptionStatusHeader": "Billing status",
+    "periodEndHeader": "Renews/ends",
+    "ownerHeader": "Owner",
     "createdHeader": "Created",
     "noOrgsFound": "No organizations found.",
     "activeLabel": "Active",

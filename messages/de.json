@@ -466,6 +466,11 @@
     "closeButton": "Schliessen",
     "laterButton": "Später"
   },
+  "pastDueBanner": {
+    "message": "Die letzte Zahlung für dein Abonnement konnte nicht verarbeitet werden.",
+    "actionLabel": "Zahlungsmethode prüfen",
+    "dismissLabel": "Hinweis schliessen"
+  },
   "invite": {
     "loadingText": "Einladung wird geladen...",
     "invalidLinkError": "Ungültiger oder abgelaufener Einladungs-Link",
@@ -504,6 +509,10 @@
     "subdomainHeader": "Subdomain",
     "contactEmailHeader": "Kontakt-Email",
     "statusHeader": "Status",
+    "tierHeader": "Tarif",
+    "subscriptionStatusHeader": "Abo-Status",
+    "periodEndHeader": "Läuft ab",
+    "ownerHeader": "Owner",
     "createdHeader": "Erstellt",
     "noOrgsFound": "Keine Organizations vorhanden.",
     "activeLabel": "Aktiv",

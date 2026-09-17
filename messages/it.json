@@ -466,6 +466,11 @@
     "closeButton": "Chiudi",
     "laterButton": "Più tardi"
   },
+  "pastDueBanner": {
+    "message": "L'ultimo pagamento del tuo abbonamento non è andato a buon fine.",
+    "actionLabel": "Controlla il metodo di pagamento",
+    "dismissLabel": "Chiudi avviso"
+  },
   "invite": {
     "loadingText": "Caricamento dell'invito...",
     "invalidLinkError": "Link di invito non valido o scaduto",
@@ -504,6 +509,10 @@
     "subdomainHeader": "Sottodominio",
     "contactEmailHeader": "E-mail di contatto",
     "statusHeader": "Stato",
+    "tierHeader": "Piano",
+    "subscriptionStatusHeader": "Stato pagamento",
+    "periodEndHeader": "Scadenza",
+    "ownerHeader": "Proprietario",
     "createdHeader": "Creata il",
     "noOrgsFound": "Nessuna organizzazione disponibile.",
     "activeLabel": "Attiva",

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { createOrganization, getAllOrganizations } from '@/lib/api/organizations'
-import { CreateOrganizationRequest, CreateOrganizationResponse, Organization, OrganizationRole } from '@/lib/types/user'
+import { CreateOrganizationRequest, CreateOrganizationResponse, Organization, OrganizationRole, SubscriptionStatus } from '@/lib/types/user'
 import { useToast } from '@/lib/hooks/useToast'
 import { ToastContainer } from '@/app/components/Toast'
 import { useDateLocale } from '@/lib/i18n/formatDate'
@@ -18,6 +18,7 @@ export default function AdminOrganizationsPage() {
   const { toasts, showToast, removeToast } = useToast()
   const t = useTranslations('adminOrganizations')
   const tSettings = useTranslations('settings')
+  const tBilling = useTranslations('settingsBilling')
   const tCommon = useTranslations('common')
   const dateLocale = useDateLocale()
   const getApiErrorMessage = useApiErrorMessage()
@@ -37,6 +38,18 @@ export default function AdminOrganizationsPage() {
     subdomain: '',
     contactEmail: '',
   })
+
+  const subscriptionStatusLabel = (status: SubscriptionStatus) => {
+    if (status === 'past_due') return tBilling('statusPastDue')
+    if (status === 'canceled') return tBilling('statusCanceled')
+    return tBilling('statusActive')
+  }
+
+  const subscriptionStatusClasses = (status: SubscriptionStatus) => {
+    if (status === 'past_due') return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+    if (status === 'canceled') return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
+    return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+  }
 
   const loadOrganizations = useCallback(async () => {
     try {
@@ -178,6 +191,18 @@ export default function AdminOrganizationsPage() {
                     {t('statusHeader')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
+                    {t('tierHeader')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
+                    {t('subscriptionStatusHeader')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
+                    {t('periodEndHeader')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
+                    {t('ownerHeader')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
                     {t('createdHeader')}
                   </th>
                 </tr>
@@ -185,7 +210,7 @@ export default function AdminOrganizationsPage() {
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
                 {organizations.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-zinc-500 dark:text-zinc-400">
+                    <td colSpan={9} className="px-6 py-8 text-center text-zinc-500 dark:text-zinc-400">
                       {t('noOrgsFound')}
                     </td>
                   </tr>
@@ -209,6 +234,28 @@ export default function AdminOrganizationsPage() {
                         }`}>
                           {org.isActive ? t('activeLabel') : t('inactiveLabel')}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-400 capitalize">
+                        {org.subscription?.tier ?? '-'}
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        {org.subscription ? (
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${subscriptionStatusClasses(org.subscription.status)}`}>
+                            {subscriptionStatusLabel(org.subscription.status)}
+                          </span>
+                        ) : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-400">
+                        {org.subscription?.currentPeriodEnd
+                          ? new Date(org.subscription.currentPeriodEnd).toLocaleDateString(dateLocale)
+                          : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-400">
+                        {org.owner ? (
+                          <a href={`mailto:${org.owner.email}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+                            {org.owner.email}
+                          </a>
+                        ) : '-'}
                       </td>
                       <td className="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-400">
                         {new Date(org.createdAt).toLocaleDateString(dateLocale)}
@@ -244,6 +291,26 @@ export default function AdminOrganizationsPage() {
                   <div className="text-sm text-zinc-600 dark:text-zinc-400 space-y-1">
                     <p><span className="font-medium">{t('subdomainHeader')}:</span> {org.subdomain || '-'}</p>
                     <p className="break-all"><span className="font-medium">{t('contactEmailHeader')}:</span> {org.contactEmail || '-'}</p>
+                    <p>
+                      <span className="font-medium">{t('tierHeader')}:</span>{' '}
+                      <span className="capitalize">{org.subscription?.tier ?? '-'}</span>
+                      {org.subscription && (
+                        <span className={`ml-2 px-2 py-0.5 text-xs font-semibold rounded-full ${subscriptionStatusClasses(org.subscription.status)}`}>
+                          {subscriptionStatusLabel(org.subscription.status)}
+                        </span>
+                      )}
+                    </p>
+                    {org.subscription?.currentPeriodEnd && (
+                      <p><span className="font-medium">{t('periodEndHeader')}:</span> {new Date(org.subscription.currentPeriodEnd).toLocaleDateString(dateLocale)}</p>
+                    )}
+                    <p className="break-all">
+                      <span className="font-medium">{t('ownerHeader')}:</span>{' '}
+                      {org.owner ? (
+                        <a href={`mailto:${org.owner.email}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+                          {org.owner.email}
+                        </a>
+                      ) : '-'}
+                    </p>
                     <p><span className="font-medium">{t('createdLabel')}</span> {new Date(org.createdAt).toLocaleDateString(dateLocale)}</p>
                   </div>
                 </div>

@@ -466,6 +466,11 @@
     "closeButton": "Fermer",
     "laterButton": "Plus tard"
   },
+  "pastDueBanner": {
+    "message": "Le dernier paiement de votre abonnement n'a pas pu être traité.",
+    "actionLabel": "Vérifier le moyen de paiement",
+    "dismissLabel": "Fermer l'avis"
+  },
   "invite": {
     "loadingText": "Chargement de l'invitation...",
     "invalidLinkError": "Lien d'invitation invalide ou expiré",
@@ -504,6 +509,10 @@
     "subdomainHeader": "Sous-domaine",
     "contactEmailHeader": "E-mail de contact",
     "statusHeader": "Statut",
+    "tierHeader": "Forfait",
+    "subscriptionStatusHeader": "Statut de paiement",
+    "periodEndHeader": "Échéance",
+    "ownerHeader": "Propriétaire",
     "createdHeader": "Créée le",
     "noOrgsFound": "Aucune organisation disponible.",
     "activeLabel": "Active",
