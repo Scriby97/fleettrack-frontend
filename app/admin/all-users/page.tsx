@@ -19,6 +19,7 @@ export default function AdminAllUsersPage() {
   const { loading: authLoading, isAdmin } = useAuth()
   const { toasts, showToast, removeToast } = useToast()
   const t = useTranslations('adminAllUsers')
+  const tSettings = useTranslations('settings')
   const tInv = useTranslations('inviteManagement')
   const tCommon = useTranslations('common')
   const dateLocale = useDateLocale()
@@ -271,7 +272,13 @@ export default function AdminAllUsersPage() {
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 p-4 sm:p-8">
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="max-w-6xl mx-auto space-y-6">
-        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: t('title') }]} />
+        <Breadcrumbs
+          items={[
+            { label: 'Dashboard', href: '/' },
+            { label: tSettings('title'), href: '/settings' },
+            { label: t('title') },
+          ]}
+        />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

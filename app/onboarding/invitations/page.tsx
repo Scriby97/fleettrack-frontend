@@ -13,11 +13,20 @@ import type { OrganizationRole, PendingInvite } from '@/lib/types/user'
 
 export default function OnboardingInvitationsPage() {
   const router = useRouter()
-  const { refreshOrganizations } = useAuth()
+  const { refreshOrganizations, hasOrganization } = useAuth()
   const { removeInvite: removePendingInvite } = usePendingInvites()
   const t = useTranslations('onboardingInvitations')
   const getApiErrorMessage = useApiErrorMessage()
   const dateLocale = useDateLocale()
+
+  // Diese Seite wird aus zwei Kontexten erreicht: aus /onboarding (User hat
+  // noch keine Organisation) und aus /settings (User hat bereits eine
+  // Organisation und schaut sich Einladungen zu WEITEREN Organisationen an).
+  // "Zurück" muss dorthin zurückführen, woher man kam - ein hart codiertes
+  // /onboarding wuerde im zweiten Fall sofort zu "/" weiterleiten (die
+  // Onboarding-Seite selbst leitet Nutzer mit Organisation dorthin um), statt
+  // wie erwartet zu den Einstellungen zurueckzukehren.
+  const backHref = hasOrganization ? '/settings' : '/onboarding'
 
   const ROLE_LABELS: Record<OrganizationRole, string> = {
     employee: t('employeeRole'),
@@ -82,7 +91,7 @@ export default function OnboardingInvitationsPage() {
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 px-4 py-10 flex items-center justify-center">
       <div className="max-w-2xl w-full space-y-6">
         <div>
-          <Link href="/onboarding" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+          <Link href={backHref} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
             {t('backLink')}
           </Link>
           <h1 className="mt-3 text-3xl font-bold text-zinc-900 dark:text-zinc-50">{t('title')}</h1>
@@ -108,7 +117,7 @@ export default function OnboardingInvitationsPage() {
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               {t('noInvitesMessage')}
             </p>
-            <Link href="/onboarding" className="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline">
+            <Link href={backHref} className="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline">
               {t('backToOverview')}
             </Link>
           </div>

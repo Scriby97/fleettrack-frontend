@@ -17,6 +17,7 @@ export default function AdminOrganizationsPage() {
   const router = useRouter()
   const { toasts, showToast, removeToast } = useToast()
   const t = useTranslations('adminOrganizations')
+  const tSettings = useTranslations('settings')
   const tCommon = useTranslations('common')
   const dateLocale = useDateLocale()
   const getApiErrorMessage = useApiErrorMessage()
@@ -131,7 +132,13 @@ export default function AdminOrganizationsPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: t('title') }]} />
+        <Breadcrumbs
+          items={[
+            { label: 'Dashboard', href: '/' },
+            { label: tSettings('title'), href: '/settings' },
+            { label: t('title') },
+          ]}
+        />
 
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">

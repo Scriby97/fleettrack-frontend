@@ -20,6 +20,7 @@ export default function UsersPage() {
   const { organizations, selectedOrgId, canManageSelectedOrganization, selectedOrganizationRole, isLoading: orgLoading } = useOrganization()
   const selectedOrganization = organizations.find((org) => org.id === selectedOrgId)
   const t = useTranslations('userManagement')
+  const tSettings = useTranslations('settings')
   const tInv = useTranslations('inviteManagement')
   const tMember = useTranslations('memberManagement')
   const tCommon = useTranslations('common')
@@ -351,7 +352,13 @@ export default function UsersPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 p-4 sm:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        <Breadcrumbs items={[{ label: 'Dashboard', href: '/' }, { label: t('title') }]} />
+        <Breadcrumbs
+          items={[
+            { label: 'Dashboard', href: '/' },
+            { label: tSettings('title'), href: '/settings' },
+            { label: t('title') },
+          ]}
+        />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
