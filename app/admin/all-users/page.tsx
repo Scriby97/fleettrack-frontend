@@ -126,11 +126,30 @@ export default function AdminAllUsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, activeTab, isAdmin])
 
+  // /auth/users liefert User-Datensätze mit "organizationMemberships" (ein
+  // User kann in mehreren Organisationen Mitglied sein) - die früheren
+  // Einzelfelder "organizationId"/"organization" auf User sind vom Backend
+  // her immer leer und wurden hier faelschlicherweise noch verwendet, daher
+  // liefen Filter und Organisations-Anzeige zuvor ins Leere.
+  const orgNameById = useMemo(
+    () => new Map(organizations.map((org) => [org.id, org.name])),
+    [organizations]
+  )
+
+  const getUserOrgSummaries = (user: User) =>
+    (user.organizationMemberships ?? []).map((membership) => ({
+      id: membership.organizationId,
+      name: orgNameById.get(membership.organizationId) ?? membership.organization?.name ?? membership.organizationId,
+      roleLabel: ORG_ROLE_LABELS[membership.role],
+    }))
+
   const filteredUsers = useMemo(() => {
     let result = users
 
     if (selectedOrgId) {
-      result = result.filter((user) => user.organizationId === selectedOrgId)
+      result = result.filter((user) =>
+        (user.organizationMemberships ?? []).some((membership) => membership.organizationId === selectedOrgId)
+      )
     }
 
     const term = searchTerm.trim().toLowerCase()
@@ -138,15 +157,18 @@ export default function AdminAllUsersPage() {
 
     return result.filter((user) => {
       const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim().toLowerCase()
-      const orgName = user.organization?.name?.toLowerCase() ?? ''
+      const orgNames = (user.organizationMemberships ?? [])
+        .map((membership) => orgNameById.get(membership.organizationId) ?? '')
+        .join(' ')
+        .toLowerCase()
       return (
         user.email.toLowerCase().includes(term) ||
         name.includes(term) ||
         user.role.toLowerCase().includes(term) ||
-        orgName.includes(term)
+        orgNames.includes(term)
       )
     })
-  }, [searchTerm, selectedOrgId, users])
+  }, [searchTerm, selectedOrgId, users, orgNameById])
 
   const getDisplayName = (user: User) => {
     const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
@@ -389,7 +411,19 @@ export default function AdminAllUsersPage() {
                           {USER_ROLE_LABELS[user.role]}
                         </td>
                         <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
-                          {user.organization?.name ?? '-'}
+                          {(() => {
+                            const orgSummaries = getUserOrgSummaries(user)
+                            if (orgSummaries.length === 0) return '-'
+                            return (
+                              <ul className="space-y-0.5">
+                                {orgSummaries.map((org) => (
+                                  <li key={org.id}>
+                                    {org.name} <span className="text-xs text-zinc-400 dark:text-zinc-500">({org.roleLabel})</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )
+                          })()}
                         </td>
                         <td className="px-4 py-3">
                           <button
@@ -432,7 +466,12 @@ export default function AdminAllUsersPage() {
                         <span className="font-medium">{t('roleHeader')}:</span> {USER_ROLE_LABELS[user.role]}
                       </p>
                       <p>
-                        <span className="font-medium">{t('organizationLabel')}</span> {user.organization?.name ?? '-'}
+                        <span className="font-medium">{t('organizationLabel')}</span>{' '}
+                        {(() => {
+                          const orgSummaries = getUserOrgSummaries(user)
+                          if (orgSummaries.length === 0) return '-'
+                          return orgSummaries.map((org) => `${org.name} (${org.roleLabel})`).join(', ')
+                        })()}
                       </p>
                     </div>
                     <div className="pt-1">
