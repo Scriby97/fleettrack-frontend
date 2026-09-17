@@ -394,7 +394,8 @@
     "option2Label": "Option 2",
     "invitesTitle": "Invitations à une organisation",
     "invitesDescription": "Tu as des invitations en attente pour une organisation. Consulte-les et accepte-les ou refuse-les.",
-    "invitesCta": "Voir les invitations"
+    "invitesCta": "Voir les invitations",
+    "signOutButton": "Se déconnecter"
   },
   "onboardingCreateOrg": {
     "backLink": "← Retour",

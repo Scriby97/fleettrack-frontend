@@ -9,9 +9,15 @@ import { getMyInvites } from '@/lib/api/invites'
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const { userProfile, hasOrganization } = useAuth()
+  const { userProfile, hasOrganization, signOut, supabaseUser } = useAuth()
   const [hasInvites, setHasInvites] = useState(false)
   const t = useTranslations('onboarding')
+
+  const handleSignOut = async () => {
+    await signOut()
+    router.push('/login')
+    router.refresh()
+  }
 
   useEffect(() => {
     if (userProfile && hasOrganization) {
@@ -39,6 +45,19 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 px-4 py-10 flex items-center justify-center">
       <div className="max-w-3xl w-full">
+        <div className="flex items-center justify-end gap-3 mb-6 text-sm">
+          {supabaseUser?.email && (
+            <span className="text-zinc-500 dark:text-zinc-400 truncate">{supabaseUser.email}</span>
+          )}
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="shrink-0 font-medium text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            {t('signOutButton')}
+          </button>
+        </div>
+
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">{t('title')}</h1>
           <p className="mt-3 text-zinc-600 dark:text-zinc-400">

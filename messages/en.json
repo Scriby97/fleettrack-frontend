@@ -394,7 +394,8 @@
     "option2Label": "Option 2",
     "invitesTitle": "Organization invitations",
     "invitesDescription": "You have pending invitations to an organization. Review them and accept or decline.",
-    "invitesCta": "View invitations"
+    "invitesCta": "View invitations",
+    "signOutButton": "Sign out"
   },
   "onboardingCreateOrg": {
     "backLink": "← Back",

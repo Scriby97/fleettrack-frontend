@@ -394,7 +394,8 @@
     "option2Label": "Opzione 2",
     "invitesTitle": "Inviti all'organizzazione",
     "invitesDescription": "Hai inviti in sospeso per un'organizzazione. Consultali e accettali o rifiutali.",
-    "invitesCta": "Vai agli inviti"
+    "invitesCta": "Vai agli inviti",
+    "signOutButton": "Esci"
   },
   "onboardingCreateOrg": {
     "backLink": "← Indietro",

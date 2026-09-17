@@ -394,7 +394,8 @@
     "option2Label": "Option 2",
     "invitesTitle": "Organisationseinladungen",
     "invitesDescription": "Du hast offene Einladungen zu einer Organisation. Sieh sie dir an und nimm sie an oder lehne sie ab.",
-    "invitesCta": "Zu den Einladungen"
+    "invitesCta": "Zu den Einladungen",
+    "signOutButton": "Abmelden"
   },
   "onboardingCreateOrg": {
     "backLink": "← Zurück",
