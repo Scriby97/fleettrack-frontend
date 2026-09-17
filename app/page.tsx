@@ -150,20 +150,19 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* Mobile header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-[#0b0b0b] border-b border-zinc-200 dark:border-zinc-800 px-5 py-4 flex items-center justify-between z-50">
+      {/* Mobile header - bewusst immer Navy (wie BottomNav), unabhaengig vom Theme */}
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-zinc-950 border-b border-zinc-800 px-5 py-4 flex items-center justify-between z-50">
         <button
           type="button"
           onClick={() => goToTab("nutzung")}
           className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity"
         >
-          <Image src="/fleettrack-logo-light.svg" alt="FleetTrack" width={26} height={26} className="dark:hidden" />
-          <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack" width={26} height={26} className="hidden dark:block" />
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">FleetTrack</h2>
+          <Image src="/fleettrack-logo-dark.svg" alt="FleetTrack" width={26} height={26} />
+          <h2 className="text-base font-semibold text-zinc-50">FleetTrack</h2>
         </button>
         <div className="flex items-center gap-2 shrink-0">
           <InstallPrompt />
-          <OrgSwitcher />
+          <OrgSwitcher onDark />
         </div>
       </div>
 

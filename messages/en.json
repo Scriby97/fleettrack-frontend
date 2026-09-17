@@ -9,7 +9,8 @@
     "pleaseWait": "Please wait...",
     "organizationLabel": "Organization",
     "unexpectedError": "An unexpected error occurred",
-    "switchOrganization": "Switch organization"
+    "switchOrganization": "Switch organization",
+    "moreActions": "More actions"
   },
   "nav": {
     "createUsage": "Log usage",

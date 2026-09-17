@@ -9,7 +9,8 @@
     "pleaseWait": "Veuillez patienter...",
     "organizationLabel": "Organisation",
     "unexpectedError": "Une erreur inattendue s'est produite",
-    "switchOrganization": "Changer d'organisation"
+    "switchOrganization": "Changer d'organisation",
+    "moreActions": "Plus d'actions"
   },
   "nav": {
     "createUsage": "Saisir une utilisation",

@@ -12,7 +12,15 @@ import { OrgAvatar } from './OrgAvatar'
  * Button, der ein Auswahl-Menü zum Wechseln öffnet. Bei nur einer Organisation
  * ist es reine Anzeige.
  */
-export function OrgSwitcher() {
+interface OrgSwitcherProps {
+  // Fuer den Einsatz auf einer immer-dunklen Flaeche (mobile Kopfleiste,
+  // navy statt themenabhaengig weiss/dunkel) - faerbt nur den Chip selbst
+  // um, das Dropdown-Panel bleibt (es liegt ueber dem hellen Seiteninhalt)
+  // beim normalen Theme-Verhalten.
+  onDark?: boolean
+}
+
+export function OrgSwitcher({ onDark = false }: OrgSwitcherProps = {}) {
   const t = useTranslations('common')
   const { organization } = useAuth()
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization()
@@ -42,18 +50,19 @@ export function OrgSwitcher() {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [open])
 
-  const chipClass =
-    'flex items-center gap-2 w-full min-w-0 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 px-2.5 py-2'
+  const chipClass = onDark
+    ? 'flex items-center gap-2 w-full min-w-0 rounded-lg bg-white/10 px-2.5 py-2'
+    : 'flex items-center gap-2 w-full min-w-0 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 px-2.5 py-2'
 
   const chipInner = (
     <>
       <OrgAvatar name={name} logoUrl={logoUrl} size={24} />
-      <span className="flex-1 truncate text-left text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <span className={`flex-1 truncate text-left text-sm font-medium ${onDark ? 'text-zinc-50' : 'text-zinc-700 dark:text-zinc-300'}`}>
         {name}
       </span>
       {canSwitch && (
         <svg
-          className="h-4 w-4 shrink-0 text-zinc-400"
+          className={`h-4 w-4 shrink-0 ${onDark ? 'text-zinc-300' : 'text-zinc-400'}`}
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -77,7 +86,7 @@ export function OrgSwitcher() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className={`${chipClass} transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700/60`}
+        className={`${chipClass} transition-colors ${onDark ? 'hover:bg-white/20' : 'hover:bg-zinc-200 dark:hover:bg-zinc-700/60'}`}
         aria-haspopup="listbox"
         aria-expanded={open}
         title={t('switchOrganization')}

@@ -9,7 +9,8 @@
     "pleaseWait": "Bitte warten...",
     "organizationLabel": "Organization",
     "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
-    "switchOrganization": "Organisation wechseln"
+    "switchOrganization": "Organisation wechseln",
+    "moreActions": "Weitere Aktionen"
   },
   "nav": {
     "createUsage": "Nutzung erfassen",
