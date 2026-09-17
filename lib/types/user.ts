@@ -145,26 +145,3 @@ export interface SelfServiceOrganizationResponse {
 }
 
 export type InviteStatus = 'used' | 'pending' | 'expired'
-
-// Organization Management Types
-export interface CreateOrganizationRequest {
-  name: string
-  adminEmail: string
-  adminFirstName?: string
-  adminLastName?: string
-  // Organisationsrolle (nicht die globale User-Rolle!), die der eingeladene
-  // Erst-Admin in der NEUEN Organisation bekommt.
-  adminRole?: OrganizationRole
-  subdomain?: string
-  contactEmail?: string
-}
-
-export interface CreateOrganizationResponse {
-  organization: Organization
-  invite: {
-    token: string
-    link: string
-    email: string
-    expiresAt: string
-  }
-}

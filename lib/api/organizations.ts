@@ -1,6 +1,4 @@
 import {
-  CreateOrganizationRequest,
-  CreateOrganizationResponse,
   Organization,
   OrganizationMembership,
   OrganizationSubscription,
@@ -12,24 +10,6 @@ import {
 import { authenticatedFetch } from './authenticatedFetch'
 import { buildApiUrl } from './url'
 import { throwApiError } from './ApiError'
-
-/**
- * Create a new organization (Super Admin only)
- */
-export async function createOrganization(
-  data: CreateOrganizationRequest
-): Promise<CreateOrganizationResponse> {
-  const response = await authenticatedFetch(buildApiUrl('/organizations'), {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-
-  if (!response.ok) {
-    await throwApiError(response, 'Fehler beim Erstellen der Organisation')
-  }
-
-  return response.json()
-}
 
 /**
  * Get all organizations (Super Admin only)
