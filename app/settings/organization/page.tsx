@@ -320,9 +320,9 @@ export default function SettingsOrganizationPage() {
           </button>
         </form>
 
-        <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-6 space-y-4 border border-red-200 dark:border-red-900/50">
+        <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-6 space-y-4">
           <div>
-            <h2 className="text-lg font-semibold text-red-700 dark:text-red-400">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
               {t('dangerZoneTitle')}
             </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">

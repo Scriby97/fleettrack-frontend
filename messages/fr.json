@@ -764,7 +764,7 @@
     "saveSuccess": "Modifications enregistrées",
     "logoPendingHint": "Ne sera appliqué qu'à l'enregistrement.",
     "undoLogoChange": "Annuler la modification",
-    "dangerZoneTitle": "Zone de danger",
+    "dangerZoneTitle": "Supprimer l'organisation",
     "dangerZoneSubtitle": "La suppression de l'organisation est irréversible.",
     "deleteButton": "Supprimer l'organisation",
     "deleteConfirmTitle": "Vraiment supprimer cette organisation ?",

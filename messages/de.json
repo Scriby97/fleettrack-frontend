@@ -764,7 +764,7 @@
     "saveSuccess": "Änderungen gespeichert",
     "logoPendingHint": "Wird erst beim Speichern übernommen.",
     "undoLogoChange": "Änderung verwerfen",
-    "dangerZoneTitle": "Gefahrenzone",
+    "dangerZoneTitle": "Organisation löschen",
     "dangerZoneSubtitle": "Das Löschen der Organisation kann nicht rückgängig gemacht werden.",
     "deleteButton": "Organisation löschen",
     "deleteConfirmTitle": "Organisation wirklich löschen?",

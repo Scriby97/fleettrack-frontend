@@ -764,7 +764,7 @@
     "saveSuccess": "Changes saved",
     "logoPendingHint": "Applied only once you save.",
     "undoLogoChange": "Discard change",
-    "dangerZoneTitle": "Danger zone",
+    "dangerZoneTitle": "Delete organization",
     "dangerZoneSubtitle": "Deleting the organization cannot be undone.",
     "deleteButton": "Delete organization",
     "deleteConfirmTitle": "Really delete this organization?",
