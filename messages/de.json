@@ -106,7 +106,15 @@
     "vehicleField": "Fahrzeug",
     "startEndKmLabel": "Kilometer:",
     "startKmLabel": "Start-Kilometerstand",
-    "endKmLabel": "End-Kilometerstand"
+    "endKmLabel": "End-Kilometerstand",
+    "filterSectionTitle": "Nutzungszeitraum",
+    "filterStartLabel": "Start",
+    "filterEndLabel": "Ende",
+    "invalidRangeError": "Das Startdatum muss vor dem Enddatum liegen.",
+    "usagesShownCountMore": "{count} neueste Nutzungen angezeigt",
+    "loadingMore": "Lade weitere Nutzungen…",
+    "loadMore": "Mehr laden",
+    "clearFilter": "Zurücksetzen"
   },
   "fleetOverview": {
     "title": "Flottenübersicht",

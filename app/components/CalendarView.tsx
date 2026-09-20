@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 
 interface Event {
   id: string | number;
@@ -12,6 +12,10 @@ interface Event {
 interface Props {
   events: Event[];
   onEventClick?: (eventId: string | number) => void;
+  // Meldet den aktuell sichtbaren Zeitraum (inkl. angrenzender Tage im
+  // Monatsraster) beim Anzeigen und bei jedem Blaettern/Moduswechsel, damit
+  // der Aufrufer genau dafuer die Ereignisse nachladen kann.
+  onVisibleRangeChange?: (range: { start: Date; end: Date }) => void;
 }
 
 function startOfMonth(date: Date) {
@@ -27,7 +31,7 @@ function addDays(date: Date, days: number) {
   return d;
 }
 
-export default function CalendarView({ events, onEventClick }: Props) {
+export default function CalendarView({ events, onEventClick, onVisibleRangeChange }: Props) {
   const [mode, setMode] = useState<'month' | 'week'>('month');
   const [cursor, setCursor] = useState<Date>(new Date());
 
@@ -54,6 +58,22 @@ export default function CalendarView({ events, onEventClick }: Props) {
     for (let i = 0; i < 7; i++) days.push(addDays(weekStart, i));
     return days;
   }, [cursor]);
+
+  const onVisibleRangeChangeRef = useRef(onVisibleRangeChange);
+  useEffect(() => {
+    onVisibleRangeChangeRef.current = onVisibleRangeChange;
+  }, [onVisibleRangeChange]);
+
+  const visibleDays = mode === 'month' ? monthRange : weekRange;
+  const visibleStartMs = visibleDays[0].getTime();
+  const visibleEndMs = visibleDays[visibleDays.length - 1].getTime();
+  useEffect(() => {
+    const start = new Date(visibleStartMs);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(visibleEndMs);
+    end.setHours(23, 59, 59, 999);
+    onVisibleRangeChangeRef.current?.({ start, end });
+  }, [visibleStartMs, visibleEndMs]);
 
   const eventsByDay = useMemo(() => {
     const map = new Map<string, Event[]>();

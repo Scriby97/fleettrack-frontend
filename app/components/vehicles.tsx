@@ -10,6 +10,7 @@ import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { VehicleTypeIcon } from './VehicleTypeIcon';
 import VehicleDetail from './VehicleDetail';
 import ExportFleetCsvModal from './ExportFleetCsvModal';
+import { defaultRangeStart, defaultRangeEnd } from '@/lib/dates/rangeDefaults';
 
 export interface Vehicle {
   id: string;
@@ -111,19 +112,6 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onSelect }) => {
     </button>
   );
 };
-
-// Formatiert ein Date fuer <input type="datetime-local"> (lokale Zeit, kein "Z"/Offset)
-const toDatetimeLocalValue = (date: Date): string => {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
-
-const defaultRangeStart = (): string => {
-  const now = new Date();
-  return toDatetimeLocalValue(new Date(now.getFullYear() - 1, now.getMonth(), now.getDate(), now.getHours(), now.getMinutes()));
-};
-
-const defaultRangeEnd = (): string => toDatetimeLocalValue(new Date());
 
 const RANGE_STORAGE_KEY = 'fleettrack:vehicleRange';
 

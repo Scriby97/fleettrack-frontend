@@ -106,7 +106,15 @@
     "vehicleField": "Vehicle",
     "startEndKmLabel": "Kilometres:",
     "startKmLabel": "Start odometer",
-    "endKmLabel": "End odometer"
+    "endKmLabel": "End odometer",
+    "filterSectionTitle": "Usage period",
+    "filterStartLabel": "Start",
+    "filterEndLabel": "End",
+    "invalidRangeError": "The start date must be before the end date.",
+    "usagesShownCountMore": "Showing the latest {count} usages",
+    "loadingMore": "Loading more usages…",
+    "loadMore": "Load more",
+    "clearFilter": "Reset"
   },
   "fleetOverview": {
     "title": "Fleet overview",

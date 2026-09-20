@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type FC, type FormEvent } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, type FC, type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDateLocale } from '@/lib/i18n/formatDate';
 import CalendarView from './CalendarView';
@@ -9,7 +9,8 @@ import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
 import { throwApiError } from '@/lib/api/ApiError';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
-import { getUsagesWithVehicles } from '@/lib/api/usages';
+import { getUsagesWithVehicles, type UsageWithVehicle } from '@/lib/api/usages';
+import { getOrganizationVehicles } from '@/lib/api/vehicles';
 import { useToast } from '@/lib/hooks/useToast';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { ToastContainer } from './Toast';
@@ -157,6 +158,34 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, 
 );
 };
 
+// Listenansicht: so viele Nutzungen pro Seite, weitere laden beim Scrollen nach.
+const PAGE_SIZE = 10;
+
+function mapUsageToReport(u: UsageWithVehicle, unknownVehicleLabel: string): Report {
+  return {
+    id: u.id,
+    vehicleId: u.vehicleId,
+    vehicle: u.vehicle?.name ?? String(u.vehicleId ?? unknownVehicleLabel),
+    vehicleType: u.vehicle?.vehicleType,
+    startOperatingHours: typeof u.startOperatingHours === 'number' ? u.startOperatingHours : Number(u.startOperatingHours ?? 0),
+    endOperatingHours: typeof u.endOperatingHours === 'number' ? u.endOperatingHours : Number(u.endOperatingHours ?? 0),
+    fuel: typeof u.fuelLitersRefilled === 'number' ? u.fuelLitersRefilled : Number(u.fuelLitersRefilled ?? 0),
+    usageDate: u.usageDate,
+    creatorId: u.creatorId,
+    creatorFirstName: u.creator?.firstName,
+    creatorLastName: u.creator?.lastName,
+    creatorEmail: u.creator?.email,
+  };
+}
+
+function mergeVehicles(prev: Vehicle[], usages: UsageWithVehicle[]): Vehicle[] {
+  const byId = new Map(prev.map((v) => [v.id, v]));
+  usages.forEach((u) => {
+    if (u.vehicle && u.vehicleId) byId.set(u.vehicleId, u.vehicle);
+  });
+  return Array.from(byId.values());
+}
+
 const UebersichtEintraege: FC = () => {
   const { isAdmin, userProfile } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId, canManageSelectedOrganization } = useOrganization();
@@ -168,10 +197,29 @@ const UebersichtEintraege: FC = () => {
   const canEditReport = (report: Report) =>
     canManageSelectedOrganization || report.creatorId === userProfile?.id;
   const { toasts, showToast, removeToast } = useToast();
+  // Listenansicht: seitenweise geladen (neueste zuerst), nextCursor = null -> alles geladen.
   const [reports, setReports] = useState<Report[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(false);
+  // Kalenderansicht: laedt genau den sichtbaren Monat/die sichtbare Woche.
+  const [calendarReports, setCalendarReports] = useState<Report[]>([]);
+  const [calendarRange, setCalendarRange] = useState<{ start: string; end: string } | null>(null);
+  // Fahrzeuge der Organisation (fuer das Dropdown im Bearbeiten-Dialog, auch ohne
+  // Nutzungen) und die aus den geladenen Nutzungen stammenden - Letztere sichern
+  // ab, dass auch ausrangierte Fahrzeuge bestehender Eintraege aufgeloest werden.
+  const [orgVehicles, setOrgVehicles] = useState<Vehicle[]>([]);
+  const [usageVehicles, setUsageVehicles] = useState<Vehicle[]>([]);
+  const vehicles = useMemo(() => {
+    const byId = new Map<string, Vehicle>();
+    [...usageVehicles, ...orgVehicles].forEach((v) => byId.set(v.id, v));
+    return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [orgVehicles, usageVehicles]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const listRequestRef = useRef(0);
+  const loadingMoreRef = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [editingReport, setEditingReport] = useState<Report | null>(null);
   const [editForm, setEditForm] = useState({
@@ -184,7 +232,27 @@ const UebersichtEintraege: FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | string | null>(null);
 
-  const calendarEvents = reports
+  // Optionaler Zeitraum-Filter fuer die Liste (nur aktiv, wenn Start UND Ende
+  // gesetzt sind) - ohne Filter werden einfach die neuesten Nutzungen seitenweise geladen.
+  const [range, setRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
+  const rangeActive = Boolean(range.start) && Boolean(range.end);
+  const rangeInvalid = rangeActive && new Date(range.start) > new Date(range.end);
+  const rangeOptions = useCallback(
+    () =>
+      rangeActive
+        ? {
+            startDate: new Date(range.start).toISOString(),
+            endDate: new Date(range.end).toISOString(),
+          }
+        : {},
+    [rangeActive, range.start, range.end],
+  );
+
+  const handleVisibleRangeChange = useCallback(({ start, end }: { start: Date; end: Date }) => {
+    setCalendarRange({ start: start.toISOString(), end: end.toISOString() });
+  }, []);
+
+  const calendarEvents = calendarReports
     .filter((r) => r.usageDate)
     .map((r) => {
       const diff = r.endOperatingHours - r.startOperatingHours;
@@ -217,7 +285,7 @@ const UebersichtEintraege: FC = () => {
   };
 
   const handleEventClick = (eventId: string | number) => {
-    const report = reports.find(r => String(r.id) === String(eventId));
+    const report = calendarReports.find(r => String(r.id) === String(eventId));
     if (report) {
       handleEdit(report);
     }
@@ -264,26 +332,25 @@ const UebersichtEintraege: FC = () => {
       const vehicleMap = new Map<string, Vehicle>();
       vehicles.forEach((v) => vehicleMap.set(v.id, v));
 
-      setReports((prev) =>
-        prev.map((r) =>
-          r.id === editingReport.id
-            ? {
-                id: updatedUsage.id,
-                vehicleId: updatedUsage.vehicleId,
-                vehicle: vehicleMap.get(String(updatedUsage.vehicleId))?.name ?? t('unknownVehicle'),
-                vehicleType: vehicleMap.get(String(updatedUsage.vehicleId))?.vehicleType ?? r.vehicleType,
-                startOperatingHours: updatedUsage.startOperatingHours,
-                endOperatingHours: updatedUsage.endOperatingHours,
-                fuel: updatedUsage.fuelLitersRefilled,
-                usageDate: updatedUsage.usageDate,
-                creatorId: updatedUsage.creatorId ?? r.creatorId,
-                creatorFirstName: updatedUsage.creator?.firstName ?? r.creatorFirstName,
-                creatorLastName: updatedUsage.creator?.lastName ?? r.creatorLastName,
-                creatorEmail: updatedUsage.creator?.email ?? r.creatorEmail,
-              }
-            : r
-        )
-      );
+      const applyUpdate = (r: Report): Report =>
+        r.id === editingReport.id
+          ? {
+              id: updatedUsage.id,
+              vehicleId: updatedUsage.vehicleId,
+              vehicle: vehicleMap.get(String(updatedUsage.vehicleId))?.name ?? t('unknownVehicle'),
+              vehicleType: vehicleMap.get(String(updatedUsage.vehicleId))?.vehicleType ?? r.vehicleType,
+              startOperatingHours: updatedUsage.startOperatingHours,
+              endOperatingHours: updatedUsage.endOperatingHours,
+              fuel: updatedUsage.fuelLitersRefilled,
+              usageDate: updatedUsage.usageDate,
+              creatorId: updatedUsage.creatorId ?? r.creatorId,
+              creatorFirstName: updatedUsage.creator?.firstName ?? r.creatorFirstName,
+              creatorLastName: updatedUsage.creator?.lastName ?? r.creatorLastName,
+              creatorEmail: updatedUsage.creator?.email ?? r.creatorEmail,
+            }
+          : r;
+      setReports((prev) => prev.map(applyUpdate));
+      setCalendarReports((prev) => prev.map(applyUpdate));
 
       handleCancelEdit();
       showToast(t('updateSuccess'), 'success');
@@ -307,6 +374,7 @@ const UebersichtEintraege: FC = () => {
       }
 
       setReports((prev) => prev.filter((report) => report.id !== id));
+      setCalendarReports((prev) => prev.filter((report) => report.id !== id));
       showToast(t('deleteSuccess'), 'success');
     } catch (err) {
       console.error('Fehler beim Löschen der Nutzung:', err);
@@ -314,66 +382,168 @@ const UebersichtEintraege: FC = () => {
     }
   };
 
-  // Fetch usages data when organization is selected
+  // Listenansicht: erste Seite (neueste zuerst) laden, wenn Organisation oder
+  // Zeitraum-Filter wechseln. Weitere Seiten kommen ueber loadMore beim Scrollen.
   useEffect(() => {
-    const apiBaseUrl = getApiBaseUrlOrNull();
-    if (!apiBaseUrl) return;
-
-    // Wait for organization to be selected
+    if (view !== 'list') return;
+    if (!getApiBaseUrlOrNull()) return;
     if (!selectedOrgId) return;
+    // Ungueltiger Zeitraum (Start nach Ende) - nicht fetchen, Fehlermeldung
+    // steht bereits bei den Eingabefeldern.
+    if (rangeInvalid) return;
 
+    const requestRef = listRequestRef;
+    const requestId = ++requestRef.current;
     const controller = new AbortController();
-    const fetchData = async () => {
+    loadingMoreRef.current = false;
+
+    const fetchFirstPage = async () => {
       setIsLoading(true);
+      setIsLoadingMore(false);
+      setLoadMoreError(false);
       setError(null);
 
       try {
-        // Single optimized request to fetch usages with vehicle data
-        const usagesWithVehicles = await getUsagesWithVehicles(selectedOrgId || undefined);
-
-        // Extract unique vehicles from the response
-        const vehicleMap = new Map<string, Vehicle>();
-        usagesWithVehicles.forEach((u) => {
-          if (u.vehicle && u.vehicleId) {
-            vehicleMap.set(u.vehicleId, u.vehicle);
-          }
+        const page = await getUsagesWithVehicles(selectedOrgId, {
+          ...rangeOptions(),
+          limit: PAGE_SIZE,
+          signal: controller.signal,
         });
+        if (requestId !== listRequestRef.current) return;
 
-        // Map to Report format
-        const mapped: Report[] = usagesWithVehicles.map((u) => ({
-          id: u.id,
-          vehicleId: u.vehicleId,
-          vehicle: u.vehicle?.name ?? String(u.vehicleId ?? t('unknownVehicle')),
-          vehicleType: u.vehicle?.vehicleType,
-          startOperatingHours: typeof u.startOperatingHours === 'number' ? u.startOperatingHours : Number(u.startOperatingHours ?? 0),
-          endOperatingHours: typeof u.endOperatingHours === 'number' ? u.endOperatingHours : Number(u.endOperatingHours ?? 0),
-          fuel: typeof u.fuelLitersRefilled === 'number' ? u.fuelLitersRefilled : Number(u.fuelLitersRefilled ?? 0),
-          usageDate: u.usageDate,
-          creatorId: u.creatorId,
-          creatorFirstName: u.creator?.firstName,
-          creatorLastName: u.creator?.lastName,
-          creatorEmail: u.creator?.email,
-        }));
-
-        setReports(mapped);
-        setVehicles(Array.from(vehicleMap.values()));
-        setError(null);
+        setReports(page.usages.map((u) => mapUsageToReport(u, t('unknownVehicle'))));
+        setUsageVehicles(mergeVehicles([], page.usages));
+        setNextCursor(page.nextCursor);
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
+        if (requestId !== listRequestRef.current) return;
         console.error('Fehler beim Laden der Nutzungen:', err);
+        setReports([]);
+        setNextCursor(null);
         setError(t('loadError'));
       } finally {
-        setIsLoading(false);
+        if (requestId === listRequestRef.current) setIsLoading(false);
       }
     };
 
-    fetchData();
+    fetchFirstPage();
 
     return () => {
+      // Antworten dieser (jetzt veralteten) Abfrage verwerfen, auch vom Nachladen.
+      requestRef.current++;
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, selectedOrgId, range.start, range.end, rangeInvalid]);
+
+  const loadMore = useCallback(async () => {
+    if (!nextCursor || !selectedOrgId || loadingMoreRef.current) return;
+    loadingMoreRef.current = true;
+    const requestId = listRequestRef.current;
+    setIsLoadingMore(true);
+    setLoadMoreError(false);
+
+    try {
+      const page = await getUsagesWithVehicles(selectedOrgId, {
+        ...rangeOptions(),
+        limit: PAGE_SIZE,
+        cursor: nextCursor,
+      });
+      // Organisation/Filter wurde inzwischen gewechselt - Antwort verwerfen.
+      if (requestId !== listRequestRef.current) return;
+
+      setReports((prev) => {
+        const known = new Set(prev.map((r) => String(r.id)));
+        const fresh = page.usages
+          .filter((u) => !known.has(String(u.id)))
+          .map((u) => mapUsageToReport(u, t('unknownVehicle')));
+        return [...prev, ...fresh];
+      });
+      setUsageVehicles((prev) => mergeVehicles(prev, page.usages));
+      setNextCursor(page.nextCursor);
+    } catch (err) {
+      if (requestId !== listRequestRef.current) return;
+      console.error('Fehler beim Nachladen der Nutzungen:', err);
+      setLoadMoreError(true);
+    } finally {
+      if (requestId === listRequestRef.current) {
+        loadingMoreRef.current = false;
+        setIsLoadingMore(false);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nextCursor, selectedOrgId, rangeOptions]);
+
+  // Endlos-Scrollen: sobald das Ende der Liste (leicht vorher) sichtbar wird,
+  // die naechste Seite laden. Bei einem Fehler pausiert das Nachladen bis zum
+  // manuellen Retry-Button, damit nicht endlos neu versucht wird.
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (view !== 'list' || !node || !nextCursor || isLoading || isLoadingMore || loadMoreError) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void loadMore();
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [view, nextCursor, isLoading, isLoadingMore, loadMoreError, loadMore]);
+
+  // Alle Fahrzeuge der Organisation fuer den Bearbeiten-Dialog laden.
+  useEffect(() => {
+    if (!getApiBaseUrlOrNull() || !selectedOrgId) return;
+    const controller = new AbortController();
+    getOrganizationVehicles(selectedOrgId, { signal: controller.signal })
+      .then(setOrgVehicles)
+      .catch((err) => {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        console.error('Fehler beim Laden der Fahrzeuge:', err);
+      });
+    return () => controller.abort();
   }, [selectedOrgId]);
+
+  // Kalenderansicht: genau den sichtbaren Monat/die sichtbare Woche laden
+  // (ohne limit - der Zeitraum ist von sich aus klein).
+  useEffect(() => {
+    if (view !== 'calendar' || !calendarRange) return;
+    if (!getApiBaseUrlOrNull()) return;
+    if (!selectedOrgId) return;
+
+    const controller = new AbortController();
+    let cancelled = false;
+
+    const fetchVisibleRange = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const page = await getUsagesWithVehicles(selectedOrgId, {
+          startDate: calendarRange.start,
+          endDate: calendarRange.end,
+          signal: controller.signal,
+        });
+        if (cancelled) return;
+        setCalendarReports(page.usages.map((u) => mapUsageToReport(u, t('unknownVehicle'))));
+        setUsageVehicles((prev) => mergeVehicles(prev, page.usages));
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        if (cancelled) return;
+        console.error('Fehler beim Laden der Nutzungen:', err);
+        setError(t('loadError'));
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    fetchVisibleRange();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, selectedOrgId, calendarRange]);
 
   return (
     <section className="space-y-4">
@@ -402,15 +572,68 @@ const UebersichtEintraege: FC = () => {
           )}
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              {isLoading ? t('loadingUsages') : t('usagesFoundCount', { count: reports.length })}
+              {isLoading
+                ? t('loadingUsages')
+                : view === 'calendar'
+                  ? t('usagesFoundCount', { count: calendarReports.length })
+                  : nextCursor
+                    ? t('usagesShownCountMore', { count: reports.length })
+                    : t('usagesFoundCount', { count: reports.length })}
             </p>
             <div className="flex gap-2">
               <button onClick={() => setView('list')} className={`px-2 sm:px-3 py-1 text-sm rounded ${view === 'list' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}`}>{t('listView')}</button>
               <button onClick={() => setView('calendar')} className={`px-2 sm:px-3 py-1 text-sm rounded ${view === 'calendar' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}`}>{t('calendarView')}</button>
             </div>
           </div>
+          {view === 'list' && (
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-3">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">
+                {t('filterSectionTitle')}
+              </p>
+              {(range.start || range.end) && (
+                <button
+                  type="button"
+                  onClick={() => setRange({ start: '', end: '' })}
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  {t('clearFilter')}
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+              <div className="flex-1 space-y-1">
+                <label htmlFor="usagesRangeStart" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  {t('filterStartLabel')}
+                </label>
+                <input
+                  id="usagesRangeStart"
+                  type="datetime-local"
+                  value={range.start}
+                  onChange={(e) => setRange({ ...range, start: e.target.value })}
+                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex-1 space-y-1">
+                <label htmlFor="usagesRangeEnd" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  {t('filterEndLabel')}
+                </label>
+                <input
+                  id="usagesRangeEnd"
+                  type="datetime-local"
+                  value={range.end}
+                  onChange={(e) => setRange({ ...range, end: e.target.value })}
+                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            {rangeInvalid && (
+              <p className="mt-2 text-xs text-red-600 dark:text-red-400">{t('invalidRangeError')}</p>
+            )}
+          </div>
+          )}
         </div>
-        {error && reports.length === 0 && (
+        {error && (view === 'calendar' ? calendarReports : reports).length === 0 && (
           <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 mt-3">
             <p className="text-sm text-red-900 dark:text-red-100">{error}</p>
           </div>
@@ -577,25 +800,51 @@ const UebersichtEintraege: FC = () => {
         );
       })()}
 
-      {isLoading ? (
+      {view === 'calendar' ? (
+        // Immer gemountet (auch waehrend des Ladens), sonst ginge beim Blaettern
+        // der gewaehlte Monat verloren.
+        <CalendarView
+          events={calendarEvents}
+          onEventClick={handleEventClick}
+          onVisibleRangeChange={handleVisibleRangeChange}
+        />
+      ) : isLoading && !rangeInvalid ? (
         <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
           <p className="text-zinc-600 dark:text-zinc-400">{t('loadingUsagesEllipsis')}</p>
         </div>
-      ) : view === 'calendar' ? (
-        <CalendarView events={calendarEvents} onEventClick={handleEventClick} />
       ) : reports.length > 0 ? (
-        <div className="grid gap-3">
-          {reports.map((report) => (
-            <ReportItem
-              key={report.id}
-              report={report}
-              onEdit={handleEdit}
-              onDelete={(id) => setConfirmDeleteId(id)}
-              canManage={canManageSelectedOrganization}
-              canEdit={canEditReport(report)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-3">
+            {reports.map((report) => (
+              <ReportItem
+                key={report.id}
+                report={report}
+                onEdit={handleEdit}
+                onDelete={(id) => setConfirmDeleteId(id)}
+                canManage={canManageSelectedOrganization}
+                canEdit={canEditReport(report)}
+              />
+            ))}
+          </div>
+          {nextCursor && (
+            <div ref={sentinelRef} className="py-4 text-center">
+              {loadMoreError ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-red-600 dark:text-red-400">{t('loadError')}</p>
+                  <button
+                    type="button"
+                    onClick={() => void loadMore()}
+                    className="px-4 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+                  >
+                    {t('loadMore')}
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">{t('loadingMore')}</p>
+              )}
+            </div>
+          )}
+        </>
       ) : (
         <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-8 text-center">
           <p className="text-zinc-600 dark:text-zinc-400">{t('noUsagesFound')}</p>

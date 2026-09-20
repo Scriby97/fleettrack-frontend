@@ -36,29 +36,58 @@ export interface UsageWithVehicle extends Usage {
 
 export interface GetUsagesWithVehiclesResponse {
   usages: UsageWithVehicle[];
+  // Cursor fuer die naechste Seite; null = keine weiteren Nutzungen.
+  nextCursor: string | null;
+}
+
+export interface GetUsagesWithVehiclesOptions {
+  // Optional, nur zusammen: begrenzt auf Nutzungen in diesem Zeitraum (ISO).
+  startDate?: string;
+  endDate?: string;
+  // Seitengroesse (neueste zuerst). Ohne limit kommen alle Treffer auf einmal -
+  // nur sinnvoll bei einem eng begrenzten Zeitraum (Kalender: Monat/Woche).
+  limit?: number;
+  // nextCursor der vorherigen Seite.
+  cursor?: string;
+  signal?: AbortSignal;
 }
 
 /**
- * Fetch usages with vehicle data included in a single request.
- * This optimizes the previous approach of making two separate requests.
- * 
+ * Fetch usages with vehicle data included in a single request, newest first.
+ * With `limit` the result is a page; pass the returned `nextCursor` as `cursor`
+ * to load the next one.
+ *
  * @param organizationId - Optional organization ID for filtering (used by super admins)
- * @returns Promise with usages including vehicle information
  */
 export async function getUsagesWithVehicles(
-  organizationId?: string
-): Promise<UsageWithVehicle[]> {
+  organizationId?: string,
+  options: GetUsagesWithVehiclesOptions = {},
+): Promise<GetUsagesWithVehiclesResponse> {
   const url = new URL(buildApiUrl('/usages/with-vehicles'));
   if (organizationId) {
     url.searchParams.set('organizationId', organizationId);
   }
+  if (options.startDate && options.endDate) {
+    url.searchParams.set('startDate', options.startDate);
+    url.searchParams.set('endDate', options.endDate);
+  }
+  if (options.limit) {
+    url.searchParams.set('limit', String(options.limit));
+  }
+  if (options.cursor) {
+    url.searchParams.set('cursor', options.cursor);
+  }
 
-  const response = await authenticatedFetch(url.toString());
+  const response = await authenticatedFetch(url.toString(), {
+    signal: options.signal,
+    // Nachladen beim Scrollen soll nicht den globalen Ladeindikator aufblitzen lassen.
+    skipLoadingIndicator: Boolean(options.cursor),
+  });
 
   if (!response.ok) {
     await throwApiError(response, `HTTP ${response.status}`);
   }
 
   const data: GetUsagesWithVehiclesResponse = await response.json();
-  return data.usages;
+  return { usages: data.usages, nextCursor: data.nextCursor ?? null };
 }

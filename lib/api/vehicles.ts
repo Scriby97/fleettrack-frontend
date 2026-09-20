@@ -56,3 +56,32 @@ export async function getVehicleUsageHistory(
 
   return response.json()
 }
+
+export interface OrganizationVehicle {
+  id: string
+  name: string
+  plate?: string
+  vehicleType?: string
+}
+
+/**
+ * All active (not retired/archived) vehicles of an organization - independent
+ * of whether they have any usages yet.
+ */
+export async function getOrganizationVehicles(
+  organizationId: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<OrganizationVehicle[]> {
+  const url = new URL(buildApiUrl('/vehicles'))
+  url.searchParams.set('organizationId', organizationId)
+
+  const res = await authenticatedFetch(url.toString(), { signal: options.signal })
+  if (!res.ok) {
+    await throwApiError(res, `HTTP ${res.status}`)
+  }
+  const data: unknown = await res.json()
+  if (!Array.isArray(data)) {
+    throw new Error('Unexpected response format')
+  }
+  return data as OrganizationVehicle[]
+}

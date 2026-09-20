@@ -106,7 +106,15 @@
     "vehicleField": "Veicolo",
     "startEndKmLabel": "Chilometri:",
     "startKmLabel": "Contachilometri iniziale",
-    "endKmLabel": "Contachilometri finale"
+    "endKmLabel": "Contachilometri finale",
+    "filterSectionTitle": "Periodo di utilizzo",
+    "filterStartLabel": "Inizio",
+    "filterEndLabel": "Fine",
+    "invalidRangeError": "La data di inizio deve essere precedente alla data di fine.",
+    "usagesShownCountMore": "Ultimi {count} utilizzi mostrati",
+    "loadingMore": "Caricamento di altri utilizzi…",
+    "loadMore": "Carica altro",
+    "clearFilter": "Reimposta"
   },
   "fleetOverview": {
     "title": "Panoramica flotta",
