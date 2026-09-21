@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithIntl } from '@/test/renderWithIntl'
 
@@ -97,8 +97,10 @@ class IntersectionObserverStub {
 const activeObservers = () => observers.filter((o) => !o.disconnected)
 
 async function reachEndOfList() {
+  // Der Beobachter wird in einem Effekt angelegt, der kurz nach dem Rendern der
+  // Liste laeuft - darauf warten, statt sich auf das Timing zu verlassen.
+  await waitFor(() => expect(activeObservers().length).toBeGreaterThan(0))
   const active = activeObservers()
-  expect(active.length).toBeGreaterThan(0)
   await act(async () => {
     active.at(-1)!.callback(
       [{ isIntersecting: true } as IntersectionObserverEntry],
@@ -128,6 +130,9 @@ describe('Übersicht Nutzungen', () => {
   })
 
   afterEach(() => {
+    // Erst abbauen, dann die Attrappen entfernen - sonst kann ein noch laufender
+    // Effekt ein IntersectionObserver-Objekt anlegen, das es nicht mehr gibt.
+    cleanup()
     vi.useRealTimers()
     vi.unstubAllGlobals()
   })

@@ -343,6 +343,11 @@
     "saveSuccess": "Reminder saved",
     "saveErrorGeneric": "Error saving the reminder"
   },
+  "subscriptionTiers": {
+    "lieutenant": "Lieutenant",
+    "captain": "Captain",
+    "general": "General"
+  },
   "settingsBilling": {
     "title": "Subscription",
     "subtitle": "Manage the plan of {name}.",

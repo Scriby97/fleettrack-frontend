@@ -31,6 +31,7 @@ export default function SettingsBillingPage() {
   const { organizations, selectedOrgId, selectedOrganizationRole, isLoading: orgLoading } = useOrganization()
   const t = useTranslations('settingsBilling')
   const tSettings = useTranslations('settings')
+  const tTier = useTranslations('subscriptionTiers')
   const getApiErrorMessage = useApiErrorMessage()
   const dateLocale = useDateLocale()
 
@@ -46,9 +47,9 @@ export default function SettingsBillingPage() {
   const [portalLoading, setPortalLoading] = useState(false)
 
   const plans: PlanDefinition[] = [
-    { id: 'lieutenant', label: 'Lieutenant', price: t('freeLabel'), maxVehicles: '2', maxMembers: '5', paid: false },
-    { id: 'captain', label: 'Captain', price: `CHF 49.- ${t('perMonthSuffix')}`, maxVehicles: '20', maxMembers: '50', paid: true },
-    { id: 'general', label: 'General', price: `CHF 99.- ${t('perMonthSuffix')}`, maxVehicles: t('unlimitedLabel'), maxMembers: t('unlimitedLabel'), paid: true },
+    { id: 'lieutenant', label: tTier('lieutenant'), price: t('freeLabel'), maxVehicles: '2', maxMembers: '5', paid: false },
+    { id: 'captain', label: tTier('captain'), price: `CHF 49.- ${t('perMonthSuffix')}`, maxVehicles: '20', maxMembers: '50', paid: true },
+    { id: 'general', label: tTier('general'), price: `CHF 99.- ${t('perMonthSuffix')}`, maxVehicles: t('unlimitedLabel'), maxMembers: t('unlimitedLabel'), paid: true },
   ]
 
   useEffect(() => {
@@ -208,8 +209,8 @@ export default function SettingsBillingPage() {
                 {t('currentPlanTitle')}
               </h2>
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="text-xl font-bold text-zinc-900 dark:text-zinc-50 capitalize">
-                  {subscription.tier}
+                <span className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+                  {tTier(subscription.tier)}
                 </span>
                 <span className="text-sm text-zinc-600 dark:text-zinc-400">{statusLabel}</span>
               </div>

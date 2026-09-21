@@ -20,6 +20,7 @@ export default function AdminOrganizationsPage() {
   const t = useTranslations('adminOrganizations')
   const tSettings = useTranslations('settings')
   const tBilling = useTranslations('settingsBilling')
+  const tTier = useTranslations('subscriptionTiers')
   const dateLocale = useDateLocale()
   const getApiErrorMessage = useApiErrorMessage()
 
@@ -184,8 +185,8 @@ export default function AdminOrganizationsPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-400 capitalize">
-                        {org.subscription?.tier ?? '-'}
+                      <td className="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-400">
+                        {org.subscription ? tTier(org.subscription.tier) : '-'}
                       </td>
                       <td className="px-6 py-4 text-sm">
                         {org.subscription ? (
@@ -258,7 +259,7 @@ export default function AdminOrganizationsPage() {
                     <p className="break-all"><span className="font-medium">{t('contactEmailHeader')}:</span> {org.contactEmail || '-'}</p>
                     <p>
                       <span className="font-medium">{t('tierHeader')}:</span>{' '}
-                      <span className="capitalize">{org.subscription?.tier ?? '-'}</span>
+                      <span>{org.subscription ? tTier(org.subscription.tier) : '-'}</span>
                       {org.subscription && (
                         <span className={`ml-2 px-2 py-0.5 text-xs font-semibold rounded-full ${subscriptionStatusClasses(org.subscription.status)}`}>
                           {subscriptionStatusLabel(org.subscription.status)}

@@ -35,12 +35,13 @@ export default function CreateOrganizationOnboardingPage() {
   const wasCanceled = searchParams.get('canceled') === '1'
   const backHref = hasOrganization ? '/settings' : '/onboarding'
   const t = useTranslations('onboardingCreateOrg')
+  const tTier = useTranslations('subscriptionTiers')
   const getApiErrorMessage = useApiErrorMessage()
 
   const plans: PlanDefinition[] = useMemo(() => [
     {
       id: 'lieutenant',
-      label: 'Lieutenant',
+      label: tTier('lieutenant'),
       price: t('freeLabel'),
       maxVehicles: '2',
       maxMembers: '5',
@@ -48,7 +49,7 @@ export default function CreateOrganizationOnboardingPage() {
     },
     {
       id: 'captain',
-      label: 'Captain',
+      label: tTier('captain'),
       price: `CHF 49.- ${t('perMonthSuffix')}`,
       maxVehicles: '20',
       maxMembers: '50',
@@ -57,13 +58,13 @@ export default function CreateOrganizationOnboardingPage() {
     },
     {
       id: 'general',
-      label: 'General',
+      label: tTier('general'),
       price: `CHF 99.- ${t('perMonthSuffix')}`,
       maxVehicles: t('unlimitedLabel'),
       maxMembers: t('unlimitedLabel'),
       paid: true,
     },
-  ], [t])
+  ], [t, tTier])
 
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionTier>('lieutenant')
   const [organizationName, setOrganizationName] = useState('')

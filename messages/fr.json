@@ -343,6 +343,11 @@
     "saveSuccess": "Rappel enregistré",
     "saveErrorGeneric": "Erreur lors de l'enregistrement du rappel"
   },
+  "subscriptionTiers": {
+    "lieutenant": "Lieutenant",
+    "captain": "Capitaine",
+    "general": "Général"
+  },
   "settingsBilling": {
     "title": "Abonnement",
     "subtitle": "Gère le forfait de {name}.",
@@ -402,7 +407,7 @@
     "subtitle": "Ton compte est actif mais pas encore rattaché à une organisation. Choisis la prochaine étape.",
     "option1Label": "Option 1",
     "createOrgTitle": "Créer une nouvelle organisation",
-    "createOrgDescription": "Choisis Lieutenant (gratuit), Captain ou General et configure ton organisation.",
+    "createOrgDescription": "Choisis Lieutenant (gratuit), Capitaine ou Général et configure ton organisation.",
     "createOrgCta": "Créer l'organisation",
     "option2Label": "Option 2",
     "invitesTitle": "Invitations à une organisation",

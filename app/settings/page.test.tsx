@@ -41,7 +41,7 @@ describe('Einstellungen', () => {
 
       renderWithIntl(<SettingsPage />)
 
-      expect(screen.getByText('User Management')).toBeInTheDocument()
+      expect(screen.getByText('Benutzerverwaltung')).toBeInTheDocument()
       expect(hasLink('/admin/users')).toBe(true)
     })
 

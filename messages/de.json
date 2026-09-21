@@ -268,7 +268,7 @@
     "appearanceDescription": "Hell, dunkel, Systemstandard oder Sprache wählen.",
     "remindersTitle": "Erinnerung",
     "remindersDescription": "Tägliche Benachrichtigung zum Erfassen deiner Nutzung einrichten.",
-    "userManagementTitle": "User Management",
+    "userManagementTitle": "Benutzerverwaltung",
     "userManagementDescription": "Einladungen verwalten und Mitgliederrollen ändern.",
     "allUsersTitle": "Alle Benutzer",
     "allUsersDescription": "Benutzer und Einladungen über alle Organisationen hinweg verwalten.",
@@ -343,6 +343,11 @@
     "saveSuccess": "Erinnerung gespeichert",
     "saveErrorGeneric": "Fehler beim Speichern der Erinnerung"
   },
+  "subscriptionTiers": {
+    "lieutenant": "Leutnant",
+    "captain": "Hauptmann",
+    "general": "General"
+  },
   "settingsBilling": {
     "title": "Abonnement",
     "subtitle": "Verwalte den Tarif von {name}.",
@@ -367,12 +372,12 @@
     "switchButton": "Wechseln zu {plan}",
     "switchError": "Fehler beim Ändern des Abonnements",
     "switchSuccessNotice": "Tarif erfolgreich gewechselt.",
-    "cancelSuccessNotice": "Kündigung eingereicht. Dein aktueller Tarif bleibt bis zum Ende der laufenden Abrechnungsperiode aktiv, danach fällt die Organisation automatisch auf Lieutenant (kostenlos) zurück.",
-    "cancelSuccessOverLimitNotice": "Kündigung eingereicht. Dein aktueller Tarif bleibt bis zum Ende der laufenden Abrechnungsperiode aktiv. Seid ihr zu diesem Zeitpunkt weiterhin über dem Lieutenant-Limit, werden alle Nutzer automatisch von der Organisation getrennt (eure Daten bleiben dabei vollständig erhalten).",
+    "cancelSuccessNotice": "Kündigung eingereicht. Dein aktueller Tarif bleibt bis zum Ende der laufenden Abrechnungsperiode aktiv, danach fällt die Organisation automatisch auf Leutnant (kostenlos) zurück.",
+    "cancelSuccessOverLimitNotice": "Kündigung eingereicht. Dein aktueller Tarif bleibt bis zum Ende der laufenden Abrechnungsperiode aktiv. Seid ihr zu diesem Zeitpunkt weiterhin über dem Leutnant-Limit, werden alle Nutzer automatisch von der Organisation getrennt (eure Daten bleiben dabei vollständig erhalten).",
     "cancelConfirmTitle": "Abonnement kündigen?",
-    "cancelConfirmMessage": "Dein Zugriff bleibt bis zum Ende der aktuellen Abrechnungsperiode bestehen. Danach fällt die Organisation automatisch auf den kostenlosen Lieutenant-Tarif zurück (max. 2 Fahrzeuge, 5 Mitarbeiter).",
+    "cancelConfirmMessage": "Dein Zugriff bleibt bis zum Ende der aktuellen Abrechnungsperiode bestehen. Danach fällt die Organisation automatisch auf den kostenlosen Leutnant-Tarif zurück (max. 2 Fahrzeuge, 5 Mitarbeiter).",
     "cancelConfirmOverLimitTitle": "Achtung: Alle Nutzer verlieren den Zugriff",
-    "cancelConfirmOverLimitMessage": "Eure Organisation nutzt aktuell mehr Fahrzeuge oder Mitarbeiter, als der kostenlose Lieutenant-Tarif erlaubt (max. 2 Fahrzeuge, 5 Mitarbeiter). Wenn ihr kündigt und bis zum Ende der Abrechnungsperiode weiterhin über dem Limit liegt, werden ALLE Nutzer (inklusive dir als Owner) automatisch von der Organisation getrennt - niemand kann dann mehr darauf zugreifen. Eure Daten (Fahrzeuge, Nutzungen usw.) werden dabei NICHT gelöscht, nur der Zugriff geht verloren, bis ihr erneut einen passenden Tarif abschliesst.",
+    "cancelConfirmOverLimitMessage": "Eure Organisation nutzt aktuell mehr Fahrzeuge oder Mitarbeiter, als der kostenlose Leutnant-Tarif erlaubt (max. 2 Fahrzeuge, 5 Mitarbeiter). Wenn ihr kündigt und bis zum Ende der Abrechnungsperiode weiterhin über dem Limit liegt, werden ALLE Nutzer (inklusive dir als Owner) automatisch von der Organisation getrennt - niemand kann dann mehr darauf zugreifen. Eure Daten (Fahrzeuge, Nutzungen usw.) werden dabei NICHT gelöscht, nur der Zugriff geht verloren, bis ihr erneut einen passenden Tarif abschliesst.",
     "cancelConfirmButton": "Ja, kündigen",
     "switchConfirmTitle": "Tarif wechseln?",
     "switchConfirmMessage": "Der neue Tarif wird sofort aktiv, die Differenz wird anteilig verrechnet (Proration).",
@@ -402,7 +407,7 @@
     "subtitle": "Dein Konto ist aktiv, aber noch keiner Organisation zugeordnet. Wähle den nächsten Schritt aus.",
     "option1Label": "Option 1",
     "createOrgTitle": "Neue Organisation erstellen",
-    "createOrgDescription": "Wähle Lieutenant (kostenlos), Captain oder General und richte deine Organisation ein.",
+    "createOrgDescription": "Wähle Leutnant (kostenlos), Hauptmann oder General und richte deine Organisation ein.",
     "createOrgCta": "Organisation anlegen",
     "option2Label": "Option 2",
     "invitesTitle": "Organisationseinladungen",
@@ -414,7 +419,7 @@
     "backLink": "← Zurück",
     "title": "Organisation erstellen",
     "subtitle": "Wähle ein Paket und richte deine Organisation ein. Du wirst automatisch Owner der Organisation.",
-    "canceledMessage": "Die Zahlung wurde abgebrochen. Du kannst es erneut versuchen oder vorerst mit Lieutenant (kostenlos) starten.",
+    "canceledMessage": "Die Zahlung wurde abgebrochen. Du kannst es erneut versuchen oder vorerst mit Leutnant (kostenlos) starten.",
     "planSectionTitle": "1) Subscription wählen",
     "popularBadge": "Beliebt",
     "vehiclesSuffix": "Fahrzeuge",
@@ -645,7 +650,7 @@
     "removeConfirmButton": "Entfernen"
   },
   "userManagement": {
-    "title": "User Management",
+    "title": "Benutzerverwaltung",
     "organizationLabel": "Organisation: {name}",
     "usersTabLabel": "Benutzer",
     "resetPasswordModalTitle": "Reset Email senden",
@@ -743,7 +748,7 @@
     "INVITE_ACCEPT_EMAIL_MISMATCH": "Die E-Mail-Adresse stimmt nicht mit der eingeladenen Adresse überein.",
     "SUBSCRIPTION_NOT_FOUND": "Keine Subscription für diese Organisation gefunden.",
     "SUBSCRIPTION_NO_STRIPE_SUBSCRIPTION": "Keine aktive Stripe-Subscription für diese Organisation gefunden.",
-    "SUBSCRIPTION_NO_STRIPE_CUSTOMER": "Diese Organisation hat noch keinen Stripe-Kunden (Lieutenant/Free-Tarif).",
+    "SUBSCRIPTION_NO_STRIPE_CUSTOMER": "Diese Organisation hat noch keinen Stripe-Kunden (Leutnant/Free-Tarif).",
     "SUBSCRIPTION_CHECKOUT_CREATE_FAILED": "Stripe Checkout-Session konnte nicht erstellt werden. Bitte versuche es erneut.",
     "SUBSCRIPTION_TIER_CHANGE_FAILED": "Der Tarifwechsel konnte nicht durchgeführt werden. Bitte versuche es erneut oder kontaktiere den Support.",
     "ORG_LOGO_INVALID": "Das Bild ist ungültig. Erlaubt sind PNG, JPEG oder WebP (max. 3 MB)."
