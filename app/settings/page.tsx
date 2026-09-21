@@ -33,7 +33,10 @@ function SettingsIcon({ children }: { children: ReactNode }) {
 export default function SettingsPage() {
   const router = useRouter()
   const { supabaseUser, loading: authLoading, isAdmin } = useAuth()
-  const { canManageSelectedOrganization, selectedOrganizationRole } = useOrganization()
+  const { selectedOrganizationRole } = useOrganization()
+  // Echte Rolle in der gewaehlten Organisation - ein globaler Administrator, der
+  // dort Admin/Owner ist, verwaltet deren Mitglieder genauso wie jeder andere.
+  const isOrganizationManager = selectedOrganizationRole === 'admin' || selectedOrganizationRole === 'owner'
   const { pendingInvites, hasPendingInvites } = usePendingInvites()
   const t = useTranslations('settings')
 
@@ -157,7 +160,7 @@ export default function SettingsPage() {
               </Link>
             )}
 
-            {canManageSelectedOrganization && !isAdmin && (
+            {isOrganizationManager && (
               <Link
                 href="/admin/users"
                 className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"

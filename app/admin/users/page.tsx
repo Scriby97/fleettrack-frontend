@@ -7,17 +7,20 @@ import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useOrganization } from '@/lib/contexts/OrganizationContext'
 import { createInvite, deleteInvite, getOrganizationInvites } from '@/lib/api/invites'
-import { getUsers, sendUserResetPassword } from '@/lib/api/users'
 import { getOrganizationMembers, updateMemberRole, transferOwnership, removeMember } from '@/lib/api/organizationMembers'
 import { canPromoteToAdmin, canDemoteToEmployee, canTransferOwnership, canRemoveMember } from '@/lib/permissions/organizationMembers'
-import type { InviteEntity, InviteStatus, OrganizationMemberDetail, User } from '@/lib/types/user'
+import type { InviteEntity, InviteStatus, OrganizationMemberDetail } from '@/lib/types/user'
 import { useDateLocale } from '@/lib/i18n/formatDate'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 
 export default function UsersPage() {
   const router = useRouter()
   const { loading: authLoading, isAdmin, userProfile, refreshOrganizations } = useAuth()
-  const { organizations, selectedOrgId, canManageSelectedOrganization, selectedOrganizationRole, isLoading: orgLoading } = useOrganization()
+  const { organizations, selectedOrgId, selectedOrganizationRole, isLoading: orgLoading } = useOrganization()
+  // Echte Rolle in der gewaehlten Organisation (nicht die globale Administrator-
+  // Rolle) - ein globaler Administrator, der dort Admin/Owner ist, darf diese
+  // Seite nutzen; ohne Mitgliedschaft verwaltet er Benutzer ueber /admin/all-users.
+  const isOrganizationManager = selectedOrganizationRole === 'admin' || selectedOrganizationRole === 'owner'
   const selectedOrganization = organizations.find((org) => org.id === selectedOrgId)
   const t = useTranslations('userManagement')
   const tSettings = useTranslations('settings')
@@ -45,12 +48,7 @@ export default function UsersPage() {
     owner: tInv('ownerOption'),
   }
 
-  const USER_ROLE_LABELS: Record<User['role'], string> = {
-    user: t('roleUser'),
-    administrator: t('roleAdministrator'),
-  }
-
-  const [activeTab, setActiveTab] = useState<'invites' | 'members' | 'users'>('members')
+  const [activeTab, setActiveTab] = useState<'invites' | 'members'>('members')
   const [invites, setInvites] = useState<InviteEntity[]>([])
   const [loading, setLoading] = useState(true)
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -58,13 +56,7 @@ export default function UsersPage() {
   const [inviteRole, setInviteRole] = useState<'admin' | 'employee'>('employee')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [usersError, setUsersError] = useState<string | null>(null)
-  const [resetNotice, setResetNotice] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
-  const [users, setUsers] = useState<User[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [confirmUser, setConfirmUser] = useState<User | null>(null)
-  const [submittingId, setSubmittingId] = useState<string | null>(null)
 
   const [members, setMembers] = useState<OrganizationMemberDetail[]>([])
   const [membersError, setMembersError] = useState<string | null>(null)
@@ -75,36 +67,28 @@ export default function UsersPage() {
 
   useEffect(() => {
     // Erst entscheiden, wenn sowohl Auth ALS AUCH die Organisationsdaten
-    // wirklich fertig geladen sind - canManageSelectedOrganization ist sonst
+    // wirklich fertig geladen sind - die Rolle ist sonst
     // kurzzeitig faelschlich false, waehrend OrganizationContext seine
     // Ableitung (organizationMemberships -> organizations -> selectedOrgId)
     // noch durchlaeuft, was einen berechtigten Owner/Admin faelschlich auf
     // '/' umgeleitet hat (siehe E2E-Testbefund).
     if (authLoading || orgLoading) return
 
-    if (!canManageSelectedOrganization) {
-      router.push('/')
-      return
+    if (!isOrganizationManager) {
+      router.push(isAdmin ? '/admin/all-users' : '/')
     }
-
-    if (isAdmin) {
-      router.push('/admin/all-users')
-      return
-    }
-  }, [authLoading, orgLoading, canManageSelectedOrganization, isAdmin, router])
+  }, [authLoading, orgLoading, isOrganizationManager, isAdmin, router])
 
   useEffect(() => {
-    if (authLoading || orgLoading || !canManageSelectedOrganization || isAdmin) return
+    if (authLoading || orgLoading || !isOrganizationManager) return
 
     const fetchData = async () => {
       setLoading(true)
 
-      // The global "all users" list is only available to global administrators -
-      // org-level admins/owners only manage invites and members for their own
-      // organization.
-      const [inviteResult, userResult, memberResult] = await Promise.allSettled([
+      // Diese Seite verwaltet nur Einladungen und Mitglieder der gewaehlten
+      // Organisation - die systemweite Benutzerliste gibt es unter /admin/all-users.
+      const [inviteResult, memberResult] = await Promise.allSettled([
         getOrganizationInvites(selectedOrgId ?? undefined),
-        isAdmin ? getUsers() : Promise.resolve([]),
         selectedOrgId ? getOrganizationMembers(selectedOrgId) : Promise.resolve([]),
       ])
 
@@ -112,12 +96,6 @@ export default function UsersPage() {
         setInvites(inviteResult.value)
       } else {
         setError(getApiErrorMessage(inviteResult.reason, t('loadInvitesError')))
-      }
-
-      if (userResult.status === 'fulfilled') {
-        setUsers(userResult.value)
-      } else {
-        setUsersError(getApiErrorMessage(userResult.reason, t('loadUsersError')))
       }
 
       if (memberResult.status === 'fulfilled') {
@@ -131,7 +109,7 @@ export default function UsersPage() {
 
     fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, orgLoading, isAdmin, canManageSelectedOrganization, selectedOrgId])
+  }, [authLoading, orgLoading, isOrganizationManager, selectedOrgId])
 
   const refetchMembers = async () => {
     if (!selectedOrgId) return
@@ -292,48 +270,6 @@ export default function UsersPage() {
     return [...invites].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   }, [invites])
 
-  const filteredUsers = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase()
-    if (!term) return users
-
-    return users.filter((user) => {
-      const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim().toLowerCase()
-      return (
-        user.email.toLowerCase().includes(term) ||
-        name.includes(term) ||
-        user.role.toLowerCase().includes(term)
-      )
-    })
-  }, [searchTerm, users])
-
-  const getDisplayName = (user: User) => {
-    const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
-    return name || user.email
-  }
-
-  const handleResetRequest = (user: User) => {
-    setConfirmUser(user)
-  }
-
-  const handleConfirmReset = async () => {
-    if (!confirmUser) return
-
-    setSubmittingId(confirmUser.id)
-    setResetNotice(null)
-    setUsersError(null)
-
-    try {
-      await sendUserResetPassword(confirmUser.id)
-      setResetNotice(t('resetSuccessNotice', { email: confirmUser.email }))
-      setConfirmUser(null)
-    } catch (err) {
-      const message = getApiErrorMessage(err, t('loadUsersError'))
-      setUsersError(message)
-    } finally {
-      setSubmittingId(null)
-    }
-  }
-
   if (authLoading || orgLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -342,7 +278,7 @@ export default function UsersPage() {
     )
   }
 
-  if (!canManageSelectedOrganization || isAdmin) {
+  if (!isOrganizationManager) {
     return null
   }
 
@@ -399,18 +335,6 @@ export default function UsersPage() {
           >
             {tInv('tabLabel')}
           </button>
-          {isAdmin && (
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-colors ${
-                activeTab === 'users'
-                  ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-100'
-                  : 'border-zinc-200 text-zinc-600 hover:border-blue-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-600'
-              }`}
-            >
-              {t('usersTabLabel')}
-            </button>
-          )}
         </div>
 
         {activeTab === 'invites' && (
@@ -723,119 +647,6 @@ export default function UsersPage() {
           </>
         )}
 
-        {activeTab === 'users' && (
-          <>
-            {usersError && (
-              <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
-                <p className="text-sm text-red-800 dark:text-red-200">{usersError}</p>
-              </div>
-            )}
-
-            {resetNotice && (
-              <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3">
-                <p className="text-sm text-blue-800 dark:text-blue-200">{resetNotice}</p>
-              </div>
-            )}
-
-            <div className="bg-white dark:bg-zinc-800 rounded-lg shadow p-4 sm:p-6 space-y-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2 min-w-0">
-                  <h2 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('usersTabLabel')}</h2>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400">{filteredUsers.length}</span>
-                </div>
-                <input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder={t('searchPlaceholder')}
-                  className="w-full sm:w-64 px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg text-xs sm:text-sm dark:bg-zinc-700 dark:text-zinc-100"
-                />
-              </div>
-
-              {/* Desktop Tabelle */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-medium">{tMember('nameHeader')}</th>
-                      <th className="px-4 py-3 text-left font-medium">{tMember('emailHeader')}</th>
-                      <th className="px-4 py-3 text-left font-medium">{tMember('roleHeader')}</th>
-                      <th className="px-4 py-3 text-left font-medium">{tMember('actionsHeader')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
-                    {filteredUsers.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="px-4 py-6 text-center text-zinc-500 dark:text-zinc-400">
-                          {t('noUsersFound')}
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredUsers.map((user) => (
-                        <tr key={user.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
-                          <td className="px-4 py-3 text-zinc-900 dark:text-zinc-100 font-medium">
-                            {getDisplayName(user)}
-                          </td>
-                          <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
-                            {user.email}
-                          </td>
-                          <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
-                            {USER_ROLE_LABELS[user.role]}
-                          </td>
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => handleResetRequest(user)}
-                              className="px-3 py-2 text-xs font-semibold rounded-lg bg-signal-600 text-white hover:bg-signal-700 transition-colors"
-                              disabled={submittingId === user.id}
-                            >
-                              {submittingId === user.id ? t('sendingLabel') : t('resetPasswordButton')}
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Kacheln */}
-              <div className="md:hidden space-y-3">
-                {filteredUsers.length === 0 ? (
-                  <div className="py-6 text-center text-zinc-500 dark:text-zinc-400">
-                    {t('noUsersFound')}
-                  </div>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-3"
-                    >
-                      <div>
-                        <p className="font-semibold text-zinc-900 dark:text-zinc-100">
-                          {getDisplayName(user)}
-                        </p>
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 break-all">
-                          {user.email}
-                        </p>
-                      </div>
-                      <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                        <span className="font-medium">{tMember('roleHeader')}:</span> {USER_ROLE_LABELS[user.role]}
-                      </div>
-                      <div className="pt-1">
-                        <button
-                          onClick={() => handleResetRequest(user)}
-                          className="w-full px-3 py-2 text-xs font-semibold rounded-lg bg-signal-600 text-white hover:bg-signal-700 transition-colors"
-                          disabled={submittingId === user.id}
-                        >
-                          {submittingId === user.id ? t('sendingLabel') : t('resetPasswordButton')}
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </>
-        )}
       </div>
 
       {showInviteModal && (
@@ -900,37 +711,6 @@ export default function UsersPage() {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {confirmUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-sm">
-            <div className="p-6 space-y-4">
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                {t('resetPasswordModalTitle')}
-              </h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                {t('resetPasswordModalMessage', { email: confirmUser.email })}
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => setConfirmUser(null)}
-                  className="px-4 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                  disabled={submittingId === confirmUser.id}
-                >
-                  {tCommon('cancel')}
-                </button>
-                <button
-                  onClick={handleConfirmReset}
-                  className="px-4 py-2 text-sm rounded-lg bg-signal-600 text-white hover:bg-signal-700"
-                  disabled={submittingId === confirmUser.id}
-                >
-                  {submittingId === confirmUser.id ? t('sendingLabel') : t('resetSendButton')}
-                </button>
-              </div>
             </div>
           </div>
         </div>
