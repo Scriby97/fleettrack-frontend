@@ -44,7 +44,7 @@ vi.mock('./VehicleDetail', () => ({
 }))
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let exportProps: any
-vi.mock('./ExportFleetCsvModal', () => ({
+vi.mock('./ExportFleetModal', () => ({
   default: (props: { onClose: () => void }) => {
     exportProps = props
     return (
@@ -150,7 +150,7 @@ describe('Flottenübersicht', () => {
       renderWithIntl(<FlottenUebersicht />)
 
       expect(await screen.findByText('Keine Fahrzeuge vorhanden')).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: 'CSV exportieren' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Excel exportieren' })).not.toBeInTheDocument()
     })
 
     it('shows an error when the server answers with an error status', async () => {
@@ -432,13 +432,13 @@ describe('Flottenübersicht', () => {
     })
   })
 
-  describe('CSV export entry points', () => {
+  describe('Excel export entry points', () => {
     it('opens the export with the loaded vehicles, organization name and current range', async () => {
       respondWith([stat('v1', 'Bully')])
       renderWithIntl(<FlottenUebersicht />)
       await screen.findByText('Bully')
 
-      await userEvent.click(screen.getByRole('button', { name: 'CSV exportieren' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Excel exportieren' }))
 
       expect(screen.getByTestId('export-modal')).toBeInTheDocument()
       expect(exportProps.vehicles.map((v: { name: string }) => v.name)).toEqual(['Bully'])
@@ -451,7 +451,7 @@ describe('Flottenübersicht', () => {
       respondWith([stat('v1', 'Bully')])
       renderWithIntl(<FlottenUebersicht />)
       await screen.findByText('Bully')
-      await userEvent.click(screen.getByRole('button', { name: 'CSV exportieren' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Excel exportieren' }))
 
       await userEvent.click(screen.getByRole('button', { name: 'close-export' }))
 
@@ -479,7 +479,7 @@ describe('Flottenübersicht', () => {
       await screen.findByText('Bully')
       await userEvent.click(screen.getByRole('button', { name: 'Weitere Aktionen' }))
 
-      await userEvent.click(screen.getByRole('menuitem', { name: 'CSV exportieren' }))
+      await userEvent.click(screen.getByRole('menuitem', { name: 'Excel exportieren' }))
 
       expect(screen.getByTestId('export-modal')).toBeInTheDocument()
       expect(screen.queryByRole('menu')).not.toBeInTheDocument()

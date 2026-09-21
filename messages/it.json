@@ -181,7 +181,7 @@
     "currentKm": "Contachilometri attuale",
     "chartMetricKm": "Chilometri",
     "chartKmUnit": "km",
-    "exportButton": "Esporta CSV",
+    "exportButton": "Esporta in Excel",
     "exportModalTitle": "Esporta report della flotta",
     "exportTypesTitle": "Tipi di veicolo",
     "exportSubmitButton": "Esporta",

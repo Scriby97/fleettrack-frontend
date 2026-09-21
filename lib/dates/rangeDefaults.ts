@@ -5,7 +5,7 @@ export const toDatetimeLocalValue = (date: Date): string => {
 }
 
 // Default-Zeitraum "letzte 12 Monate" - etabliertes Muster aus der
-// Flottenübersicht/dem CSV-Export, wiederverwendet für weitere Ansichten mit
+// Flottenübersicht/dem Excel-Export, wiederverwendet für weitere Ansichten mit
 // Zeitraum-Filter (z.B. Übersicht Nutzungen), damit deren Standard-Abfrage
 // nicht unbegrenzt mit der gesamten Historie mitwächst.
 export const defaultRangeStart = (): string => {

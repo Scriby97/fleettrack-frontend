@@ -181,7 +181,7 @@
     "currentKm": "Current odometer",
     "chartMetricKm": "Kilometres",
     "chartKmUnit": "km",
-    "exportButton": "Export CSV",
+    "exportButton": "Export to Excel",
     "exportModalTitle": "Export fleet report",
     "exportTypesTitle": "Vehicle types",
     "exportSubmitButton": "Export",

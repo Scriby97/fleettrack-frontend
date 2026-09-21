@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { VehicleTypeIcon } from './VehicleTypeIcon';
 import VehicleDetail from './VehicleDetail';
-import ExportFleetCsvModal from './ExportFleetCsvModal';
+import ExportFleetModal from './ExportFleetModal';
 import { defaultRangeStart, defaultRangeEnd } from '@/lib/dates/rangeDefaults';
 
 export interface Vehicle {
@@ -123,7 +123,7 @@ export const typeRank = (type?: string): number =>
   type && type in TYPE_ORDER ? TYPE_ORDER[type] : 1;
 
 // Gruppenüberschriften der Flottenliste, in Sortier-/Anzeigereihenfolge -
-// dieselben Gruppen werden auch als Fahrzeugtyp-Filter im CSV-Export verwendet.
+// dieselben Gruppen werden auch als Fahrzeugtyp-Filter im Excel-Export verwendet.
 export const VEHICLE_GROUPS = [
   { rank: 0, labelKey: 'fleetGroupGroomer' },
   { rank: 1, labelKey: 'fleetGroupTransporter' },
@@ -339,7 +339,7 @@ const FlottenUebersicht: FC<FlottenUebersichtProps> = ({ onAddVehicle }) => {
             </button>
           )}
 
-          {/* Mobile: CSV-Export hinter einem "..."-Menü. "Fahrzeug hinzufügen" lebt
+          {/* Mobile: Excel-Export hinter einem "..."-Menü. "Fahrzeug hinzufügen" lebt
               stattdessen als schwebender Button (siehe weiter unten). */}
           {vehicles.length > 0 && (
             <div className="relative md:hidden">
@@ -449,7 +449,7 @@ const FlottenUebersicht: FC<FlottenUebersichtProps> = ({ onAddVehicle }) => {
       )}
 
       {showExportModal && (
-        <ExportFleetCsvModal
+        <ExportFleetModal
           vehicles={vehicles}
           organizationName={organizations.find((org) => org.id === selectedOrgId)?.name}
           initialRangeStart={range.start}

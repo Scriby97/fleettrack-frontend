@@ -4,13 +4,13 @@ import { useState, type FC } from 'react';
 import { useTranslations } from 'next-intl';
 import { getVehicleUsageHistory } from '@/lib/api/vehicles';
 import { vehicleUsesKm } from '@/lib/vehicles/metric';
-import { csvRow } from '@/lib/csv/csv';
+import { buildXlsx, XLSX_MIME, type XlsxCell } from '@/lib/xlsx/xlsx';
 import { useDateLocale } from '@/lib/i18n/formatDate';
 import { useToast } from '@/lib/hooks/useToast';
 import { ToastContainer } from './Toast';
 import { typeRank, VEHICLE_GROUPS, type Vehicle } from './vehicles';
 
-interface ExportFleetCsvModalProps {
+interface ExportFleetModalProps {
   vehicles: Vehicle[];
   organizationName?: string;
   initialRangeStart: string;
@@ -26,7 +26,7 @@ const datePart = (value: string): string => value.slice(0, 10);
 const formatRangeValue = (value: string, locale: string): string =>
   new Date(value).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' });
 
-const ExportFleetCsvModal: FC<ExportFleetCsvModalProps> = ({
+const ExportFleetModal: FC<ExportFleetModalProps> = ({
   vehicles,
   organizationName,
   initialRangeStart,
@@ -87,12 +87,12 @@ const ExportFleetCsvModal: FC<ExportFleetCsvModalProps> = ({
         ),
       );
 
-      const rangeInfoRow = csvRow([
-        t('exportRangeLabel'),
+      const rangeInfoRow: XlsxCell[] = [
+        { value: t('exportRangeLabel'), style: 'header' },
         `${formatRangeValue(rangeStart, dateLocale)} – ${formatRangeValue(rangeEnd, dateLocale)}`,
-      ]);
+      ];
 
-      const header = csvRow([
+      const header: XlsxCell[] = [
         t('exportColName'),
         t('exportColType'),
         t('snowsatLabel'),
@@ -102,51 +102,49 @@ const ExportFleetCsvModal: FC<ExportFleetCsvModalProps> = ({
         t('exportColKm'),
         t('exportColFuel'),
         t('usageCountLabel'),
-      ]);
+      ].map((value) => ({ value, style: 'header' as const }));
 
       let failedCount = 0;
-      const rows = selected.map((vehicle, index) => {
+      const rows = selected.map((vehicle, index): XlsxCell[] => {
         const result = results[index];
         const usesKm = vehicleUsesKm(vehicle.vehicleType);
         const status = vehicle.isRetired ? t('exportColStatusRetired') : t('exportColStatusActive');
+        const base: XlsxCell[] = [
+          vehicle.name,
+          localizedType(vehicle.vehicleType),
+          vehicle.snowsatNumber ?? null,
+          vehicle.plate,
+          status,
+        ];
 
         if (result.status === 'rejected') {
           failedCount += 1;
-          return csvRow([
-            vehicle.name,
-            localizedType(vehicle.vehicleType),
-            vehicle.snowsatNumber ?? '',
-            vehicle.plate,
-            status,
-            '',
-            '',
-            '',
-            '',
-          ]);
+          return [...base, null, null, null, null];
         }
 
         const totals = result.value.totals;
         const counterValue = usesKm ? Math.round(totals.operatingHours) : Number(totals.operatingHours.toFixed(1));
 
-        return csvRow([
-          vehicle.name,
-          localizedType(vehicle.vehicleType),
-          vehicle.snowsatNumber ?? '',
-          vehicle.plate,
-          status,
-          usesKm ? '' : counterValue,
-          usesKm ? counterValue : '',
-          Math.round(totals.fuelLiters),
-          totals.usageCount,
-        ]);
+        // Zahlen bleiben echte Zahlen (Excel kann damit rechnen, unabhaengig
+        // von Dezimalzeichen und Regionaleinstellungen).
+        return [
+          ...base,
+          usesKm ? null : { value: counterValue, style: 'hours' },
+          usesKm ? { value: counterValue, style: 'integer' } : null,
+          { value: Math.round(totals.fuelLiters), style: 'integer' },
+          { value: totals.usageCount, style: 'integer' },
+        ];
       });
 
-      const csvContent = [rangeInfoRow, '', header, ...rows].join('\r\n');
-      // BOM, damit Excel Umlaute (ä/ö/ü) korrekt als UTF-8 erkennt.
-      const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const bytes = buildXlsx({
+        name: organizationName ?? t('title'),
+        rows: [rangeInfoRow, [], header, ...rows],
+        columnWidths: [30, 16, 14, 14, 12, 20, 16, 14, 12],
+      });
+      const blob = new Blob([bytes as BlobPart], { type: XLSX_MIME });
       const url = URL.createObjectURL(blob);
       const orgSlug = (organizationName ?? 'Flotte').replace(/[^a-zA-Z0-9_-]+/g, '_');
-      const filename = `${orgSlug}_${datePart(rangeStart)}_bis_${datePart(rangeEnd)}.csv`;
+      const filename = `${orgSlug}_${datePart(rangeStart)}_bis_${datePart(rangeEnd)}.xlsx`;
 
       const link = document.createElement('a');
       link.href = url;
@@ -272,4 +270,4 @@ const ExportFleetCsvModal: FC<ExportFleetCsvModalProps> = ({
   );
 };
 
-export default ExportFleetCsvModal;
+export default ExportFleetModal;

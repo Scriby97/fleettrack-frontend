@@ -181,7 +181,7 @@
     "currentKm": "Kilometerstand",
     "chartMetricKm": "Kilometer",
     "chartKmUnit": "km",
-    "exportButton": "CSV exportieren",
+    "exportButton": "Excel exportieren",
     "exportModalTitle": "Flotten-Report exportieren",
     "exportTypesTitle": "Fahrzeugtypen",
     "exportSubmitButton": "Exportieren",

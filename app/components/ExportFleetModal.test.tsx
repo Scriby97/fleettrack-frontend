@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithIntl } from '@/test/renderWithIntl'
+import { cellStyle, entryText, readSheetRows, readStoredZip } from '@/test/xlsxRead'
+import { crc32, XLSX_MIME } from '@/lib/xlsx/xlsx'
 
 const getVehicleUsageHistory = vi.fn()
 vi.mock('@/lib/api/vehicles', () => ({
@@ -22,7 +24,7 @@ vi.mock('@/lib/contexts/OrganizationContext', () => ({
 }))
 vi.mock('@/lib/api/authenticatedFetch', () => ({ authenticatedFetch: vi.fn() }))
 
-import ExportFleetCsvModal from './ExportFleetCsvModal'
+import ExportFleetModal from './ExportFleetModal'
 
 // --- Helfer -----------------------------------------------------------------
 
@@ -45,37 +47,30 @@ const history = (totals: Partial<Record<string, number>>) => ({
 let downloads: { filename: string; blob: Blob }[] = []
 let createdBlobs: Blob[] = []
 
-function readBlob(blob: Blob): Promise<string> {
+function readBytes(blob: Blob): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result))
-    reader.onerror = () => reject(reader.error)
-    reader.readAsText(blob)
-  })
-}
-
-function readBytes(blob: Blob): Promise<ArrayBuffer> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as ArrayBuffer)
+    reader.onload = () => resolve(new Uint8Array(reader.result as ArrayBuffer))
     reader.onerror = () => reject(reader.error)
     reader.readAsArrayBuffer(blob)
   })
 }
 
-const lastCsv = async () => {
-  const text = await readBlob(createdBlobs.at(-1)!)
-  return text.replace(/^﻿/, '').split('\r\n')
+// Liest die zuletzt erzeugte Excel-Datei wieder ein.
+const lastWorkbook = async () => {
+  const entries = readStoredZip(await readBytes(createdBlobs.at(-1)!))
+  const sheet = entryText(entries, 'xl/worksheets/sheet1.xml')
+  return { entries, sheet, rows: readSheetRows(sheet), workbook: entryText(entries, 'xl/workbook.xml') }
 }
 
 function setDatetime(id: string, value: string) {
   fireEvent.change(document.getElementById(id) as HTMLInputElement, { target: { value } })
 }
 
-const renderModal = (props: Partial<React.ComponentProps<typeof ExportFleetCsvModal>> = {}) => {
+const renderModal = (props: Partial<React.ComponentProps<typeof ExportFleetModal>> = {}) => {
   const onClose = vi.fn()
   const view = renderWithIntl(
-    <ExportFleetCsvModal
+    <ExportFleetModal
       vehicles={[groomer, transporter, quad]}
       organizationName="Bergbahnen AG"
       initialRangeStart="2026-01-01T00:00"
@@ -87,7 +82,7 @@ const renderModal = (props: Partial<React.ComponentProps<typeof ExportFleetCsvMo
   return { onClose, ...view }
 }
 
-describe('ExportFleetCsvModal', () => {
+describe('ExportFleetModal', () => {
   beforeEach(() => {
     getVehicleUsageHistory.mockReset()
     downloads = []
@@ -166,32 +161,81 @@ describe('ExportFleetCsvModal', () => {
       })
     })
 
-    it('writes a header, the range line and one row per vehicle (hours for groomers, km for others)', async () => {
+    it('writes a range line, a header and one row per vehicle (hours for groomers, km for others)', async () => {
       renderModal()
 
       await userEvent.click(screen.getByRole('button', { name: 'Exportieren' }))
       await waitFor(() => expect(createdBlobs).toHaveLength(1))
-      const lines = await lastCsv()
+      const { rows } = await lastWorkbook()
 
-      expect(lines[0]).toMatch(/^Zeitraum,/)
-      expect(lines[1]).toBe('')
-      expect(lines[2]).toBe(
-        'Fahrzeug,Typ,SNOWsat-Nr,Kennzeichen,Status,Betriebsstunden (h),Kilometer (km),Getankt (L),Nutzungen',
-      )
-      expect(lines[3]).toBe('Pistenbully 1,Pistenfahrzeug,11,BE 1,Aktiv,10.8,,360,3')
-      expect(lines[4]).toBe('Transporter,—,,ZH 2,Aktiv,,1235,80,2')
-      expect(lines[5]).toBe('Quad,Quad,,VS 3,Ausrangiert,,50,0,1')
-      expect(lines).toHaveLength(6)
+      expect(rows[0][0]).toBe('Zeitraum')
+      expect(rows[0][1]).toContain('–')
+      expect(rows[1]).toEqual([])
+      expect(rows[2]).toEqual([
+        'Fahrzeug',
+        'Typ',
+        'SNOWsat-Nr',
+        'Kennzeichen',
+        'Status',
+        'Betriebsstunden (h)',
+        'Kilometer (km)',
+        'Getankt (L)',
+        'Nutzungen',
+      ])
+      expect(rows[3]).toEqual(['Pistenbully 1', 'Pistenfahrzeug', '11', 'BE 1', 'Aktiv', 10.8, null, 360, 3])
+      expect(rows[4]).toEqual(['Transporter', '—', null, 'ZH 2', 'Aktiv', null, 1235, 80, 2])
+      expect(rows[5]).toEqual(['Quad', 'Quad', null, 'VS 3', 'Ausrangiert', null, 50, 0, 1])
+      expect(rows).toHaveLength(6)
     })
 
-    it('starts the file with a BOM so Excel detects UTF-8', async () => {
+    it('writes the measured values as real numbers with a number format, so Excel can calculate with them', async () => {
+      renderModal()
+
+      await userEvent.click(screen.getByRole('button', { name: 'Exportieren' }))
+      await waitFor(() => expect(createdBlobs).toHaveLength(1))
+      const { rows, sheet } = await lastWorkbook()
+
+      for (const value of [rows[3][5], rows[3][7], rows[3][8], rows[4][6]]) {
+        expect(typeof value).toBe('number')
+      }
+      expect(cellStyle(sheet, 'F4')).toBe(2) // Betriebsstunden: 1 Nachkommastelle
+      expect(cellStyle(sheet, 'G5')).toBe(3) // Kilometer: ganze Zahl
+      expect(cellStyle(sheet, 'H4')).toBe(3) // Liter
+      expect(cellStyle(sheet, 'I4')).toBe(3) // Anzahl
+    })
+
+    it('highlights the header row', async () => {
+      renderModal()
+
+      await userEvent.click(screen.getByRole('button', { name: 'Exportieren' }))
+      await waitFor(() => expect(createdBlobs).toHaveLength(1))
+      const { sheet } = await lastWorkbook()
+
+      for (const ref of ['A3', 'E3', 'I3']) expect(cellStyle(sheet, ref)).toBe(1)
+      expect(cellStyle(sheet, 'A4')).toBeNull()
+    })
+
+    it('produces a valid Excel file (.xlsx) with the right MIME type', async () => {
       renderModal()
 
       await userEvent.click(screen.getByRole('button', { name: 'Exportieren' }))
       await waitFor(() => expect(createdBlobs).toHaveLength(1))
 
-      const bytes = new Uint8Array(await readBytes(createdBlobs[0]))
-      expect([...bytes.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf])
+      expect(createdBlobs[0].type).toBe(XLSX_MIME)
+      const bytes = await readBytes(createdBlobs[0])
+      expect([...bytes.slice(0, 2)]).toEqual([0x50, 0x4b]) // "PK"
+      const { entries } = await lastWorkbook()
+      expect(entries.map((e) => e.name)).toContain('xl/worksheets/sheet1.xml')
+      for (const entry of entries) expect(entry.storedCrc).toBe(crc32(entry.data))
+    })
+
+    it('names the sheet after the organization', async () => {
+      renderModal({ organizationName: 'Bergbahnen Gstaad AG' })
+
+      await userEvent.click(screen.getByRole('button', { name: 'Exportieren' }))
+      await waitFor(() => expect(createdBlobs).toHaveLength(1))
+
+      expect((await lastWorkbook()).workbook).toContain('name="Bergbahnen Gstaad AG"')
     })
 
     it('names the file after the organization and the range', async () => {
@@ -200,7 +244,7 @@ describe('ExportFleetCsvModal', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Exportieren' }))
       await waitFor(() => expect(downloads).toHaveLength(1))
 
-      expect(downloads[0].filename).toBe('Bergbahnen_Gstaad_AG_2026-01-01_bis_2026-01-31.csv')
+      expect(downloads[0].filename).toBe('Bergbahnen_Gstaad_AG_2026-01-01_bis_2026-01-31.xlsx')
     })
 
     it('falls back to "Flotte" without an organization name', async () => {
@@ -209,7 +253,7 @@ describe('ExportFleetCsvModal', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Exportieren' }))
       await waitFor(() => expect(downloads).toHaveLength(1))
 
-      expect(downloads[0].filename).toBe('Flotte_2026-01-01_bis_2026-01-31.csv')
+      expect(downloads[0].filename).toBe('Flotte_2026-01-01_bis_2026-01-31.xlsx')
     })
 
     it('only exports the selected vehicle types', async () => {
@@ -221,20 +265,21 @@ describe('ExportFleetCsvModal', () => {
       await waitFor(() => expect(createdBlobs).toHaveLength(1))
 
       expect(getVehicleUsageHistory.mock.calls.map((c) => c[0])).toEqual(['t1'])
-      const lines = await lastCsv()
-      expect(lines).toHaveLength(4)
-      expect(lines[3]).toMatch(/^Transporter,/)
+      const { rows } = await lastWorkbook()
+      expect(rows).toHaveLength(4)
+      expect(rows[3][0]).toBe('Transporter')
     })
 
-    it('escapes commas and quotes in vehicle names', async () => {
+    it('keeps names with commas, quotes, semicolons and XML characters intact', async () => {
+      const name = 'Bully "Gelb", Nord; Süd & <Co>'
       renderModal({
-        vehicles: [{ id: 'g1', name: 'Bully "Gelb", Nord', plate: 'BE 1', vehicleType: 'Pistenfahrzeug' }],
+        vehicles: [{ id: 'g1', name, plate: 'BE 1', vehicleType: 'Pistenfahrzeug' }],
       })
 
       await userEvent.click(screen.getByRole('button', { name: 'Exportieren' }))
       await waitFor(() => expect(createdBlobs).toHaveLength(1))
 
-      expect((await lastCsv())[3]).toMatch(/^"Bully ""Gelb"", Nord",Pistenfahrzeug,/)
+      expect((await lastWorkbook()).rows[3][0]).toBe(name)
     })
 
     it('confirms with a toast and closes the modal', async () => {
@@ -258,8 +303,8 @@ describe('ExportFleetCsvModal', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Exportieren' }))
       await waitFor(() => expect(createdBlobs).toHaveLength(1))
 
-      const lines = await lastCsv()
-      expect(lines[4]).toBe('Transporter,—,,ZH 2,Aktiv,,,,')
+      const { rows } = await lastWorkbook()
+      expect(rows[4]).toEqual(['Transporter', '—', null, 'ZH 2', 'Aktiv'])
       expect(
         await screen.findByText(
           'Report wurde exportiert, aber für 1 Fahrzeug(e) konnten keine Daten geladen werden',
