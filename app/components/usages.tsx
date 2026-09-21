@@ -237,6 +237,10 @@ const UebersichtEintraege: FC = () => {
   const [range, setRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const rangeActive = Boolean(range.start) && Boolean(range.end);
   const rangeInvalid = rangeActive && new Date(range.start) > new Date(range.end);
+  // Nur der wirksame Zeitraum loest ein Neuladen aus - waehrend erst Start oder
+  // Ende eingegeben ist, aendert sich an der Abfrage nichts.
+  const activeStart = rangeActive ? range.start : '';
+  const activeEnd = rangeActive ? range.end : '';
   const rangeOptions = useCallback(
     () =>
       rangeActive
@@ -434,7 +438,7 @@ const UebersichtEintraege: FC = () => {
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, selectedOrgId, range.start, range.end, rangeInvalid]);
+  }, [view, selectedOrgId, activeStart, activeEnd, rangeInvalid]);
 
   const loadMore = useCallback(async () => {
     if (!nextCursor || !selectedOrgId || loadingMoreRef.current) return;
