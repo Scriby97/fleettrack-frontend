@@ -381,10 +381,11 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
         </h1>
         {isAdmin && organizations.length > 0 && (
           <div className="flex items-center gap-2 mt-2">
-            <label className="text-sm text-zinc-600 dark:text-zinc-400">
+            <label htmlFor="createUsageOrgSelect" className="text-sm text-zinc-600 dark:text-zinc-400">
               {tCommon('organizationLabel')}:
             </label>
             <select
+              id="createUsageOrgSelect"
               value={selectedOrgId || ''}
               onChange={(e) => setSelectedOrgId(e.target.value)}
               className="px-3 py-1 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-purple-500"

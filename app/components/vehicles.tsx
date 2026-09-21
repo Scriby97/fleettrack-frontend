@@ -303,10 +303,11 @@ const FlottenUebersicht: FC<FlottenUebersichtProps> = ({ onAddVehicle }) => {
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
             {isAdmin && organizations.length > 0 && (
               <div className="flex items-center gap-2">
-                <label className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
+                <label htmlFor="fleetOrgSelect" className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
                   {tCommon('organizationLabel')}:
                 </label>
                 <select
+                  id="fleetOrgSelect"
                   value={selectedOrgId || ''}
                   onChange={(e) => setSelectedOrgId(e.target.value)}
                   className="flex-1 sm:flex-initial px-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-purple-500"
