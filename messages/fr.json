@@ -107,16 +107,9 @@
     "startEndKmLabel": "Kilomètres :",
     "startKmLabel": "Compteur km au début",
     "endKmLabel": "Compteur km à la fin",
-    "filterSectionTitle": "Période d'utilisation",
-    "filterStartLabel": "Début",
-    "filterEndLabel": "Fin",
-    "invalidRangeError": "La date de début doit être antérieure à la date de fin.",
     "usagesShownCountMore": "{count} dernières utilisations affichées",
     "loadingMore": "Chargement d’autres utilisations…",
-    "loadMore": "Charger plus",
-    "clearFilter": "Réinitialiser",
-    "filterToggleLabel": "Filtrer par période",
-    "filterActiveLabel": "Période : {range}"
+    "loadMore": "Charger plus"
   },
   "fleetOverview": {
     "title": "Aperçu de la flotte",

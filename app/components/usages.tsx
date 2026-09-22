@@ -190,7 +190,6 @@ const UebersichtEintraege: FC = () => {
   const { isAdmin, userProfile } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId, canManageSelectedOrganization } = useOrganization();
   const t = useTranslations('usagesOverview');
-  const dateLocale = useDateLocale();
   const tCommon = useTranslations('common');
   const getApiErrorMessage = useApiErrorMessage();
   // Ein Mitarbeiter darf zusaetzlich seine eigenen Nutzungen bearbeiten (aber
@@ -232,30 +231,6 @@ const UebersichtEintraege: FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | string | null>(null);
-
-  // Optionaler Zeitraum-Filter fuer die Liste (nur aktiv, wenn Start UND Ende
-  // gesetzt sind) - ohne Filter werden einfach die neuesten Nutzungen seitenweise geladen.
-  const [range, setRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
-  // Zusammengeklappt, damit der Filter (den die meisten Nutzer nie brauchen)
-  // nicht mehr Platz einnimmt als die Liste/Kalender-Umschaltung darüber -
-  // öffnet sich von selbst, sobald tatsächlich ein Zeitraum gesetzt ist.
-  const [filterOpen, setFilterOpen] = useState(false);
-  const rangeActive = Boolean(range.start) && Boolean(range.end);
-  const rangeInvalid = rangeActive && new Date(range.start) > new Date(range.end);
-  // Nur der wirksame Zeitraum loest ein Neuladen aus - waehrend erst Start oder
-  // Ende eingegeben ist, aendert sich an der Abfrage nichts.
-  const activeStart = rangeActive ? range.start : '';
-  const activeEnd = rangeActive ? range.end : '';
-  const rangeOptions = useCallback(
-    () =>
-      rangeActive
-        ? {
-            startDate: new Date(range.start).toISOString(),
-            endDate: new Date(range.end).toISOString(),
-          }
-        : {},
-    [rangeActive, range.start, range.end],
-  );
 
   const handleVisibleRangeChange = useCallback(({ start, end }: { start: Date; end: Date }) => {
     setCalendarRange({ start: start.toISOString(), end: end.toISOString() });
@@ -391,15 +366,12 @@ const UebersichtEintraege: FC = () => {
     }
   };
 
-  // Listenansicht: erste Seite (neueste zuerst) laden, wenn Organisation oder
-  // Zeitraum-Filter wechseln. Weitere Seiten kommen ueber loadMore beim Scrollen.
+  // Listenansicht: erste Seite (neueste zuerst) laden, wenn die Organisation
+  // wechselt. Weitere Seiten kommen ueber loadMore beim Scrollen.
   useEffect(() => {
     if (view !== 'list') return;
     if (!getApiBaseUrlOrNull()) return;
     if (!selectedOrgId) return;
-    // Ungueltiger Zeitraum (Start nach Ende) - nicht fetchen, Fehlermeldung
-    // steht bereits bei den Eingabefeldern.
-    if (rangeInvalid) return;
 
     const requestRef = listRequestRef;
     const requestId = ++requestRef.current;
@@ -414,7 +386,6 @@ const UebersichtEintraege: FC = () => {
 
       try {
         const page = await getUsagesWithVehicles(selectedOrgId, {
-          ...rangeOptions(),
           limit: PAGE_SIZE,
           signal: controller.signal,
         });
@@ -443,7 +414,7 @@ const UebersichtEintraege: FC = () => {
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, selectedOrgId, activeStart, activeEnd, rangeInvalid]);
+  }, [view, selectedOrgId]);
 
   const loadMore = useCallback(async () => {
     if (!nextCursor || !selectedOrgId || loadingMoreRef.current) return;
@@ -454,7 +425,6 @@ const UebersichtEintraege: FC = () => {
 
     try {
       const page = await getUsagesWithVehicles(selectedOrgId, {
-        ...rangeOptions(),
         limit: PAGE_SIZE,
         cursor: nextCursor,
       });
@@ -481,7 +451,7 @@ const UebersichtEintraege: FC = () => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nextCursor, selectedOrgId, rangeOptions]);
+  }, [nextCursor, selectedOrgId]);
 
   // Endlos-Scrollen: sobald das Ende der Liste (leicht vorher) sichtbar wird,
   // die naechste Seite laden. Bei einem Fehler pausiert das Nachladen bis zum
@@ -595,91 +565,6 @@ const UebersichtEintraege: FC = () => {
               <button onClick={() => setView('calendar')} className={`px-2 sm:px-3 py-1 text-sm rounded ${view === 'calendar' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}`}>{t('calendarView')}</button>
             </div>
           </div>
-          {view === 'list' && (
-          <div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setFilterOpen((open) => !open)}
-                aria-expanded={filterOpen}
-                className="inline-flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-              >
-                <svg
-                  className={`w-3 h-3 transition-transform ${filterOpen ? 'rotate-90' : ''}`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-                {rangeActive
-                  ? t('filterActiveLabel', {
-                      range: `${new Date(range.start).toLocaleDateString(dateLocale)} – ${new Date(range.end).toLocaleDateString(dateLocale)}`,
-                    })
-                  : t('filterToggleLabel')}
-              </button>
-              {rangeActive && !filterOpen && (
-                <button
-                  type="button"
-                  onClick={() => setRange({ start: '', end: '' })}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  {t('clearFilter')}
-                </button>
-              )}
-            </div>
-            {filterOpen && (
-              <div className="mt-2 rounded-lg border border-zinc-200 dark:border-zinc-700 p-3">
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">
-                    {t('filterSectionTitle')}
-                  </p>
-                  {(range.start || range.end) && (
-                    <button
-                      type="button"
-                      onClick={() => setRange({ start: '', end: '' })}
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      {t('clearFilter')}
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-                  <div className="flex-1 space-y-1">
-                    <label htmlFor="usagesRangeStart" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                      {t('filterStartLabel')}
-                    </label>
-                    <input
-                      id="usagesRangeStart"
-                      type="datetime-local"
-                      value={range.start}
-                      onChange={(e) => setRange({ ...range, start: e.target.value })}
-                      className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <label htmlFor="usagesRangeEnd" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                      {t('filterEndLabel')}
-                    </label>
-                    <input
-                      id="usagesRangeEnd"
-                      type="datetime-local"
-                      value={range.end}
-                      onChange={(e) => setRange({ ...range, end: e.target.value })}
-                      className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-                {rangeInvalid && (
-                  <p className="mt-2 text-xs text-red-600 dark:text-red-400">{t('invalidRangeError')}</p>
-                )}
-              </div>
-            )}
-          </div>
-          )}
         </div>
         {error && (view === 'calendar' ? calendarReports : reports).length === 0 && (
           <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 mt-3">
@@ -856,7 +741,7 @@ const UebersichtEintraege: FC = () => {
           onEventClick={handleEventClick}
           onVisibleRangeChange={handleVisibleRangeChange}
         />
-      ) : isLoading && !rangeInvalid ? (
+      ) : isLoading ? (
         <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
           <p className="text-zinc-600 dark:text-zinc-400">{t('loadingUsagesEllipsis')}</p>
         </div>

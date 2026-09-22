@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithIntl } from '@/test/renderWithIntl'
 
@@ -110,10 +110,6 @@ async function reachEndOfList() {
 }
 
 const cards = () => document.querySelectorAll('main h3, section h3')
-
-function setDatetime(id: string, value: string) {
-  fireEvent.change(document.getElementById(id) as HTMLInputElement, { target: { value } })
-}
 
 describe('Übersicht Nutzungen', () => {
   beforeEach(() => {
@@ -367,122 +363,17 @@ describe('Übersicht Nutzungen', () => {
     })
   })
 
-  describe('optional date range filter', () => {
-    it('starts collapsed, with an empty range that does not restrict the request', async () => {
+  describe('list requests', () => {
+    it('never restricts the request to a date range (no filter UI anymore)', async () => {
       getUsagesWithVehicles.mockResolvedValue(page(usages(0, 2), null))
 
       renderWithIntl(<UebersichtEintraege />)
       await screen.findByText('2 Nutzungen gefunden')
 
-      expect(screen.getByRole('button', { name: 'Zeitraum filtern' })).toHaveAttribute(
-        'aria-expanded',
-        'false',
-      )
-      expect(document.getElementById('usagesRangeStart')).not.toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: 'Zurücksetzen' })).not.toBeInTheDocument()
       const [, options] = getUsagesWithVehicles.mock.calls[0]
       expect(options.startDate).toBeUndefined()
       expect(options.endDate).toBeUndefined()
-    })
-
-    it('reveals the empty inputs when opened', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(0, 2), null))
-      renderWithIntl(<UebersichtEintraege />)
-      await screen.findByText('2 Nutzungen gefunden')
-
-      await userEvent.click(screen.getByRole('button', { name: 'Zeitraum filtern' }))
-
-      expect(document.getElementById('usagesRangeStart')).toHaveValue('')
-      expect(document.getElementById('usagesRangeEnd')).toHaveValue('')
-    })
-
-    it('reloads the first page for the chosen range once start and end are set', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(0, 2), null))
-      renderWithIntl(<UebersichtEintraege />)
-      await screen.findByText('2 Nutzungen gefunden')
-      await userEvent.click(screen.getByRole('button', { name: 'Zeitraum filtern' }))
-      getUsagesWithVehicles.mockClear()
-
-      setDatetime('usagesRangeStart', '2026-01-01T00:00')
-      setDatetime('usagesRangeEnd', '2026-01-31T23:59')
-
-      await waitFor(() => {
-        const last = getUsagesWithVehicles.mock.calls.at(-1)![1]
-        expect(last).toMatchObject({
-          startDate: new Date('2026-01-01T00:00').toISOString(),
-          endDate: new Date('2026-01-31T23:59').toISOString(),
-          limit: 10,
-        })
-        expect(last.cursor).toBeUndefined()
-      })
-    })
-
-    it('does not reload while only start or end is set (half-open range)', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(0, 2), null))
-      renderWithIntl(<UebersichtEintraege />)
-      await screen.findByText('2 Nutzungen gefunden')
-      await userEvent.click(screen.getByRole('button', { name: 'Zeitraum filtern' }))
-      getUsagesWithVehicles.mockClear()
-
-      setDatetime('usagesRangeStart', '2026-01-01T00:00')
-      await screen.findByRole('button', { name: 'Zurücksetzen' })
-
-      // solange nur Start ODER Ende gesetzt ist, aendert sich an der Abfrage nichts
-      expect(getUsagesWithVehicles).not.toHaveBeenCalled()
-    })
-
-    it('shows an error and does not fetch when start is after end', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(0, 2), null))
-      renderWithIntl(<UebersichtEintraege />)
-      await screen.findByText('2 Nutzungen gefunden')
-      await userEvent.click(screen.getByRole('button', { name: 'Zeitraum filtern' }))
-      getUsagesWithVehicles.mockClear()
-
-      setDatetime('usagesRangeStart', '2026-02-01T00:00')
-      setDatetime('usagesRangeEnd', '2026-01-01T00:00')
-
-      expect(
-        await screen.findByText('Das Startdatum muss vor dem Enddatum liegen.'),
-      ).toBeInTheDocument()
-      expect(getUsagesWithVehicles).not.toHaveBeenCalled()
-    })
-
-    it('shows a summary with a reset button once a range is active, even collapsed', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(0, 2), null))
-      renderWithIntl(<UebersichtEintraege />)
-      await screen.findByText('2 Nutzungen gefunden')
-      await userEvent.click(screen.getByRole('button', { name: 'Zeitraum filtern' }))
-      setDatetime('usagesRangeStart', '2026-01-01T00:00')
-      setDatetime('usagesRangeEnd', '2026-01-31T23:59')
-      await waitFor(() =>
-        expect(getUsagesWithVehicles.mock.calls.at(-1)![1].startDate).toBeDefined(),
-      )
-
-      // Filter wieder einklappen - die Zusammenfassung und "Zurücksetzen" bleiben trotzdem sichtbar.
-      await userEvent.click(screen.getByRole('button', { name: /Zeitraum:/ }))
-
-      expect(document.getElementById('usagesRangeStart')).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Zurücksetzen' })).toBeInTheDocument()
-    })
-
-    it('"Zurücksetzen" clears the range and reloads without it', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(0, 2), null))
-      renderWithIntl(<UebersichtEintraege />)
-      await screen.findByText('2 Nutzungen gefunden')
-      await userEvent.click(screen.getByRole('button', { name: 'Zeitraum filtern' }))
-      setDatetime('usagesRangeStart', '2026-01-01T00:00')
-      setDatetime('usagesRangeEnd', '2026-01-31T23:59')
-      await waitFor(() =>
-        expect(getUsagesWithVehicles.mock.calls.at(-1)![1].startDate).toBeDefined(),
-      )
-
-      await userEvent.click(screen.getByRole('button', { name: 'Zurücksetzen' }))
-
-      await waitFor(() => {
-        expect(getUsagesWithVehicles.mock.calls.at(-1)![1].startDate).toBeUndefined()
-      })
-      expect(document.getElementById('usagesRangeStart')).toHaveValue('')
-      expect(document.getElementById('usagesRangeEnd')).toHaveValue('')
+      expect(options.limit).toBe(10)
     })
   })
 
@@ -528,19 +419,6 @@ describe('Übersicht Nutzungen', () => {
       expect(getUsagesWithVehicles.mock.calls[0][1].startDate).toBe(
         new Date(2026, 8, 28, 0, 0, 0, 0).toISOString(),
       )
-    })
-
-    it('hides the range filter toggle in calendar view and brings it back in list view', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page([], null))
-      renderWithIntl(<UebersichtEintraege />)
-      await screen.findByText('Keine Nutzungen vorhanden')
-      expect(screen.getByRole('button', { name: 'Zeitraum filtern' })).toBeInTheDocument()
-
-      await userEvent.click(screen.getByRole('button', { name: 'Kalender' }))
-      expect(screen.queryByRole('button', { name: 'Zeitraum filtern' })).not.toBeInTheDocument()
-
-      await userEvent.click(screen.getByRole('button', { name: 'Liste' }))
-      expect(await screen.findByRole('button', { name: 'Zeitraum filtern' })).toBeInTheDocument()
     })
 
     it('reloads the first list page when switching back from the calendar', async () => {
