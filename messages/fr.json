@@ -114,7 +114,9 @@
     "usagesShownCountMore": "{count} dernières utilisations affichées",
     "loadingMore": "Chargement d’autres utilisations…",
     "loadMore": "Charger plus",
-    "clearFilter": "Réinitialiser"
+    "clearFilter": "Réinitialiser",
+    "filterToggleLabel": "Filtrer par période",
+    "filterActiveLabel": "Période : {range}"
   },
   "fleetOverview": {
     "title": "Aperçu de la flotte",

@@ -114,7 +114,9 @@
     "usagesShownCountMore": "{count} neueste Nutzungen angezeigt",
     "loadingMore": "Lade weitere Nutzungen…",
     "loadMore": "Mehr laden",
-    "clearFilter": "Zurücksetzen"
+    "clearFilter": "Zurücksetzen",
+    "filterToggleLabel": "Zeitraum filtern",
+    "filterActiveLabel": "Zeitraum: {range}"
   },
   "fleetOverview": {
     "title": "Flottenübersicht",

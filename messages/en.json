@@ -114,7 +114,9 @@
     "usagesShownCountMore": "Showing the latest {count} usages",
     "loadingMore": "Loading more usages…",
     "loadMore": "Load more",
-    "clearFilter": "Reset"
+    "clearFilter": "Reset",
+    "filterToggleLabel": "Filter by date range",
+    "filterActiveLabel": "Date range: {range}"
   },
   "fleetOverview": {
     "title": "Fleet overview",
