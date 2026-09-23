@@ -4,6 +4,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithIntl } from '@/test/renderWithIntl'
 import { jsonResponse } from '@/test/http'
+import { toDatetimeLocalValue } from '@/lib/dates/rangeDefaults'
 
 const authenticatedFetch = vi.fn()
 vi.mock('@/lib/api/authenticatedFetch', () => ({
@@ -83,6 +84,13 @@ const submitButton = () => screen.getByRole('button', { name: /Nutzung speichern
 const DRAFT_KEY = (org: string) => `fleettrack:createUsageDraft:${org}`
 const readDraft = (org: string) => JSON.parse(window.localStorage.getItem(DRAFT_KEY(org)) ?? 'null')
 
+// usageDate ist jetzt datetime-local (siehe CreateUsage/getNowDateTime) - der
+// erwartete Default-Wert haengt von der lokalen Zeitzone der Testumgebung ab
+// (CI vs. lokal), daher hier ueber dieselbe Konvertierungsfunktion berechnet
+// statt hart codiert. new Date() liefert dank vi.setSystemTime() in beforeEach
+// zuverlaessig den gefakten Zeitpunkt.
+const defaultUsageDateLocal = () => toDatetimeLocalValue(new Date())
+
 async function renderReady(props: React.ComponentProps<typeof CreateUsage> = {}) {
   const view = renderWithIntl(<CreateUsage {...props} />)
   await waitFor(() => expect(startInput()).not.toBeDisabled())
@@ -142,7 +150,7 @@ describe('Nutzung erfassen', () => {
     it('defaults the usage date to today', async () => {
       await renderReady()
 
-      expect(dateInput().value).toBe('2026-09-16')
+      expect(dateInput().value).toBe(defaultUsageDateLocal())
     })
 
     it('does nothing before an organization is selected', () => {
@@ -385,7 +393,7 @@ describe('Nutzung erfassen', () => {
         startOperatingHours: 636.7,
         endOperatingHours: 645.1,
         fuelLitersRefilled: 45.5,
-        usageDate: '2026-09-16',
+        usageDate: new Date(defaultUsageDateLocal()).toISOString(),
       })
       expect(endInput().value).toBe('')
       expect(fuelInput().value).toBe('')
@@ -408,12 +416,12 @@ describe('Nutzung erfassen', () => {
     it('sends the chosen date', async () => {
       await renderReady()
       await fillEnd('700')
-      fireEvent.change(dateInput(), { target: { value: '2026-09-10' } })
+      fireEvent.change(dateInput(), { target: { value: '2026-09-10T14:00' } })
 
       await userEvent.click(submitButton())
       await screen.findByText('Nutzung erfolgreich gespeichert')
 
-      expect(JSON.parse(postCalls()[0][1].body).usageDate).toBe('2026-09-10')
+      expect(JSON.parse(postCalls()[0][1].body).usageDate).toBe(new Date('2026-09-10T14:00').toISOString())
     })
 
     it('records kilometers for a non-groomer vehicle', async () => {
@@ -545,7 +553,7 @@ describe('Nutzung erfassen', () => {
           startOperatingHours: '636.7',
           endOperatingHours: '700',
           fuel: '12',
-          usageDate: '2026-09-16',
+          usageDate: defaultUsageDateLocal(),
         }),
       )
       expect(readDraft('org-2')).toBeNull()
@@ -559,7 +567,7 @@ describe('Nutzung erfassen', () => {
           startOperatingHours: '12050',
           endOperatingHours: '12100',
           fuel: '30',
-          usageDate: '2026-09-12',
+          usageDate: '2026-09-12T08:00',
         }),
       )
 
@@ -569,7 +577,7 @@ describe('Nutzung erfassen', () => {
       expect(startInput().value).toBe('12050')
       expect(endInput().value).toBe('12100')
       expect(fuelInput().value).toBe('30')
-      expect(dateInput().value).toBe('2026-09-12')
+      expect(dateInput().value).toBe('2026-09-12T08:00')
       expect(screen.getByText('Gefahrene Strecke: 50 km')).toBeInTheDocument()
       expect(lastHoursCalls()).toHaveLength(0)
     })
@@ -580,7 +588,7 @@ describe('Nutzung erfassen', () => {
         startOperatingHours: '636.7',
         endOperatingHours: '650',
         fuel: '',
-        usageDate: '2026-09-12',
+        usageDate: '2026-09-12T08:00',
       }
       window.localStorage.setItem(DRAFT_KEY('org-1'), JSON.stringify(draft))
 
@@ -619,7 +627,7 @@ describe('Nutzung erfassen', () => {
           startOperatingHours: '7',
           endOperatingHours: '9',
           fuel: '1',
-          usageDate: '2026-09-01',
+          usageDate: '2026-09-01T08:00',
         }),
       )
       const { rerender } = await renderReady()
@@ -631,7 +639,7 @@ describe('Nutzung erfassen', () => {
 
       await waitFor(() => expect(vehicleSelect().value).toBe('v3'))
       expect(endInput().value).toBe('9')
-      expect(dateInput().value).toBe('2026-09-01')
+      expect(dateInput().value).toBe('2026-09-01T08:00')
       expect(readDraft('org-1')?.endOperatingHours).toBe('700')
       expect(readDraft('org-2')?.endOperatingHours).toBe('9')
     })
