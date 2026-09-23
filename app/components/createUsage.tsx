@@ -4,14 +4,23 @@ import { useState, useCallback, useEffect, useRef, type FC, type FormEvent } fro
 import { useTranslations } from 'next-intl';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
-import { throwApiError } from '@/lib/api/ApiError';
+import { ApiError, throwApiError } from '@/lib/api/ApiError';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
+import { appendSecondaryContinuityIssue } from '@/lib/i18n/continuityWarning';
 import { vehicleUsesKm } from '@/lib/vehicles/metric';
+import { toDatetimeLocalValue } from '@/lib/dates/rangeDefaults';
 import { ToastContainer } from './Toast';
+import { ConfirmDialog } from './ConfirmDialog';
 import { NotificationPermissionPrompt } from './NotificationPermissionPrompt';
+
+// Backend-Fehlercodes, die eine Lücke/Überschneidung der Betriebsstunden zum
+// benachbarten Eintrag desselben Fahrzeugs melden (siehe UsagesService.
+// checkHoursContinuity) - blockieren das Speichern nicht endgültig, sondern
+// werden als Bestätigungsdialog angezeigt (siehe handleSubmit/continuityWarning).
+const HOURS_CONTINUITY_ERROR_CODES = new Set(['USAGE_HOURS_GAP', 'USAGE_HOURS_OVERLAP']);
 
 interface Vehicle {
   id: string;
@@ -79,19 +88,21 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
   const { toasts, showToast, removeToast } = useToast();
   const t = useTranslations('createUsage');
   const tCommon = useTranslations('common');
+  const tErrors = useTranslations('errors');
   const getApiErrorMessage = useApiErrorMessage();
 
-  const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
+  // Datum UND Zeit (nicht nur Datum) - sonst kann das System bei mehreren
+  // Nutzungen am selben Tag (z.B. Nacht- und Abendschicht) die tatsaechliche
+  // Reihenfolge nicht mehr sicher bestimmen (siehe UsagesService.
+  // checkHoursContinuity, das usageDate als primaeres Sortierkriterium nutzt).
+  const getNowDateTime = () => toDatetimeLocalValue(new Date());
 
   const [formData, setFormData] = useState<FormState>({
     vehicleId: '',
     startOperatingHours: '',
     endOperatingHours: '',
     fuel: '',
-    usageDate: getTodayDate(),
+    usageDate: getNowDateTime(),
   });
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [vehiclesLoading, setVehiclesLoading] = useState(false);
@@ -127,6 +138,10 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
   const [dismissedNoVehiclesDialog, setDismissedNoVehiclesDialog] = useState(false);
   const showNoVehiclesDialog =
     !vehiclesLoading && !vehiclesError && vehicles.length === 0 && !!selectedOrgId && !dismissedNoVehiclesDialog;
+  // Lücken-/Überschneidungswarnung vom Server (siehe HOURS_CONTINUITY_ERROR_CODES) -
+  // haelt das Payload fest, damit "Trotzdem speichern" denselben Request mit
+  // confirmDespiteWarning=true wiederholen kann, ohne das Formular neu zu bauen.
+  const [continuityWarning, setContinuityWarning] = useState<{ message: string; payload: Record<string, unknown> } | null>(null);
 
   // Pistenfahrzeuge erfassen Betriebsstunden, alle anderen Typen Kilometer.
   const usesKm = vehicleUsesKm(
@@ -157,7 +172,7 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
       startOperatingHours: draft?.startOperatingHours ?? '',
       endOperatingHours: draft?.endOperatingHours ?? '',
       fuel: draft?.fuel ?? '',
-      usageDate: draft?.usageDate ?? getTodayDate(),
+      usageDate: draft?.usageDate ?? getNowDateTime(),
     });
     setCalculatedHours(
       draft ? calculateHoursDifference(draft.startOperatingHours ?? '', draft.endOperatingHours ?? '') : null
@@ -243,10 +258,56 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
     }
   };
 
+  const postUsage = async (payload: Record<string, unknown>) => {
+    const res = await authenticatedFetch(buildApiUrl('/usages'), {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      await throwApiError(res, `API-Fehler ${res.status}`);
+    }
+    return res.json();
+  };
+
+  const handleSaveSuccess = (vehicleId: string) => {
+    // Zuletzt gewaehltes Fahrzeug bleibt fuer die naechste Erfassung
+    // voreingestellt (statt auf das erste Fahrzeug der Liste zurueckzufallen) -
+    // Start-Zaehlerstand wird dafuer frisch vom Server nachgeladen, da sich
+    // dieser durch die soeben gespeicherte Nutzung veraendert hat.
+    setFormData({ vehicleId, startOperatingHours: '', endOperatingHours: '', fuel: '', usageDate: getNowDateTime() });
+    setCalculatedHours(null);
+    showToast(t('saveSuccess'), 'success');
+    if (vehicleId) {
+      fetchVehicleEndOperatingHours(vehicleId);
+    }
+    setShowNotificationPrompt(true);
+  };
+
+  const handleSaveError = (err: unknown) => {
+    console.error('Fehler beim Speichern der Nutzung:', err);
+
+    if (isLikelyOfflineError(err)) {
+      // Eingaben bewusst NICHT zuruecksetzen - sie bleiben im Formular und
+      // werden (siehe Persistierungs-Effekt) weiterhin zwischengespeichert,
+      // damit der Fahrer es spaeter mit Empfang erneut versuchen kann, ohne
+      // alles nochmals eingeben zu muessen.
+      const message = t('offlineErrorMessage');
+      setError(message);
+      showToast(message, 'error');
+    } else {
+      setError(getApiErrorMessage(err, t('saveErrorGeneric')));
+      showToast(t('saveErrorToast'), 'error');
+    }
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
+
+    // Ausserhalb des try deklariert, damit der catch-Block bei einer
+    // Kontinuitaetswarnung denselben Payload fuer den Retry uebernehmen kann.
+    let payload: Record<string, unknown> | undefined;
 
     try {
       if (!formData.vehicleId) throw new Error(t('selectVehicleError'));
@@ -264,52 +325,50 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
       const parsedFuel = formData.fuel.trim() === '' ? NaN : parseFloat(formData.fuel);
       const fuelLitersRefilled = Number.isNaN(parsedFuel) ? 0 : parsedFuel;
 
-      const payload = {
+      payload = {
         vehicleId: formData.vehicleId,
         startOperatingHours: parsedStart,
         endOperatingHours: parsedEnd,
         fuelLitersRefilled,
-        usageDate: formData.usageDate,
+        // formData.usageDate ist ein datetime-local-Wert ohne Zeitzonenangabe -
+        // new Date(...) interpretiert den als lokale Zeit, .toISOString() macht
+        // daraus den vollen Zeitstempel, den das Backend erwartet.
+        usageDate: new Date(formData.usageDate).toISOString(),
       };
 
-      const res = await authenticatedFetch(buildApiUrl('/usages'), {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        await throwApiError(res, `API-Fehler ${res.status}`);
-      }
-
-      await res.json();
-
-      // Zuletzt gewaehltes Fahrzeug bleibt fuer die naechste Erfassung
-      // voreingestellt (statt auf das erste Fahrzeug der Liste zurueckzufallen) -
-      // Start-Zaehlerstand wird dafuer frisch vom Server nachgeladen, da sich
-      // dieser durch die soeben gespeicherte Nutzung veraendert hat.
-      const lastVehicleId = formData.vehicleId;
-      setFormData({ vehicleId: lastVehicleId, startOperatingHours: '', endOperatingHours: '', fuel: '', usageDate: getTodayDate() });
-      setCalculatedHours(null);
-      showToast(t('saveSuccess'), 'success');
-      if (lastVehicleId) {
-        fetchVehicleEndOperatingHours(lastVehicleId);
-      }
-      setShowNotificationPrompt(true);
+      await postUsage(payload);
+      handleSaveSuccess(formData.vehicleId);
     } catch (err) {
-      console.error('Fehler beim Speichern der Nutzung:', err);
-
-      if (isLikelyOfflineError(err)) {
-        // Eingaben bewusst NICHT zuruecksetzen - sie bleiben im Formular und
-        // werden (siehe Persistierungs-Effekt) weiterhin zwischengespeichert,
-        // damit der Fahrer es spaeter mit Empfang erneut versuchen kann, ohne
-        // alles nochmals eingeben zu muessen.
-        const message = t('offlineErrorMessage');
-        setError(message);
-        showToast(message, 'error');
+      if (payload && err instanceof ApiError && err.code && HOURS_CONTINUITY_ERROR_CODES.has(err.code)) {
+        // Nicht blockieren - Bestaetigungsdialog zeigen, "Trotzdem speichern"
+        // wiederholt denselben Request mit confirmDespiteWarning=true.
+        setContinuityWarning({
+          message: appendSecondaryContinuityIssue(
+            err,
+            getApiErrorMessage(err, t('saveErrorGeneric')),
+            tErrors
+          ),
+          payload,
+        });
       } else {
-        setError(getApiErrorMessage(err, t('saveErrorGeneric')));
-        showToast(t('saveErrorToast'), 'error');
+        handleSaveError(err);
       }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmSaveAnyway = async () => {
+    if (!continuityWarning) return;
+    const { payload } = continuityWarning;
+    setContinuityWarning(null);
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await postUsage({ ...payload, confirmDespiteWarning: true });
+      handleSaveSuccess(String(payload.vehicleId ?? ''));
+    } catch (err) {
+      handleSaveError(err);
     } finally {
       setIsSubmitting(false);
     }
@@ -442,7 +501,7 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
           </label>
           <input
             id="usageDate"
-            type="date"
+            type="datetime-local"
             value={formData.usageDate}
             onChange={(e) => setFormData((prev) => ({ ...prev, usageDate: e.target.value }))}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
@@ -529,6 +588,17 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
       </form>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       {showNotificationPrompt && <NotificationPermissionPrompt />}
+
+      {continuityWarning && (
+        <ConfirmDialog
+          title={tCommon('confirmationTitle')}
+          message={continuityWarning.message}
+          confirmLabel={tCommon('saveAnyway')}
+          cancelLabel={tCommon('cancel')}
+          onConfirm={handleConfirmSaveAnyway}
+          onCancel={() => setContinuityWarning(null)}
+        />
+      )}
 
       {showNoVehiclesDialog && (
         <div

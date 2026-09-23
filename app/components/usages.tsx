@@ -6,13 +6,15 @@ import { useDateLocale } from '@/lib/i18n/formatDate';
 import CalendarView from './CalendarView';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
-import { throwApiError } from '@/lib/api/ApiError';
+import { ApiError, throwApiError } from '@/lib/api/ApiError';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { getUsagesWithVehicles, type UsageWithVehicle } from '@/lib/api/usages';
 import { getOrganizationVehicles } from '@/lib/api/vehicles';
 import { useToast } from '@/lib/hooks/useToast';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
+import { appendSecondaryContinuityIssue } from '@/lib/i18n/continuityWarning';
+import { toDatetimeLocalValue } from '@/lib/dates/rangeDefaults';
 import { ToastContainer } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import { VehicleTypeIcon } from './VehicleTypeIcon';
@@ -87,7 +89,8 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, 
       <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
         {report.usageDate && (
           <p>
-            <span className="font-medium">{t('usageDateLabel')}:</span> {new Date(report.usageDate).toLocaleDateString(dateLocale)}
+            <span className="font-medium">{t('usageDateLabel')}:</span>{' '}
+            {new Date(report.usageDate).toLocaleString(dateLocale, { dateStyle: 'medium', timeStyle: 'short' })}
           </p>
         )}
         <p>
@@ -161,6 +164,12 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, 
 // Listenansicht: so viele Nutzungen pro Seite, weitere laden beim Scrollen nach.
 const PAGE_SIZE = 10;
 
+// Backend-Fehlercodes, die eine Lücke/Überschneidung der Betriebsstunden zum
+// benachbarten Eintrag desselben Fahrzeugs melden (siehe UsagesService.
+// checkHoursContinuity) - blockieren das Speichern nicht endgültig, sondern
+// werden als Bestätigungsdialog angezeigt (siehe handleSaveEdit/continuityWarning).
+const HOURS_CONTINUITY_ERROR_CODES = new Set(['USAGE_HOURS_GAP', 'USAGE_HOURS_OVERLAP']);
+
 // Postgres numeric/decimal-Spalten kommen vom Backend als String (node-postgres
 // castet numeric nicht automatisch zu number) - JEDE Stelle, die Werte vom
 // Server in ein Report-Objekt uebernimmt, muss das hier konsistent umwandeln,
@@ -200,6 +209,7 @@ const UebersichtEintraege: FC = () => {
   const { organizations, selectedOrgId, setSelectedOrgId, canManageSelectedOrganization } = useOrganization();
   const t = useTranslations('usagesOverview');
   const tCommon = useTranslations('common');
+  const tErrors = useTranslations('errors');
   const getApiErrorMessage = useApiErrorMessage();
   // Ein Mitarbeiter darf zusaetzlich seine eigenen Nutzungen bearbeiten (aber
   // nicht loeschen) - siehe assertCanEditUsage im Backend.
@@ -240,6 +250,14 @@ const UebersichtEintraege: FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | string | null>(null);
+  // Lücken-/Überschneidungswarnung vom Server (siehe HOURS_CONTINUITY_ERROR_CODES) -
+  // haelt usageId + Payload fest, damit "Trotzdem speichern" denselben Request
+  // mit confirmDespiteWarning=true wiederholen kann.
+  const [continuityWarning, setContinuityWarning] = useState<{
+    message: string;
+    usageId: number | string;
+    payload: Record<string, unknown>;
+  } | null>(null);
 
   const handleVisibleRangeChange = useCallback(({ start, end }: { start: Date; end: Date }) => {
     setCalendarRange({ start: start.toISOString(), end: end.toISOString() });
@@ -260,14 +278,13 @@ const UebersichtEintraege: FC = () => {
 
   const handleEdit = (report: Report) => {
     setEditingReport(report);
-    
-    // Konvertiere das usageDate in das Format YYYY-MM-DD für das Date Input
-    let formattedDate = '';
-    if (report.usageDate) {
-      const date = new Date(report.usageDate);
-      formattedDate = date.toISOString().split('T')[0];
-    }
-    
+
+    // Konvertiere das usageDate fuer das datetime-local Input - bewusst in
+    // lokaler Zeit (toDatetimeLocalValue), nicht per .toISOString() (das ist
+    // UTC und haette in Zeitzonen vor UTC das Datum je nach Uhrzeit falsch
+    // angezeigt, z.B. 00:30 Lokalzeit CH waere in UTC noch der Vortag).
+    const formattedDate = report.usageDate ? toDatetimeLocalValue(new Date(report.usageDate)) : '';
+
     setEditForm({
       vehicleId: report.vehicleId || '',
       startOperatingHours: String(report.startOperatingHours),
@@ -295,6 +312,42 @@ const UebersichtEintraege: FC = () => {
     });
   };
 
+  const putUsage = async (id: number | string, payload: Record<string, unknown>) => {
+    const res = await authenticatedFetch(buildApiUrl(`/usages/${id}`), {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      await throwApiError(res, `API error ${res.status}`);
+    }
+    return res.json();
+  };
+
+  const applyUsageUpdate = (targetId: number | string, updatedUsage: UsageWithVehicle) => {
+    const vehicleMap = new Map<string, Vehicle>();
+    vehicles.forEach((v) => vehicleMap.set(v.id, v));
+
+    const applyUpdate = (r: Report): Report =>
+      r.id === targetId
+        ? {
+            id: updatedUsage.id,
+            vehicleId: updatedUsage.vehicleId,
+            vehicle: vehicleMap.get(String(updatedUsage.vehicleId))?.name ?? t('unknownVehicle'),
+            vehicleType: vehicleMap.get(String(updatedUsage.vehicleId))?.vehicleType ?? r.vehicleType,
+            startOperatingHours: toNumber(updatedUsage.startOperatingHours),
+            endOperatingHours: toNumber(updatedUsage.endOperatingHours),
+            fuel: toNumber(updatedUsage.fuelLitersRefilled),
+            usageDate: updatedUsage.usageDate,
+            creatorId: updatedUsage.creatorId ?? r.creatorId,
+            creatorFirstName: updatedUsage.creator?.firstName ?? r.creatorFirstName,
+            creatorLastName: updatedUsage.creator?.lastName ?? r.creatorLastName,
+            creatorEmail: updatedUsage.creator?.email ?? r.creatorEmail,
+          }
+        : r;
+    setReports((prev) => prev.map(applyUpdate));
+    setCalendarReports((prev) => prev.map(applyUpdate));
+  };
+
   const handleSaveEdit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editingReport) return;
@@ -302,49 +355,55 @@ const UebersichtEintraege: FC = () => {
     setIsSubmitting(true);
     setError(null);
 
+    const payload = {
+      vehicleId: editForm.vehicleId,
+      startOperatingHours: parseFloat(editForm.startOperatingHours),
+      endOperatingHours: parseFloat(editForm.endOperatingHours),
+      fuelLitersRefilled: parseFloat(editForm.fuel) || 0,
+      // editForm.usageDate ist ein datetime-local-Wert ohne Zeitzonenangabe -
+      // new Date(...) interpretiert den als lokale Zeit, .toISOString() macht
+      // daraus den vollen Zeitstempel, den das Backend erwartet.
+      usageDate: new Date(editForm.usageDate).toISOString(),
+    };
+
     try {
-      const payload = {
-        vehicleId: editForm.vehicleId,
-        startOperatingHours: parseFloat(editForm.startOperatingHours),
-        endOperatingHours: parseFloat(editForm.endOperatingHours),
-        fuelLitersRefilled: parseFloat(editForm.fuel) || 0,
-        usageDate: editForm.usageDate,
-      };
-
-      const res = await authenticatedFetch(buildApiUrl(`/usages/${editingReport.id}`), {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        await throwApiError(res, `API error ${res.status}`);
+      const updatedUsage = await putUsage(editingReport.id, payload);
+      applyUsageUpdate(editingReport.id, updatedUsage);
+      handleCancelEdit();
+      showToast(t('updateSuccess'), 'success');
+    } catch (err) {
+      if (err instanceof ApiError && err.code && HOURS_CONTINUITY_ERROR_CODES.has(err.code)) {
+        // Nicht blockieren - Bestaetigungsdialog zeigen, "Trotzdem speichern"
+        // wiederholt denselben Request mit confirmDespiteWarning=true.
+        setContinuityWarning({
+          message: appendSecondaryContinuityIssue(
+            err,
+            getApiErrorMessage(err, t('updateErrorGeneric')),
+            tErrors
+          ),
+          usageId: editingReport.id,
+          payload,
+        });
+      } else {
+        console.error('Fehler beim Aktualisieren der Nutzung:', err);
+        setError(getApiErrorMessage(err, t('updateErrorGeneric')));
+        showToast(t('updateErrorToast'), 'error');
       }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-      // Aktualisiere die Liste
-      const updatedUsage = await res.json();
-      const vehicleMap = new Map<string, Vehicle>();
-      vehicles.forEach((v) => vehicleMap.set(v.id, v));
+  const handleConfirmSaveEditAnyway = async () => {
+    if (!continuityWarning) return;
+    const { usageId, payload } = continuityWarning;
+    setContinuityWarning(null);
+    setIsSubmitting(true);
+    setError(null);
 
-      const applyUpdate = (r: Report): Report =>
-        r.id === editingReport.id
-          ? {
-              id: updatedUsage.id,
-              vehicleId: updatedUsage.vehicleId,
-              vehicle: vehicleMap.get(String(updatedUsage.vehicleId))?.name ?? t('unknownVehicle'),
-              vehicleType: vehicleMap.get(String(updatedUsage.vehicleId))?.vehicleType ?? r.vehicleType,
-              startOperatingHours: toNumber(updatedUsage.startOperatingHours),
-              endOperatingHours: toNumber(updatedUsage.endOperatingHours),
-              fuel: toNumber(updatedUsage.fuelLitersRefilled),
-              usageDate: updatedUsage.usageDate,
-              creatorId: updatedUsage.creatorId ?? r.creatorId,
-              creatorFirstName: updatedUsage.creator?.firstName ?? r.creatorFirstName,
-              creatorLastName: updatedUsage.creator?.lastName ?? r.creatorLastName,
-              creatorEmail: updatedUsage.creator?.email ?? r.creatorEmail,
-            }
-          : r;
-      setReports((prev) => prev.map(applyUpdate));
-      setCalendarReports((prev) => prev.map(applyUpdate));
-
+    try {
+      const updatedUsage = await putUsage(usageId, { ...payload, confirmDespiteWarning: true });
+      applyUsageUpdate(usageId, updatedUsage);
       handleCancelEdit();
       showToast(t('updateSuccess'), 'success');
     } catch (err) {
@@ -647,7 +706,7 @@ const UebersichtEintraege: FC = () => {
                 </label>
                 <input
                   id="edit-usageDate"
-                  type="date"
+                  type="datetime-local"
                   value={editForm.usageDate}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, usageDate: e.target.value }))}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
@@ -793,6 +852,16 @@ const UebersichtEintraege: FC = () => {
         </div>
       )}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+      {continuityWarning && (
+        <ConfirmDialog
+          title={tCommon('confirmationTitle')}
+          message={continuityWarning.message}
+          confirmLabel={tCommon('saveAnyway')}
+          cancelLabel={tCommon('cancel')}
+          onConfirm={handleConfirmSaveEditAnyway}
+          onCancel={() => setContinuityWarning(null)}
+        />
+      )}
       {confirmDeleteId !== null && (
         <ConfirmDialog
           title={t('confirmDeleteTitle')}

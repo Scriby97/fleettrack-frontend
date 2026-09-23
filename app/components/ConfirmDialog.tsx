@@ -61,7 +61,10 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
         >
           {title}
         </h3>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">{message}</p>
+        {/* whitespace-pre-line: einzelne Aufrufer (z.B. die Betriebsstunden-
+            Lücken-/Überschneidungswarnung) übergeben mehrzeilige Nachrichten
+            mit "\n" - ohne das würde der Zeilenumbruch von CSS ignoriert. */}
+        <p className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-pre-line">{message}</p>
         {requireTypedConfirmation !== undefined && (
           <div>
             {typedConfirmationLabel && (
