@@ -5,7 +5,7 @@ vi.mock('./authenticatedFetch', () => ({
   authenticatedFetch: (...args: unknown[]) => authenticatedFetch(...args),
 }))
 
-import { getUsagesWithVehicles } from './usages'
+import { getUsagesWithVehicles, getInconsistentPairs } from './usages'
 
 function jsonResponse(body: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body), {
@@ -124,5 +124,54 @@ describe('getUsagesWithVehicles', () => {
     authenticatedFetch.mockResolvedValue(jsonResponse({ message: 'nope' }, { status: 500 }))
 
     await expect(getUsagesWithVehicles('org-1')).rejects.toThrow()
+  })
+})
+
+describe('getInconsistentPairs', () => {
+  beforeEach(() => {
+    authenticatedFetch.mockReset()
+    vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://api.example.test')
+  })
+
+  it('sends vehicleId and calls the inconsistent-pairs endpoint', async () => {
+    authenticatedFetch.mockResolvedValue(jsonResponse({ pairs: [] }))
+
+    await getInconsistentPairs('v1')
+
+    const url = requestedUrl()
+    expect(url.pathname).toBe('/api/usages/inconsistent-pairs')
+    expect(url.searchParams.get('vehicleId')).toBe('v1')
+    expect(url.searchParams.has('organizationId')).toBe(false)
+  })
+
+  it('sends organizationId when given', async () => {
+    authenticatedFetch.mockResolvedValue(jsonResponse({ pairs: [] }))
+
+    await getInconsistentPairs('v1', { organizationId: 'org-1' })
+
+    expect(requestedUrl().searchParams.get('organizationId')).toBe('org-1')
+  })
+
+  it('returns the pairs from the response', async () => {
+    const pairs = [{ type: 'gap', hours: 2, previous: { id: 'u1' }, current: { id: 'u2' } }]
+    authenticatedFetch.mockResolvedValue(jsonResponse({ pairs }))
+
+    const result = await getInconsistentPairs('v1')
+
+    expect(result).toEqual(pairs)
+  })
+
+  it('defaults a missing pairs field to an empty array', async () => {
+    authenticatedFetch.mockResolvedValue(jsonResponse({}))
+
+    const result = await getInconsistentPairs('v1')
+
+    expect(result).toEqual([])
+  })
+
+  it('throws on a non-ok response', async () => {
+    authenticatedFetch.mockResolvedValue(jsonResponse({ message: 'nope' }, { status: 500 }))
+
+    await expect(getInconsistentPairs('v1')).rejects.toThrow()
   })
 })

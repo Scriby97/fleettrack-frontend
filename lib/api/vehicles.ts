@@ -85,3 +85,25 @@ export async function getOrganizationVehicles(
   }
   return data as OrganizationVehicle[]
 }
+
+/**
+ * IDs of vehicles that have at least one gap/overlap between two
+ * chronologically consecutive usages - powers the "!" badges in the
+ * navigation, fleet overview and vehicle detail page.
+ */
+export async function getInconsistentVehicleIds(
+  organizationId?: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<string[]> {
+  const url = new URL(buildApiUrl('/vehicles/inconsistent-usages'))
+  if (organizationId) {
+    url.searchParams.set('organizationId', organizationId)
+  }
+
+  const res = await authenticatedFetch(url.toString(), { signal: options.signal })
+  if (!res.ok) {
+    await throwApiError(res, `HTTP ${res.status}`)
+  }
+  const data: { vehicleIds: string[] } = await res.json()
+  return data.vehicleIds ?? []
+}

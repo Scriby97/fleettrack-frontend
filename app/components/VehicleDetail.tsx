@@ -9,13 +9,15 @@ import { throwApiError } from '@/lib/api/ApiError';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { useToast } from '@/lib/hooks/useToast';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
+import { useFleetConsistency } from '@/lib/contexts/FleetConsistencyContext';
 import { ToastContainer } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import { VehicleTypeIcon } from './VehicleTypeIcon';
 import { ActivityBarChart } from './ActivityBarChart';
+import { InconsistencyBadge } from './InconsistencyBadge';
 import { vehicleUsesKm, counterDecimals } from '@/lib/vehicles/metric';
 import { getVehicleUsageHistory, type VehicleUsageHistory } from '@/lib/api/vehicles';
-import { getUsagesWithVehicles, type UsageWithVehicle } from '@/lib/api/usages';
+import { getUsagesWithVehicles, getInconsistentPairs, type UsageWithVehicle, type InconsistentUsagePair } from '@/lib/api/usages';
 
 // Nutzungen-Tab: so viele Eintraege pro Seite, weitere laden beim Scrollen nach
 // (gleiches Muster/gleiche Seitengroesse wie die Listenansicht der Nutzungsuebersicht).
@@ -97,6 +99,43 @@ const VehicleUsageItem: FC<VehicleUsageItemProps> = ({ entry, usesKm, canManage 
   );
 };
 
+interface InconsistentPairCardProps {
+  pair: InconsistentUsagePair;
+  usesKm: boolean;
+  canManage: boolean;
+}
+
+// Zeigt ein Paar chronologisch aufeinanderfolgender Nutzungen, die nicht
+// luecklos ineinander uebergehen: gelb umrandet bei einer Luecke, rot
+// umrandet bei einer Ueberschneidung (siehe Backend UsagesService.
+// findInconsistentPairs).
+const InconsistentPairCard: FC<InconsistentPairCardProps> = ({ pair, usesKm, canManage }) => {
+  const t = useTranslations('usagesOverview');
+  const unit = usesKm ? 'km' : 'h';
+  const fmt = (n: number) => (usesKm ? Math.round(n).toString() : n.toFixed(1));
+  const isGap = pair.type === 'gap';
+
+  return (
+    <div
+      className={`rounded-lg border-2 p-3 space-y-2 ${
+        isGap
+          ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/10'
+          : 'border-red-400 bg-red-50 dark:bg-red-900/10'
+      }`}
+    >
+      <p
+        className={`text-xs font-semibold ${
+          isGap ? 'text-yellow-700 dark:text-yellow-400' : 'text-red-700 dark:text-red-400'
+        }`}
+      >
+        {isGap ? t('inconsistentGapLabel') : t('inconsistentOverlapLabel')} {fmt(pair.hours)} {unit}
+      </p>
+      <VehicleUsageItem entry={mapUsageEntry(pair.previous)} usesKm={usesKm} canManage={canManage} />
+      <VehicleUsageItem entry={mapUsageEntry(pair.current)} usesKm={usesKm} canManage={canManage} />
+    </div>
+  );
+};
+
 export interface DetailVehicle {
   id: string;
   name: string;
@@ -146,6 +185,8 @@ const VehicleDetail = ({
   const getApiErrorMessage = useApiErrorMessage();
   const { toasts, showToast, removeToast } = useToast();
   const { selectedOrgId, canManageSelectedOrganization } = useOrganization();
+  const { inconsistentVehicleIds } = useFleetConsistency();
+  const hasInconsistentUsages = inconsistentVehicleIds.has(initialVehicle.id);
 
   const [tab, setTab] = useState<'overview' | 'usages'>('overview');
 
@@ -170,6 +211,16 @@ const VehicleDetail = ({
   const usagesRequestRef = useRef(0);
   const loadingMoreUsagesRef = useRef(false);
   const usagesSentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // Nutzungen-Tab: "Nur inkonsistente Nutzungen"-Filter - zeigt statt der
+  // normalen (paginierten) Liste alle Paare chronologisch aufeinanderfolgender
+  // Nutzungen mit Luecke/Ueberschneidung (siehe getInconsistentPairs). Bewusst
+  // ohne Pagination - diese Liste ist eine Liste von Problemen, die behoben
+  // werden sollen, keine vollstaendige Historie.
+  const [showOnlyInconsistent, setShowOnlyInconsistent] = useState(false);
+  const [inconsistentPairs, setInconsistentPairs] = useState<InconsistentUsagePair[]>([]);
+  const [isLoadingInconsistentPairs, setIsLoadingInconsistentPairs] = useState(false);
+  const [inconsistentPairsError, setInconsistentPairsError] = useState<string | null>(null);
 
   const rangeInvalid =
     Boolean(rangeStart) && Boolean(rangeEnd) && new Date(rangeStart) > new Date(rangeEnd);
@@ -304,6 +355,36 @@ const VehicleDetail = ({
     observer.observe(node);
     return () => observer.disconnect();
   }, [tab, usagesNextCursor, isLoadingUsages, isLoadingMoreUsages, loadMoreUsagesError, loadMoreUsages]);
+
+  // Nutzungen-Tab: sobald der "Nur inkonsistente Nutzungen"-Filter aktiviert
+  // wird, alle Luecken-/Ueberschneidungs-Paare dieses Fahrzeugs laden.
+  useEffect(() => {
+    if (tab !== 'usages' || !showOnlyInconsistent) return;
+
+    const controller = new AbortController();
+    const load = async () => {
+      setIsLoadingInconsistentPairs(true);
+      setInconsistentPairsError(null);
+      try {
+        const pairs = await getInconsistentPairs(initialVehicle.id, {
+          organizationId: selectedOrgId ?? undefined,
+          signal: controller.signal,
+        });
+        setInconsistentPairs(pairs);
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        console.error('Fehler beim Laden der inkonsistenten Nutzungen:', err);
+        setInconsistentPairs([]);
+        setInconsistentPairsError(tUsages('loadError'));
+      } finally {
+        setIsLoadingInconsistentPairs(false);
+      }
+    };
+
+    load();
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, showOnlyInconsistent, initialVehicle.id, selectedOrgId]);
 
   const openEdit = useCallback(() => {
     setEditForm({
@@ -457,13 +538,14 @@ const VehicleDetail = ({
         </button>
         <button
           onClick={() => setTab('usages')}
-          className={`px-4 py-1.5 font-medium transition-colors ${
+          className={`inline-flex items-center gap-1.5 px-4 py-1.5 font-medium transition-colors ${
             tab === 'usages'
               ? 'bg-signal-600 text-white'
               : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
           }`}
         >
           {t('detailTabUsages')}
+          {hasInconsistentUsages && <InconsistencyBadge />}
         </button>
       </div>
 
@@ -586,59 +668,103 @@ const VehicleDetail = ({
 
       {tab === 'usages' && (
         <div className="space-y-3">
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {isLoadingUsages
-              ? tUsages('loadingUsages')
-              : usagesNextCursor
-                ? tUsages('usagesShownCountMore', { count: usageEntries.length })
-                : tUsages('usagesFoundCount', { count: usageEntries.length })}
-          </p>
+          <label className="inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <input
+              type="checkbox"
+              checked={showOnlyInconsistent}
+              onChange={(e) => setShowOnlyInconsistent(e.target.checked)}
+              className="rounded border-zinc-300 dark:border-zinc-600 text-signal-600 focus:ring-signal-500"
+            />
+            {tUsages('onlyInconsistentFilter')}
+            {hasInconsistentUsages && !showOnlyInconsistent && <InconsistencyBadge />}
+          </label>
 
-          {usagesError && usageEntries.length === 0 && (
-            <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
-              <p className="text-sm text-red-900 dark:text-red-100">{usagesError}</p>
-            </div>
-          )}
-
-          {isLoadingUsages ? (
-            <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
-              <p className="text-zinc-600 dark:text-zinc-400">{tUsages('loadingUsagesEllipsis')}</p>
-            </div>
-          ) : usageEntries.length > 0 ? (
+          {showOnlyInconsistent ? (
             <>
-              <div className="grid gap-3">
-                {usageEntries.map((entry) => (
-                  <VehicleUsageItem
-                    key={entry.id}
-                    entry={entry}
-                    usesKm={usesKm}
-                    canManage={canManageSelectedOrganization}
-                  />
-                ))}
-              </div>
-              {usagesNextCursor && (
-                <div ref={usagesSentinelRef} className="py-4 text-center">
-                  {loadMoreUsagesError ? (
-                    <div className="space-y-2">
-                      <p className="text-sm text-red-600 dark:text-red-400">{tUsages('loadError')}</p>
-                      <button
-                        type="button"
-                        onClick={() => void loadMoreUsages()}
-                        className="px-4 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
-                      >
-                        {tUsages('loadMore')}
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">{tUsages('loadingMore')}</p>
-                  )}
+              {inconsistentPairsError && inconsistentPairs.length === 0 && (
+                <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
+                  <p className="text-sm text-red-900 dark:text-red-100">{inconsistentPairsError}</p>
+                </div>
+              )}
+
+              {isLoadingInconsistentPairs ? (
+                <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
+                  <p className="text-zinc-600 dark:text-zinc-400">{tUsages('loadingUsagesEllipsis')}</p>
+                </div>
+              ) : inconsistentPairs.length > 0 ? (
+                <div className="grid gap-3">
+                  {inconsistentPairs.map((pair) => (
+                    <InconsistentPairCard
+                      key={`${pair.previous.id}-${pair.current.id}`}
+                      pair={pair}
+                      usesKm={usesKm}
+                      canManage={canManageSelectedOrganization}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-8 text-center">
+                  <p className="text-zinc-600 dark:text-zinc-400">{tUsages('noInconsistentUsagesFound')}</p>
                 </div>
               )}
             </>
           ) : (
-            <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-8 text-center">
-              <p className="text-zinc-600 dark:text-zinc-400">{tUsages('noUsagesFound')}</p>
-            </div>
+            <>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                {isLoadingUsages
+                  ? tUsages('loadingUsages')
+                  : usagesNextCursor
+                    ? tUsages('usagesShownCountMore', { count: usageEntries.length })
+                    : tUsages('usagesFoundCount', { count: usageEntries.length })}
+              </p>
+
+              {usagesError && usageEntries.length === 0 && (
+                <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
+                  <p className="text-sm text-red-900 dark:text-red-100">{usagesError}</p>
+                </div>
+              )}
+
+              {isLoadingUsages ? (
+                <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
+                  <p className="text-zinc-600 dark:text-zinc-400">{tUsages('loadingUsagesEllipsis')}</p>
+                </div>
+              ) : usageEntries.length > 0 ? (
+                <>
+                  <div className="grid gap-3">
+                    {usageEntries.map((entry) => (
+                      <VehicleUsageItem
+                        key={entry.id}
+                        entry={entry}
+                        usesKm={usesKm}
+                        canManage={canManageSelectedOrganization}
+                      />
+                    ))}
+                  </div>
+                  {usagesNextCursor && (
+                    <div ref={usagesSentinelRef} className="py-4 text-center">
+                      {loadMoreUsagesError ? (
+                        <div className="space-y-2">
+                          <p className="text-sm text-red-600 dark:text-red-400">{tUsages('loadError')}</p>
+                          <button
+                            type="button"
+                            onClick={() => void loadMoreUsages()}
+                            className="px-4 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+                          >
+                            {tUsages('loadMore')}
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400">{tUsages('loadingMore')}</p>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-8 text-center">
+                  <p className="text-zinc-600 dark:text-zinc-400">{tUsages('noUsagesFound')}</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

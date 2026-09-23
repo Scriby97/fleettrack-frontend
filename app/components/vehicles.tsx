@@ -7,7 +7,9 @@ import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
+import { useFleetConsistency } from '@/lib/contexts/FleetConsistencyContext';
 import { VehicleTypeIcon } from './VehicleTypeIcon';
+import { InconsistencyBadge } from './InconsistencyBadge';
 import VehicleDetail from './VehicleDetail';
 import ExportFleetModal from './ExportFleetModal';
 import { defaultRangeStart, defaultRangeEnd } from '@/lib/dates/rangeDefaults';
@@ -80,17 +82,20 @@ interface VehicleItemProps {
 
 const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onSelect }) => {
   const t = useTranslations('fleetOverview');
+  const { inconsistentVehicleIds } = useFleetConsistency();
+  const hasInconsistentUsages = inconsistentVehicleIds.has(vehicle.id);
 
   return (
     <button
       onClick={() => onSelect(vehicle.id)}
       className="w-full text-left rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all flex items-center gap-3"
     >
-      <span className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+      <span className="relative w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
         <VehicleTypeIcon
           type={vehicle.vehicleType}
           className="w-5 h-5 text-blue-600 dark:text-blue-400"
         />
+        {hasInconsistentUsages && <InconsistencyBadge className="absolute -top-1 -right-1" />}
       </span>
       <div className="min-w-0 flex-1">
         <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 truncate">

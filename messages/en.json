@@ -11,7 +11,8 @@
     "organizationLabel": "Organization",
     "unexpectedError": "An unexpected error occurred",
     "switchOrganization": "Switch organization",
-    "moreActions": "More actions"
+    "moreActions": "More actions",
+    "inconsistentUsagesWarning": "Inconsistent usages (gaps/overlaps)"
   },
   "nav": {
     "createUsage": "Log usage",
@@ -112,7 +113,11 @@
     "endKmLabel": "End odometer",
     "usagesShownCountMore": "Showing the latest {count} usages",
     "loadingMore": "Loading more usages…",
-    "loadMore": "Load more"
+    "loadMore": "Load more",
+    "onlyInconsistentFilter": "Show only inconsistent usages",
+    "noInconsistentUsagesFound": "No inconsistent usages found",
+    "inconsistentGapLabel": "Gap of",
+    "inconsistentOverlapLabel": "Overlap of"
   },
   "fleetOverview": {
     "title": "Fleet overview",

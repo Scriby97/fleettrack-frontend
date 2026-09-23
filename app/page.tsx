@@ -13,7 +13,9 @@ import { BottomNav } from "./components/BottomNav";
 import { MobileHeader } from "./components/MobileHeader";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useOrganization } from "@/lib/contexts/OrganizationContext";
+import { useFleetConsistency } from "@/lib/contexts/FleetConsistencyContext";
 import { InstallPrompt } from "./components/InstallPrompt";
+import { InconsistencyBadge } from "./components/InconsistencyBadge";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 type MenuKey = "nutzung" | "uebersichtEintraege" | "uebersicht" | "fahrzeug";
@@ -26,6 +28,7 @@ export default function Home() {
   const [active, setActive] = useState<MenuKey>("nutzung");
   const { userProfile, hasOrganization } = useAuth();
   const { canManageSelectedOrganization: canManageOrganization, selectedOrgId } = useOrganization();
+  const { hasInconsistentUsages } = useFleetConsistency();
 
   // Über die Nav (Tabs, Logo) - im Unterschied zum direkten Auswählen eines
   // Fahrzeugs in der Flottenübersicht - immer sauber navigieren: ein evtl.
@@ -127,6 +130,7 @@ export default function Home() {
                 }
               >
                 {t("fleetOverview")}
+                {hasInconsistentUsages && <InconsistencyBadge className="ml-2" />}
               </button>
 
               <button

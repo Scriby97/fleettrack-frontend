@@ -96,3 +96,37 @@ export async function getUsagesWithVehicles(
   const data: GetUsagesWithVehiclesResponse = await response.json();
   return { usages: data.usages, nextCursor: data.nextCursor ?? null };
 }
+
+export interface InconsistentUsagePair {
+  type: 'gap' | 'overlap';
+  hours: number;
+  previous: UsageWithVehicle;
+  current: UsageWithVehicle;
+}
+
+/**
+ * Pairs of chronologically consecutive usages of a vehicle that don't
+ * connect seamlessly (a gap or an overlap between them) - powers the "only
+ * inconsistent usages" filter in the vehicle detail page's Nutzungen tab.
+ */
+export async function getInconsistentPairs(
+  vehicleId: string,
+  options: { organizationId?: string; signal?: AbortSignal } = {},
+): Promise<InconsistentUsagePair[]> {
+  const url = new URL(buildApiUrl('/usages/inconsistent-pairs'));
+  url.searchParams.set('vehicleId', vehicleId);
+  if (options.organizationId) {
+    url.searchParams.set('organizationId', options.organizationId);
+  }
+
+  const response = await authenticatedFetch(url.toString(), {
+    signal: options.signal,
+  });
+
+  if (!response.ok) {
+    await throwApiError(response, `HTTP ${response.status}`);
+  }
+
+  const data: { pairs: InconsistentUsagePair[] } = await response.json();
+  return data.pairs ?? [];
+}

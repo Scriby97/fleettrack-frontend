@@ -33,6 +33,11 @@ vi.mock('@/lib/contexts/OrganizationContext', () => ({
   useOrganization: () => ({ ...orgState }),
 }))
 
+const fleetConsistencyState = { inconsistentVehicleIds: new Set<string>() }
+vi.mock('@/lib/contexts/FleetConsistencyContext', () => ({
+  useFleetConsistency: () => ({ ...fleetConsistencyState }),
+}))
+
 // Kindkomponenten werden separat getestet - hier nur, wie die Uebersicht sie ansteuert.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let detailProps: any
@@ -265,6 +270,21 @@ describe('Flottenübersicht', () => {
       expect(screen.getAllByText('(Ausrangiert)')).toHaveLength(1)
       expect(screen.getByText('5')).toBeInTheDocument()
       expect(screen.getByText('BE 111')).toBeInTheDocument()
+    })
+
+    it('shows the inconsistency badge only for a vehicle with inconsistent usages', async () => {
+      fleetConsistencyState.inconsistentVehicleIds = new Set(['a'])
+      respondWith([
+        stat('a', 'Alt', { plate: 'BE 555' }),
+        stat('b', 'Aktiv', { plate: 'BE 111' }),
+      ])
+
+      renderWithIntl(<FlottenUebersicht />)
+      await screen.findByText('BE 555')
+
+      expect(screen.getAllByLabelText('Inkonsistente Nutzungen (Lücken/Überschneidungen)')).toHaveLength(1)
+
+      fleetConsistencyState.inconsistentVehicleIds = new Set()
     })
   })
 

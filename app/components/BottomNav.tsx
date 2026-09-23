@@ -3,6 +3,8 @@
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useOrganization } from "@/lib/contexts/OrganizationContext";
+import { useFleetConsistency } from "@/lib/contexts/FleetConsistencyContext";
+import { InconsistencyBadge } from "./InconsistencyBadge";
 
 type MenuKey = "nutzung" | "uebersichtEintraege" | "uebersicht" | "fahrzeug";
 
@@ -30,6 +32,7 @@ export function BottomNav({ active, onNavigate, showFleetTab }: BottomNavProps) 
   const pathname = usePathname();
   const t = useTranslations("nav");
   const { canManageSelectedOrganization } = useOrganization();
+  const { hasInconsistentUsages } = useFleetConsistency();
   const accountActive = pathname.startsWith("/settings") || pathname.startsWith("/admin");
   const effectiveShowFleetTab = showFleetTab ?? canManageSelectedOrganization;
 
@@ -67,7 +70,8 @@ export function BottomNav({ active, onNavigate, showFleetTab }: BottomNavProps) 
       </button>
 
       {effectiveShowFleetTab && (
-        <button type="button" onClick={() => handleTabClick("uebersicht")} className={itemClass(active === "uebersicht" && !accountActive)}>
+        <button type="button" onClick={() => handleTabClick("uebersicht")} className={`relative ${itemClass(active === "uebersicht" && !accountActive)}`}>
+          {hasInconsistentUsages && <InconsistencyBadge className="absolute top-0.5 right-1" />}
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <rect x="2" y="11" width="14" height="7" rx="1.5" />
             <circle cx="6" cy="19" r="1.8" />

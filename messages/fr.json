@@ -11,7 +11,8 @@
     "organizationLabel": "Organisation",
     "unexpectedError": "Une erreur inattendue s'est produite",
     "switchOrganization": "Changer d'organisation",
-    "moreActions": "Plus d'actions"
+    "moreActions": "Plus d'actions",
+    "inconsistentUsagesWarning": "Utilisations incohérentes (lacunes/chevauchements)"
   },
   "nav": {
     "createUsage": "Saisir une utilisation",
@@ -112,7 +113,11 @@
     "endKmLabel": "Compteur km à la fin",
     "usagesShownCountMore": "{count} dernières utilisations affichées",
     "loadingMore": "Chargement d’autres utilisations…",
-    "loadMore": "Charger plus"
+    "loadMore": "Charger plus",
+    "onlyInconsistentFilter": "Afficher uniquement les utilisations incohérentes",
+    "noInconsistentUsagesFound": "Aucune utilisation incohérente trouvée",
+    "inconsistentGapLabel": "Lacune de",
+    "inconsistentOverlapLabel": "Chevauchement de"
   },
   "fleetOverview": {
     "title": "Aperçu de la flotte",
