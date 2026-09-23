@@ -559,7 +559,12 @@ describe('Nutzung erfassen', () => {
       expect(readDraft('org-2')).toBeNull()
     })
 
-    it('restores a draft, including the vehicle, and keeps its start instead of the server value', async () => {
+    it('restores a draft (end, fuel, date) but always refreshes the start from the server', async () => {
+      // lastHours.v2 = 12000 (siehe beforeEach) - bewusst abweichend vom
+      // Entwurf, um zu pruefen, dass der frische Serverwert den (moeglicherweise
+      // laengst veralteten) Entwurfswert ueberschreibt: die Start-Betriebsstunden
+      // muessen IMMER den End-Betriebsstunden der zuletzt erfassten Nutzung
+      // entsprechen, nie einen alten zwischengespeicherten Stand zeigen.
       window.localStorage.setItem(
         DRAFT_KEY('org-1'),
         JSON.stringify({
@@ -574,12 +579,14 @@ describe('Nutzung erfassen', () => {
       renderWithIntl(<CreateUsage />)
 
       await waitFor(() => expect(vehicleSelect().value).toBe('v2'))
-      expect(startInput().value).toBe('12050')
+      await waitFor(() => expect(startInput().value).toBe('12000'))
       expect(endInput().value).toBe('12100')
       expect(fuelInput().value).toBe('30')
       expect(dateInput().value).toBe('2026-09-12T08:00')
-      expect(screen.getByText('Gefahrene Strecke: 50 km')).toBeInTheDocument()
-      expect(lastHoursCalls()).toHaveLength(0)
+      // Differenz-Anzeige muss den frischen Start beruecksichtigen (100, nicht
+      // die alte, aus dem Entwurf berechnete Differenz von 50).
+      expect(screen.getByText('Gefahrene Strecke: 100 km')).toBeInTheDocument()
+      expect(lastHoursCalls()).toHaveLength(1)
     })
 
     it('does not wipe an existing draft while it is still being restored', async () => {

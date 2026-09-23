@@ -115,10 +115,6 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
   // Keep a ref of the current vehicleId so the vehicles-fetching effect can check
   // if the currently selected vehicle is still valid without being in its dep array.
   const currentVehicleIdRef = useRef<string>('');
-  // Verhindert, dass die Start-Betriebsstunden eines wiederhergestellten Entwurfs
-  // beim ersten Laden der Fahrzeuge sofort durch den automatischen "letzte
-  // Betriebsstunden"-Fetch ueberschrieben werden (siehe Vehicles-Fetch-Effekt).
-  const skipInitialFetchRef = useRef<boolean>(false);
   const usageDateInputRef = useRef<HTMLInputElement>(null);
   // Fuer welche Organisation formData gerade den geladenen Entwurf enthaelt -
   // wird zusammen mit formData im selben Batch gesetzt (siehe Restore-Effekt),
@@ -161,12 +157,6 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
 
     const draft = loadDraft(selectedOrgId);
     currentVehicleIdRef.current = draft?.vehicleId ?? '';
-    // Nur ueberspringen, wenn der Entwurf einen tatsaechlich noch nicht
-    // gespeicherten Start-Zaehlerstand enthaelt (mitten in der Eingabe
-    // unterbrochen) - nach einem erfolgreichen Speichern ist das Fahrzeug im
-    // Entwurf zwar gesetzt (siehe handleSubmit), der Start-Zaehlerstand aber
-    // bewusst leer, damit er hier ganz normal frisch vom Server geladen wird.
-    skipInitialFetchRef.current = Boolean(draft?.vehicleId) && Boolean(draft?.startOperatingHours);
 
     setFormData({
       vehicleId: draft?.vehicleId ?? '',
@@ -198,6 +188,18 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
     }
   }, [formData, selectedOrgId, activeDraftOrgId]);
 
+  // Setzt startOperatingHours UND berechnet die Differenz-Anzeige (Dauer/Strecke)
+  // neu anhand des jeweils aktuellen endOperatingHours - sonst bliebe die
+  // Anzeige z.B. nach einem wiederhergestellten Entwurf auf der alten,
+  // draft-basierten Differenz stehen, obwohl der Start gerade frisch vom
+  // Server ueberschrieben wurde (siehe fetchVehicleEndOperatingHours).
+  const setStartOperatingHoursAndRecalc = useCallback((value: string) => {
+    setFormData((prev) => {
+      setCalculatedHours(calculateHoursDifference(value, prev.endOperatingHours));
+      return { ...prev, startOperatingHours: value };
+    });
+  }, []);
+
   const fetchVehicleEndOperatingHours = useCallback(async (vehicleId: string) => {
     const apiBaseUrl = getApiBaseUrlOrNull();
     if (!apiBaseUrl || !vehicleId) return;
@@ -211,22 +213,27 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
 
       const res = await authenticatedFetch(url.toString());
       if (!res.ok) {
-        setFormData((prev) => ({ ...prev, startOperatingHours: '0' }));
+        setStartOperatingHoursAndRecalc('0');
         return;
       }
       const data = await res.json();
       if (data.endOperatingHours !== undefined && data.endOperatingHours !== null) {
-        setFormData((prev) => ({ ...prev, startOperatingHours: String(data.endOperatingHours) }));
+        setStartOperatingHoursAndRecalc(String(data.endOperatingHours));
       } else {
-        setFormData((prev) => ({ ...prev, startOperatingHours: '0' }));
+        setStartOperatingHoursAndRecalc('0');
       }
     } catch (err) {
+      // Echter Netzwerkfehler (z.B. offline) - anders als bei einer regulaeren
+      // Server-Antwort (siehe !res.ok oben, dort ist "0" die korrekte, fuer
+      // dieses Fahrzeug tatsaechlich fehlende Angabe) wissen wir hier gar nicht,
+      // was der echte Wert waere - den bestehenden (z.B. aus einem Entwurf
+      // wiederhergestellten) Stand daher unangetastet lassen statt ihn
+      // faelschlich auf 0 zu setzen.
       console.error('Fehler beim Laden der letzten Betriebsstunden:', err);
-      setFormData((prev) => ({ ...prev, startOperatingHours: '0' }));
     } finally {
       setLoadingOperatingHours(false);
     }
-  }, [selectedOrgId]);
+  }, [selectedOrgId, setStartOperatingHoursAndRecalc]);
 
   const handleVehicleChange = useCallback((vehicleId: string) => {
     currentVehicleIdRef.current = vehicleId;
@@ -401,16 +408,17 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
           setVehicles(data);
           const currentValid = data.find((v: Vehicle) => v.id === currentVehicleIdRef.current);
           const selectedVehicleId = currentValid ? currentVehicleIdRef.current : data[0]?.id ?? '';
-          // Nur beim allerersten Laden (und nur, wenn das wiederhergestellte
-          // Fahrzeug noch existiert) die bereits vorhandenen Start-Betriebsstunden
-          // aus dem Entwurf behalten statt sie sofort vom Server zu ueberschreiben.
-          const keepRestoredValue = skipInitialFetchRef.current && Boolean(currentValid);
-          skipInitialFetchRef.current = false;
 
           setFormData((prev) => ({ ...prev, vehicleId: selectedVehicleId }));
           currentVehicleIdRef.current = selectedVehicleId;
 
-          if (selectedVehicleId && !keepRestoredValue) {
+          // Immer frisch vom Server laden, nie einen (moeglicherweise laengst
+          // veralteten) Entwurfswert stehen lassen - die Start-Betriebsstunden
+          // muessen zuverlaessig den End-Betriebsstunden der zuletzt erfassten
+          // Nutzung entsprechen. fetchVehicleEndOperatingHours() selbst behaelt
+          // bei einem echten Netzwerkfehler (offline) den aktuellen Wert bei,
+          // ueberschreibt also nicht faelschlich mit 0 (siehe dort).
+          if (selectedVehicleId) {
             fetchVehicleEndOperatingHours(selectedVehicleId);
           }
         } else {
