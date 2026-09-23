@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type FC, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FC, type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDateLocale } from '@/lib/i18n/formatDate';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
@@ -59,9 +59,14 @@ interface VehicleUsageItemProps {
   entry: VehicleUsageEntry;
   usesKm: boolean;
   canManage: boolean;
+  // Faerbt den Rahmen ein, wenn dieser Eintrag Teil einer Luecke (gelb) oder
+  // Ueberschneidung (rot) mit einem chronologisch benachbarten Eintrag ist -
+  // dieselbe Markierung wie im "Nur inkonsistente Nutzungen"-Filter, aber
+  // auch in der normalen (ungefilterten) Liste sichtbar.
+  issueType?: 'gap' | 'overlap' | null;
 }
 
-const VehicleUsageItem: FC<VehicleUsageItemProps> = ({ entry, usesKm, canManage }) => {
+const VehicleUsageItem: FC<VehicleUsageItemProps> = ({ entry, usesKm, canManage, issueType }) => {
   const t = useTranslations('usagesOverview');
   const dateLocale = useDateLocale();
   const unit = usesKm ? 'km' : 'h';
@@ -69,9 +74,15 @@ const VehicleUsageItem: FC<VehicleUsageItemProps> = ({ entry, usesKm, canManage 
   const creatorName = entry.creatorFirstName || entry.creatorLastName
     ? `${entry.creatorFirstName || ''} ${entry.creatorLastName || ''}`.trim()
     : entry.creatorEmail ?? null;
+  const borderClass =
+    issueType === 'overlap'
+      ? 'border-2 border-red-400 bg-red-50 dark:bg-red-900/10'
+      : issueType === 'gap'
+        ? 'border-2 border-yellow-400 bg-yellow-50 dark:bg-yellow-900/10'
+        : 'border border-zinc-200 dark:border-zinc-700';
 
   return (
-    <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
+    <div className={`rounded-lg p-4 ${borderClass}`}>
       <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
         {entry.usageDate && (
           <p>
@@ -222,6 +233,23 @@ const VehicleDetail = ({
   const [isLoadingInconsistentPairs, setIsLoadingInconsistentPairs] = useState(false);
   const [inconsistentPairsError, setInconsistentPairsError] = useState<string | null>(null);
 
+  // Ordnet jeder betroffenen Nutzung-ID ihr (schlimmstes) Problem zu - fuer
+  // die gelb/rot umrandete Markierung einzelner Eintraege auch in der
+  // normalen (ungefilterten) Liste. Eine Ueberschneidung wiegt schwerer als
+  // eine Luecke, falls ein Eintrag (mit beiden Nachbarn) beide Probleme hat.
+  const issueTypeByUsageId = useMemo(() => {
+    const map = new Map<string, 'gap' | 'overlap'>();
+    for (const pair of inconsistentPairs) {
+      for (const usage of [pair.previous, pair.current]) {
+        const id = String(usage.id);
+        if (pair.type === 'overlap' || map.get(id) !== 'overlap') {
+          map.set(id, pair.type);
+        }
+      }
+    }
+    return map;
+  }, [inconsistentPairs]);
+
   const rangeInvalid =
     Boolean(rangeStart) && Boolean(rangeEnd) && new Date(rangeStart) > new Date(rangeEnd);
 
@@ -356,10 +384,12 @@ const VehicleDetail = ({
     return () => observer.disconnect();
   }, [tab, usagesNextCursor, isLoadingUsages, isLoadingMoreUsages, loadMoreUsagesError, loadMoreUsages]);
 
-  // Nutzungen-Tab: sobald der "Nur inkonsistente Nutzungen"-Filter aktiviert
-  // wird, alle Luecken-/Ueberschneidungs-Paare dieses Fahrzeugs laden.
+  // Nutzungen-Tab: sobald der Tab geoeffnet wird, alle Luecken-/
+  // Ueberschneidungs-Paare dieses Fahrzeugs laden - werden gebraucht, um
+  // betroffene Eintraege auch in der normalen (ungefilterten) Liste gelb/rot
+  // zu umranden, nicht nur im "Nur inkonsistente Nutzungen"-Filter.
   useEffect(() => {
-    if (tab !== 'usages' || !showOnlyInconsistent) return;
+    if (tab !== 'usages') return;
 
     const controller = new AbortController();
     const load = async () => {
@@ -384,7 +414,7 @@ const VehicleDetail = ({
     load();
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, showOnlyInconsistent, initialVehicle.id, selectedOrgId]);
+  }, [tab, initialVehicle.id, selectedOrgId]);
 
   const openEdit = useCallback(() => {
     setEditForm({
@@ -737,6 +767,7 @@ const VehicleDetail = ({
                         entry={entry}
                         usesKm={usesKm}
                         canManage={canManageSelectedOrganization}
+                        issueType={issueTypeByUsageId.get(String(entry.id))}
                       />
                     ))}
                   </div>
