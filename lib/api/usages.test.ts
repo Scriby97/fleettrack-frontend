@@ -68,6 +68,16 @@ describe('getUsagesWithVehicles', () => {
     expect(requestedUrl().searchParams.get('endDate')).toBe('2026-01-31T00:00:00.000Z')
   })
 
+  it('sends vehicleId when given', async () => {
+    authenticatedFetch.mockImplementation(() =>
+      Promise.resolve(jsonResponse({ usages: [], nextCursor: null })),
+    )
+
+    await getUsagesWithVehicles('org-1', { vehicleId: 'v1', limit: 10 })
+
+    expect(requestedUrl().searchParams.get('vehicleId')).toBe('v1')
+  })
+
   it('returns usages and the next cursor', async () => {
     authenticatedFetch.mockResolvedValue(
       jsonResponse({ usages: [{ id: 'u1' }], nextCursor: 'next' }),

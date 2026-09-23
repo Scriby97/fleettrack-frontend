@@ -1,18 +1,101 @@
 'use client';
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FC, type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import { useDateLocale } from '@/lib/i18n/formatDate';
 import { authenticatedFetch } from '@/lib/api/authenticatedFetch';
 import { buildApiUrl } from '@/lib/api/url';
 import { throwApiError } from '@/lib/api/ApiError';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { useToast } from '@/lib/hooks/useToast';
+import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { ToastContainer } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import { VehicleTypeIcon } from './VehicleTypeIcon';
 import { ActivityBarChart } from './ActivityBarChart';
 import { vehicleUsesKm, counterDecimals } from '@/lib/vehicles/metric';
 import { getVehicleUsageHistory, type VehicleUsageHistory } from '@/lib/api/vehicles';
+import { getUsagesWithVehicles, type UsageWithVehicle } from '@/lib/api/usages';
+
+// Nutzungen-Tab: so viele Eintraege pro Seite, weitere laden beim Scrollen nach
+// (gleiches Muster/gleiche Seitengroesse wie die Listenansicht der Nutzungsuebersicht).
+const USAGES_PAGE_SIZE = 10;
+
+interface VehicleUsageEntry {
+  id: number | string;
+  startOperatingHours: number;
+  endOperatingHours: number;
+  fuel: number;
+  usageDate?: string;
+  creatorId?: string;
+  creatorFirstName?: string;
+  creatorLastName?: string;
+  creatorEmail?: string;
+}
+
+// Postgres numeric/decimal-Spalten kommen vom Backend als String - siehe
+// gleichnamige Funktion in usages.tsx.
+function toNumber(value: unknown, fallback = 0): number {
+  return typeof value === 'number' ? value : Number(value ?? fallback);
+}
+
+function mapUsageEntry(u: UsageWithVehicle): VehicleUsageEntry {
+  return {
+    id: u.id,
+    startOperatingHours: toNumber(u.startOperatingHours),
+    endOperatingHours: toNumber(u.endOperatingHours),
+    fuel: toNumber(u.fuelLitersRefilled),
+    usageDate: u.usageDate,
+    creatorId: u.creatorId,
+    creatorFirstName: u.creator?.firstName,
+    creatorLastName: u.creator?.lastName,
+    creatorEmail: u.creator?.email,
+  };
+}
+
+interface VehicleUsageItemProps {
+  entry: VehicleUsageEntry;
+  usesKm: boolean;
+  canManage: boolean;
+}
+
+const VehicleUsageItem: FC<VehicleUsageItemProps> = ({ entry, usesKm, canManage }) => {
+  const t = useTranslations('usagesOverview');
+  const dateLocale = useDateLocale();
+  const unit = usesKm ? 'km' : 'h';
+  const fmt = (n: number) => (usesKm ? Math.round(n).toString() : n.toFixed(1));
+  const creatorName = entry.creatorFirstName || entry.creatorLastName
+    ? `${entry.creatorFirstName || ''} ${entry.creatorLastName || ''}`.trim()
+    : entry.creatorEmail ?? null;
+
+  return (
+    <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
+      <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+        {entry.usageDate && (
+          <p>
+            <span className="font-medium">{t('usageDateLabel')}:</span>{' '}
+            {new Date(entry.usageDate).toLocaleString(dateLocale, { dateStyle: 'medium', timeStyle: 'short' })}
+          </p>
+        )}
+        <p>
+          <span className="font-medium">{usesKm ? t('startEndKmLabel') : t('startEndLabel')}</span>{' '}
+          {fmt(entry.startOperatingHours)} {unit} — {fmt(entry.endOperatingHours)} {unit}{' '}
+          <span className="font-medium">
+            ({fmt(entry.endOperatingHours - entry.startOperatingHours)} {unit} {t('diffSuffix')})
+          </span>
+        </p>
+        <p>
+          <span className="font-medium">{t('fuelSummaryLabel')}</span> {entry.fuel} L
+        </p>
+        {canManage && creatorName && (
+          <p>
+            <span className="font-medium">{t('createdByLabel')}</span> {creatorName}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export interface DetailVehicle {
   id: string;
@@ -59,8 +142,12 @@ const VehicleDetail = ({
 }: VehicleDetailProps) => {
   const t = useTranslations('fleetOverview');
   const tCommon = useTranslations('common');
+  const tUsages = useTranslations('usagesOverview');
   const getApiErrorMessage = useApiErrorMessage();
   const { toasts, showToast, removeToast } = useToast();
+  const { selectedOrgId, canManageSelectedOrganization } = useOrganization();
+
+  const [tab, setTab] = useState<'overview' | 'usages'>('overview');
 
   const [history, setHistory] = useState<VehicleUsageHistory | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -72,6 +159,17 @@ const VehicleDetail = ({
   const [editForm, setEditForm] = useState(emptyEditForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // Nutzungen-Tab: seitenweise geladen (neueste zuerst), nextCursor = null -> alles geladen.
+  const [usageEntries, setUsageEntries] = useState<VehicleUsageEntry[]>([]);
+  const [usagesNextCursor, setUsagesNextCursor] = useState<string | null>(null);
+  const [isLoadingUsages, setIsLoadingUsages] = useState(false);
+  const [isLoadingMoreUsages, setIsLoadingMoreUsages] = useState(false);
+  const [loadMoreUsagesError, setLoadMoreUsagesError] = useState(false);
+  const [usagesError, setUsagesError] = useState<string | null>(null);
+  const usagesRequestRef = useRef(0);
+  const loadingMoreUsagesRef = useRef(false);
+  const usagesSentinelRef = useRef<HTMLDivElement | null>(null);
 
   const rangeInvalid =
     Boolean(rangeStart) && Boolean(rangeEnd) && new Date(rangeStart) > new Date(rangeEnd);
@@ -109,6 +207,103 @@ const VehicleDetail = ({
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialVehicle.id, rangeStart, rangeEnd, rangeInvalid, reloadKey]);
+
+  // Nutzungen-Tab: erste Seite (neueste zuerst) erst laden, wenn der Tab
+  // tatsaechlich geoeffnet wird - spart den Request, solange niemand hinschaut.
+  useEffect(() => {
+    if (tab !== 'usages') return;
+
+    const requestRef = usagesRequestRef;
+    const requestId = ++requestRef.current;
+    const controller = new AbortController();
+    loadingMoreUsagesRef.current = false;
+
+    const fetchFirstPage = async () => {
+      setIsLoadingUsages(true);
+      setIsLoadingMoreUsages(false);
+      setLoadMoreUsagesError(false);
+      setUsagesError(null);
+
+      try {
+        const page = await getUsagesWithVehicles(selectedOrgId ?? undefined, {
+          vehicleId: initialVehicle.id,
+          limit: USAGES_PAGE_SIZE,
+          signal: controller.signal,
+        });
+        if (requestId !== usagesRequestRef.current) return;
+
+        setUsageEntries(page.usages.map(mapUsageEntry));
+        setUsagesNextCursor(page.nextCursor);
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        if (requestId !== usagesRequestRef.current) return;
+        console.error('Fehler beim Laden der Nutzungen des Fahrzeugs:', err);
+        setUsageEntries([]);
+        setUsagesNextCursor(null);
+        setUsagesError(tUsages('loadError'));
+      } finally {
+        if (requestId === usagesRequestRef.current) setIsLoadingUsages(false);
+      }
+    };
+
+    fetchFirstPage();
+
+    return () => {
+      requestRef.current++;
+      controller.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, initialVehicle.id, selectedOrgId]);
+
+  const loadMoreUsages = useCallback(async () => {
+    if (!usagesNextCursor || loadingMoreUsagesRef.current) return;
+    loadingMoreUsagesRef.current = true;
+    const requestId = usagesRequestRef.current;
+    setIsLoadingMoreUsages(true);
+    setLoadMoreUsagesError(false);
+
+    try {
+      const page = await getUsagesWithVehicles(selectedOrgId ?? undefined, {
+        vehicleId: initialVehicle.id,
+        limit: USAGES_PAGE_SIZE,
+        cursor: usagesNextCursor,
+      });
+      if (requestId !== usagesRequestRef.current) return;
+
+      setUsageEntries((prev) => {
+        const known = new Set(prev.map((e) => String(e.id)));
+        const fresh = page.usages.filter((u) => !known.has(String(u.id))).map(mapUsageEntry);
+        return [...prev, ...fresh];
+      });
+      setUsagesNextCursor(page.nextCursor);
+    } catch (err) {
+      if (requestId !== usagesRequestRef.current) return;
+      console.error('Fehler beim Nachladen der Nutzungen des Fahrzeugs:', err);
+      setLoadMoreUsagesError(true);
+    } finally {
+      if (requestId === usagesRequestRef.current) {
+        loadingMoreUsagesRef.current = false;
+        setIsLoadingMoreUsages(false);
+      }
+    }
+  }, [usagesNextCursor, selectedOrgId, initialVehicle.id]);
+
+  // Endlos-Scrollen: gleiches Muster wie die Listenansicht der Nutzungsuebersicht.
+  useEffect(() => {
+    const node = usagesSentinelRef.current;
+    if (tab !== 'usages' || !node || !usagesNextCursor || isLoadingUsages || isLoadingMoreUsages || loadMoreUsagesError) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void loadMoreUsages();
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [tab, usagesNextCursor, isLoadingUsages, isLoadingMoreUsages, loadMoreUsagesError, loadMoreUsages]);
 
   const openEdit = useCallback(() => {
     setEditForm({
@@ -248,117 +443,204 @@ const VehicleDetail = ({
         </div>
       </div>
 
-      {/* Alle Infos */}
-      <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">{t('detailAllInfoTitle')}</h2>
-        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-          {infoRows.map(([label, value]) => (
-            <div key={label} className="flex gap-2">
-              <dt className="text-zinc-500 dark:text-zinc-400 shrink-0">{label}:</dt>
-              <dd className="font-medium text-zinc-900 dark:text-zinc-50 break-words">{value}</dd>
-            </div>
-          ))}
-        </dl>
+      {/* Tabs */}
+      <div className="flex rounded-lg border border-zinc-300 dark:border-zinc-600 overflow-hidden text-sm w-fit">
+        <button
+          onClick={() => setTab('overview')}
+          className={`px-4 py-1.5 font-medium transition-colors ${
+            tab === 'overview'
+              ? 'bg-signal-600 text-white'
+              : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
+          }`}
+        >
+          {t('detailTabOverview')}
+        </button>
+        <button
+          onClick={() => setTab('usages')}
+          className={`px-4 py-1.5 font-medium transition-colors ${
+            tab === 'usages'
+              ? 'bg-signal-600 text-white'
+              : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
+          }`}
+        >
+          {t('detailTabUsages')}
+        </button>
       </div>
 
-      {/* Zeitraum-Filter */}
-      <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">{t('filterSectionTitle')}</h2>
-        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-          <div className="flex-1 space-y-1">
-            <label htmlFor="detailRangeStart" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {t('filterStartLabel')}
-            </label>
-            <input
-              id="detailRangeStart"
-              type="datetime-local"
-              value={rangeStart}
-              onChange={(e) => onRangeChange({ start: e.target.value, end: rangeEnd })}
-              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-          <div className="flex-1 space-y-1">
-            <label htmlFor="detailRangeEnd" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {t('filterEndLabel')}
-            </label>
-            <input
-              id="detailRangeEnd"
-              type="datetime-local"
-              value={rangeEnd}
-              onChange={(e) => onRangeChange({ start: rangeStart, end: e.target.value })}
-              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-        {rangeInvalid && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{t('invalidRangeError')}</p>}
-      </div>
-
-      {isLoading && (
-        <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
-          <p className="text-zinc-600 dark:text-zinc-400">{t('detailLoadingHistory')}</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
-          <p className="text-sm text-red-900 dark:text-red-100">{error}</p>
-        </div>
-      )}
-
-      {!isLoading && !error && !rangeInvalid && totals && (
+      {tab === 'overview' && (
         <>
-          {/* Kennzahlen */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatTile
-              label={usesKm ? t('kmInRange') : t('operatingHoursInRange')}
-              value={`${fmtCounter(totals.operatingHours)} ${counterUnit}`}
-            />
-            <StatTile label={t('fuelInRange')} value={`${Math.round(totals.fuelLiters)} ${t('chartFuelUnit')}`} />
-            <StatTile
-              label={usesKm ? t('currentKm') : t('currentOperatingHours')}
-              value={totals.lastHours == null ? '—' : `${fmtCounter(totals.lastHours)} ${counterUnit}`}
-            />
-            <StatTile label={t('usageCountLabel')} value={String(totals.usageCount)} />
+          {/* Alle Infos */}
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">{t('detailAllInfoTitle')}</h2>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+              {infoRows.map(([label, value]) => (
+                <div key={label} className="flex gap-2">
+                  <dt className="text-zinc-500 dark:text-zinc-400 shrink-0">{label}:</dt>
+                  <dd className="font-medium text-zinc-900 dark:text-zinc-50 break-words">{value}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
 
-          {/* Diagramm */}
+          {/* Zeitraum-Filter */}
           <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{t('chartTitle')}</h2>
-              <div className="flex rounded-lg border border-zinc-300 dark:border-zinc-600 overflow-hidden text-xs">
-                <button
-                  onClick={() => setMetric('hours')}
-                  className={`px-3 py-1.5 font-medium transition-colors ${
-                    metric === 'hours'
-                      ? 'bg-signal-600 text-white'
-                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
-                  }`}
-                >
-                  {usesKm ? t('chartMetricKm') : t('chartMetricHours')}
-                </button>
-                <button
-                  onClick={() => setMetric('fuel')}
-                  className={`px-3 py-1.5 font-medium transition-colors ${
-                    metric === 'fuel'
-                      ? 'bg-signal-600 text-white'
-                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
-                  }`}
-                >
-                  {t('chartMetricFuel')}
-                </button>
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">{t('filterSectionTitle')}</h2>
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+              <div className="flex-1 space-y-1">
+                <label htmlFor="detailRangeStart" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  {t('filterStartLabel')}
+                </label>
+                <input
+                  id="detailRangeStart"
+                  type="datetime-local"
+                  value={rangeStart}
+                  onChange={(e) => onRangeChange({ start: e.target.value, end: rangeEnd })}
+                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex-1 space-y-1">
+                <label htmlFor="detailRangeEnd" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  {t('filterEndLabel')}
+                </label>
+                <input
+                  id="detailRangeEnd"
+                  type="datetime-local"
+                  value={rangeEnd}
+                  onChange={(e) => onRangeChange({ start: rangeStart, end: e.target.value })}
+                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                />
               </div>
             </div>
-            <ActivityBarChart
-              daily={history?.daily ?? []}
-              metric={metric}
-              rangeStart={rangeStart}
-              rangeEnd={rangeEnd}
-              unitLabel={metric === 'hours' ? counterUnit : t('chartFuelUnit')}
-              decimals={metric === 'fuel' ? 0 : counterDecimals(usesKm)}
-              noDataLabel={t('chartNoData')}
-            />
+            {rangeInvalid && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{t('invalidRangeError')}</p>}
           </div>
+
+          {isLoading && (
+            <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
+              <p className="text-zinc-600 dark:text-zinc-400">{t('detailLoadingHistory')}</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
+              <p className="text-sm text-red-900 dark:text-red-100">{error}</p>
+            </div>
+          )}
+
+          {!isLoading && !error && !rangeInvalid && totals && (
+            <>
+              {/* Kennzahlen */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <StatTile
+                  label={usesKm ? t('kmInRange') : t('operatingHoursInRange')}
+                  value={`${fmtCounter(totals.operatingHours)} ${counterUnit}`}
+                />
+                <StatTile label={t('fuelInRange')} value={`${Math.round(totals.fuelLiters)} ${t('chartFuelUnit')}`} />
+                <StatTile
+                  label={usesKm ? t('currentKm') : t('currentOperatingHours')}
+                  value={totals.lastHours == null ? '—' : `${fmtCounter(totals.lastHours)} ${counterUnit}`}
+                />
+                <StatTile label={t('usageCountLabel')} value={String(totals.usageCount)} />
+              </div>
+
+              {/* Diagramm */}
+              <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                  <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{t('chartTitle')}</h2>
+                  <div className="flex rounded-lg border border-zinc-300 dark:border-zinc-600 overflow-hidden text-xs">
+                    <button
+                      onClick={() => setMetric('hours')}
+                      className={`px-3 py-1.5 font-medium transition-colors ${
+                        metric === 'hours'
+                          ? 'bg-signal-600 text-white'
+                          : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
+                      }`}
+                    >
+                      {usesKm ? t('chartMetricKm') : t('chartMetricHours')}
+                    </button>
+                    <button
+                      onClick={() => setMetric('fuel')}
+                      className={`px-3 py-1.5 font-medium transition-colors ${
+                        metric === 'fuel'
+                          ? 'bg-signal-600 text-white'
+                          : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
+                      }`}
+                    >
+                      {t('chartMetricFuel')}
+                    </button>
+                  </div>
+                </div>
+                <ActivityBarChart
+                  daily={history?.daily ?? []}
+                  metric={metric}
+                  rangeStart={rangeStart}
+                  rangeEnd={rangeEnd}
+                  unitLabel={metric === 'hours' ? counterUnit : t('chartFuelUnit')}
+                  decimals={metric === 'fuel' ? 0 : counterDecimals(usesKm)}
+                  noDataLabel={t('chartNoData')}
+                />
+              </div>
+            </>
+          )}
         </>
+      )}
+
+      {tab === 'usages' && (
+        <div className="space-y-3">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {isLoadingUsages
+              ? tUsages('loadingUsages')
+              : usagesNextCursor
+                ? tUsages('usagesShownCountMore', { count: usageEntries.length })
+                : tUsages('usagesFoundCount', { count: usageEntries.length })}
+          </p>
+
+          {usagesError && usageEntries.length === 0 && (
+            <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
+              <p className="text-sm text-red-900 dark:text-red-100">{usagesError}</p>
+            </div>
+          )}
+
+          {isLoadingUsages ? (
+            <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
+              <p className="text-zinc-600 dark:text-zinc-400">{tUsages('loadingUsagesEllipsis')}</p>
+            </div>
+          ) : usageEntries.length > 0 ? (
+            <>
+              <div className="grid gap-3">
+                {usageEntries.map((entry) => (
+                  <VehicleUsageItem
+                    key={entry.id}
+                    entry={entry}
+                    usesKm={usesKm}
+                    canManage={canManageSelectedOrganization}
+                  />
+                ))}
+              </div>
+              {usagesNextCursor && (
+                <div ref={usagesSentinelRef} className="py-4 text-center">
+                  {loadMoreUsagesError ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-red-600 dark:text-red-400">{tUsages('loadError')}</p>
+                      <button
+                        type="button"
+                        onClick={() => void loadMoreUsages()}
+                        className="px-4 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+                      >
+                        {tUsages('loadMore')}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">{tUsages('loadingMore')}</p>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-8 text-center">
+              <p className="text-zinc-600 dark:text-zinc-400">{tUsages('noUsagesFound')}</p>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Bearbeiten-Modal */}

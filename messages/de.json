@@ -158,6 +158,8 @@
     "endHoursLabel": "End-Betriebsstunden",
     "invalidRangeError": "Das Startdatum muss vor dem Enddatum liegen.",
     "detailBackToList": "Zurück zur Flotte",
+    "detailTabOverview": "Übersicht",
+    "detailTabUsages": "Nutzungen",
     "detailAllInfoTitle": "Fahrzeugdaten",
     "detailLoadingHistory": "Nutzungsverlauf wird geladen...",
     "historyLoadError": "Nutzungsverlauf konnte nicht geladen werden.",

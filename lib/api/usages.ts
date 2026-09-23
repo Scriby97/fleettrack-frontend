@@ -49,6 +49,8 @@ export interface GetUsagesWithVehiclesOptions {
   limit?: number;
   // nextCursor der vorherigen Seite.
   cursor?: string;
+  // Nur Nutzungen dieses einen Fahrzeugs (Nutzungen-Tab der Fahrzeug-Detailseite).
+  vehicleId?: string;
   signal?: AbortSignal;
 }
 
@@ -76,6 +78,9 @@ export async function getUsagesWithVehicles(
   }
   if (options.cursor) {
     url.searchParams.set('cursor', options.cursor);
+  }
+  if (options.vehicleId) {
+    url.searchParams.set('vehicleId', options.vehicleId);
   }
 
   const response = await authenticatedFetch(url.toString(), {

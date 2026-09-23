@@ -158,6 +158,8 @@
     "endHoursLabel": "End operating hours",
     "invalidRangeError": "The start date must be before the end date.",
     "detailBackToList": "Back to fleet",
+    "detailTabOverview": "Overview",
+    "detailTabUsages": "Usages",
     "detailAllInfoTitle": "Vehicle details",
     "detailLoadingHistory": "Loading usage history...",
     "historyLoadError": "Could not load the usage history.",

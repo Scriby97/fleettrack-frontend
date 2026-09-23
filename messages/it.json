@@ -158,6 +158,8 @@
     "endHoursLabel": "Ore di servizio - fine",
     "invalidRangeError": "La data di inizio deve essere precedente alla data di fine.",
     "detailBackToList": "Torna alla flotta",
+    "detailTabOverview": "Panoramica",
+    "detailTabUsages": "Utilizzi",
     "detailAllInfoTitle": "Dati del veicolo",
     "detailLoadingHistory": "Caricamento della cronologia di utilizzo...",
     "historyLoadError": "Impossibile caricare la cronologia di utilizzo.",
