@@ -513,8 +513,18 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
             </button>
           </div>
           <div className="relative">
+            <input
+              id="usageDate"
+              type="datetime-local"
+              value={formData.usageDate}
+              onChange={(e) => setFormData((prev) => ({ ...prev, usageDate: e.target.value }))}
+              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 pr-11 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+              required
+            />
+            {/* Eigenes Uhr-Icon rechts, vor dem nativen Picker-Pfeil des Browsers -
+                links waere inkonsistent mit den anderen Feldern (px-4 ohne Icon). */}
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 pointer-events-none"
+              className="absolute right-8 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -526,14 +536,6 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
               <circle cx="12" cy="12" r="9" />
               <path d="M12 7v5l3 3" />
             </svg>
-            <input
-              id="usageDate"
-              type="datetime-local"
-              value={formData.usageDate}
-              onChange={(e) => setFormData((prev) => ({ ...prev, usageDate: e.target.value }))}
-              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 pl-10 pr-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
-              required
-            />
           </div>
         </div>
 
