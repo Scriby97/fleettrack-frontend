@@ -161,15 +161,24 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, 
 // Listenansicht: so viele Nutzungen pro Seite, weitere laden beim Scrollen nach.
 const PAGE_SIZE = 10;
 
+// Postgres numeric/decimal-Spalten kommen vom Backend als String (node-postgres
+// castet numeric nicht automatisch zu number) - JEDE Stelle, die Werte vom
+// Server in ein Report-Objekt uebernimmt, muss das hier konsistent umwandeln,
+// sonst crasht spaeter z.B. fmt()'s .toFixed() beim Rendern (kein Fehler beim
+// Speichern selbst, nur beim naechsten Rendern der aktualisierten Zahl).
+function toNumber(value: unknown, fallback = 0): number {
+  return typeof value === 'number' ? value : Number(value ?? fallback);
+}
+
 function mapUsageToReport(u: UsageWithVehicle, unknownVehicleLabel: string): Report {
   return {
     id: u.id,
     vehicleId: u.vehicleId,
     vehicle: u.vehicle?.name ?? String(u.vehicleId ?? unknownVehicleLabel),
     vehicleType: u.vehicle?.vehicleType,
-    startOperatingHours: typeof u.startOperatingHours === 'number' ? u.startOperatingHours : Number(u.startOperatingHours ?? 0),
-    endOperatingHours: typeof u.endOperatingHours === 'number' ? u.endOperatingHours : Number(u.endOperatingHours ?? 0),
-    fuel: typeof u.fuelLitersRefilled === 'number' ? u.fuelLitersRefilled : Number(u.fuelLitersRefilled ?? 0),
+    startOperatingHours: toNumber(u.startOperatingHours),
+    endOperatingHours: toNumber(u.endOperatingHours),
+    fuel: toNumber(u.fuelLitersRefilled),
     usageDate: u.usageDate,
     creatorId: u.creatorId,
     creatorFirstName: u.creator?.firstName,
@@ -323,9 +332,9 @@ const UebersichtEintraege: FC = () => {
               vehicleId: updatedUsage.vehicleId,
               vehicle: vehicleMap.get(String(updatedUsage.vehicleId))?.name ?? t('unknownVehicle'),
               vehicleType: vehicleMap.get(String(updatedUsage.vehicleId))?.vehicleType ?? r.vehicleType,
-              startOperatingHours: updatedUsage.startOperatingHours,
-              endOperatingHours: updatedUsage.endOperatingHours,
-              fuel: updatedUsage.fuelLitersRefilled,
+              startOperatingHours: toNumber(updatedUsage.startOperatingHours),
+              endOperatingHours: toNumber(updatedUsage.endOperatingHours),
+              fuel: toNumber(updatedUsage.fuelLitersRefilled),
               usageDate: updatedUsage.usageDate,
               creatorId: updatedUsage.creatorId ?? r.creatorId,
               creatorFirstName: updatedUsage.creator?.firstName ?? r.creatorFirstName,
