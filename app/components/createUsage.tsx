@@ -14,6 +14,7 @@ import { vehicleUsesKm } from '@/lib/vehicles/metric';
 import { toDatetimeLocalValue } from '@/lib/dates/rangeDefaults';
 import { ToastContainer } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
+import { DateTimePicker } from './DateTimePicker';
 import { NotificationPermissionPrompt } from './NotificationPermissionPrompt';
 
 // Backend-Fehlercodes, die eine Lücke/Überschneidung der Betriebsstunden zum
@@ -115,7 +116,6 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
   // Keep a ref of the current vehicleId so the vehicles-fetching effect can check
   // if the currently selected vehicle is still valid without being in its dep array.
   const currentVehicleIdRef = useRef<string>('');
-  const usageDateInputRef = useRef<HTMLInputElement>(null);
   // Fuer welche Organisation formData gerade den geladenen Entwurf enthaelt -
   // wird zusammen mit formData im selben Batch gesetzt (siehe Restore-Effekt),
   // damit der Persistierungs-Effekt formData nie unter der falschen bzw. noch
@@ -505,66 +505,16 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
 
         {/* Erfassungsdatum */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <label htmlFor="usageDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {t('usageDateLabel')}
-            </label>
-            <button
-              type="button"
-              onClick={() => setFormData((prev) => ({ ...prev, usageDate: toDatetimeLocalValue(new Date()) }))}
-              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7v5l3 3" />
-              </svg>
-              {t('nowButton')}
-            </button>
-          </div>
-          <div className="relative">
-            <input
-              ref={usageDateInputRef}
-              id="usageDate"
-              type="datetime-local"
-              value={formData.usageDate}
-              onChange={(e) => setFormData((prev) => ({ ...prev, usageDate: e.target.value }))}
-              // Natives Kalender-/Uhr-Icon (Chrome/Edge/Safari) ausblenden UND
-              // dessen eigenen Klickbereich deaktivieren (sonst reagiert der an
-              // seiner ursprünglichen, jetzt unsichtbaren Position weiterhin auf
-              // Klicks, oft leicht versetzt zu unserem eigenen Icon darunter -
-              // das fühlte sich an, als würde der Picker gar nicht mehr aufgehen).
-              // Stattdessen öffnet unser eigenes Icon (Button daneben) den Picker
-              // aktiv über showPicker(). Firefox kennt dieses Pseudo-Element
-              // nicht, zeigt dort weiterhin sein eigenes Icon zusätzlich an.
-              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 pr-10 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
-              required
-            />
-            {/* Eigenes Uhr-Icon rechts statt der nativen Icons - links waere
-                inkonsistent mit den anderen Feldern (px-4 ohne Icon). Klickbar:
-                oeffnet den nativen Picker explizit ueber showPicker(), statt
-                sich auf einen (unsichtbar gemachten) nativen Klickbereich zu
-                verlassen. */}
-            <button
-              type="button"
-              onClick={() => usageDateInputRef.current?.showPicker?.()}
-              aria-label={t('usageDateLabel')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-            >
-              <svg
-                className="w-4 h-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7v5l3 3" />
-              </svg>
-            </button>
-          </div>
+          <label htmlFor="usageDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            {t('usageDateLabel')}
+          </label>
+          <DateTimePicker
+            id="usageDate"
+            value={formData.usageDate}
+            onChange={(value) => setFormData((prev) => ({ ...prev, usageDate: value }))}
+            required
+            nowLabel={t('nowButton')}
+          />
         </div>
 
         {/* Start-Zählerstand (Betriebsstunden oder Kilometer) */}

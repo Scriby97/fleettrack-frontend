@@ -85,6 +85,7 @@
     "createdByLabel": "Logged by:",
     "vehicleLabel": "Vehicle",
     "usageDateLabel": "End of usage",
+    "nowButton": "Now",
     "startHoursLabel": "Start operating hours",
     "endHoursLabel": "End operating hours",
     "fuelLabel": "Fuel (L)",

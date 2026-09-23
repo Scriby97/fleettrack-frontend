@@ -85,6 +85,7 @@
     "createdByLabel": "Saisi par :",
     "vehicleLabel": "Véhicule",
     "usageDateLabel": "Fin de l'utilisation",
+    "nowButton": "Maintenant",
     "startHoursLabel": "Heures de service - début",
     "endHoursLabel": "Heures de service - fin",
     "fuelLabel": "Carburant (L)",

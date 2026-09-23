@@ -17,6 +17,7 @@ import { appendSecondaryContinuityIssue } from '@/lib/i18n/continuityWarning';
 import { toDatetimeLocalValue } from '@/lib/dates/rangeDefaults';
 import { ToastContainer } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
+import { DateTimePicker } from './DateTimePicker';
 import { VehicleTypeIcon } from './VehicleTypeIcon';
 import { vehicleUsesKm } from '@/lib/vehicles/metric';
 
@@ -704,14 +705,13 @@ const UebersichtEintraege: FC = () => {
                 <label htmlFor="edit-usageDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   {t('usageDateLabel')}
                 </label>
-                <input
+                <DateTimePicker
                   id="edit-usageDate"
-                  type="datetime-local"
                   value={editForm.usageDate}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, usageDate: e.target.value }))}
-                  className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                  onChange={(value) => setEditForm((prev) => ({ ...prev, usageDate: value }))}
                   required
                   disabled={!canEditEditingReport}
+                  nowLabel={t('nowButton')}
                 />
               </div>
 
