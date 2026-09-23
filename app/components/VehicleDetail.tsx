@@ -85,7 +85,7 @@ const VehicleUsageItem: FC<VehicleUsageItemProps> = ({ entry, usesKm, canManage 
           </span>
         </p>
         <p>
-          <span className="font-medium">{t('fuelSummaryLabel')}</span> {entry.fuel} L
+          <span className="font-medium">{t('fuelSummaryLabel')}</span> {entry.fuel.toFixed(2)} L
         </p>
         {canManage && creatorName && (
           <p>

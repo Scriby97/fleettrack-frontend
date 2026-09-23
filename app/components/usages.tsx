@@ -100,7 +100,7 @@ const ReportItem: FC<ReportItemProps> = ({ report, onEdit, onDelete, canManage, 
           <span className="font-medium">({fmt(report.endOperatingHours - report.startOperatingHours)} {unit} {t('diffSuffix')})</span>
         </p>
         <p>
-          <span className="font-medium">{t('fuelSummaryLabel')}</span> {report.fuel} L
+          <span className="font-medium">{t('fuelSummaryLabel')}</span> {report.fuel.toFixed(2)} L
         </p>
         {canManage && creatorName && (
           <p>
@@ -763,7 +763,7 @@ const UebersichtEintraege: FC = () => {
                   onChange={(e) => setEditForm((prev) => ({ ...prev, fuel: e.target.value }))}
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                   min="0"
-                  step="0.1"
+                  step="0.01"
                   disabled={!canEditEditingReport}
                 />
               </div>
