@@ -119,6 +119,7 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
   // beim ersten Laden der Fahrzeuge sofort durch den automatischen "letzte
   // Betriebsstunden"-Fetch ueberschrieben werden (siehe Vehicles-Fetch-Effekt).
   const skipInitialFetchRef = useRef<boolean>(false);
+  const usageDateInputRef = useRef<HTMLInputElement>(null);
   // Fuer welche Organisation formData gerade den geladenen Entwurf enthaelt -
   // wird zusammen mit formData im selben Batch gesetzt (siehe Restore-Effekt),
   // damit der Persistierungs-Effekt formData nie unter der falschen bzw. noch
@@ -514,32 +515,47 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
           </div>
           <div className="relative">
             <input
+              ref={usageDateInputRef}
               id="usageDate"
               type="datetime-local"
               value={formData.usageDate}
               onChange={(e) => setFormData((prev) => ({ ...prev, usageDate: e.target.value }))}
-              // Natives Kalender-/Uhr-Icon (Chrome/Edge/Safari) ausblenden - der
-              // Klickbereich bleibt trotzdem aktiv (opacity statt display:none),
-              // nur unser eigenes Icon direkt darunter ist sichtbar. Firefox kennt
-              // dieses Pseudo-Element nicht, zeigt dort weiterhin sein eigenes.
-              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 pr-10 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:opacity-0"
+              // Natives Kalender-/Uhr-Icon (Chrome/Edge/Safari) ausblenden UND
+              // dessen eigenen Klickbereich deaktivieren (sonst reagiert der an
+              // seiner ursprünglichen, jetzt unsichtbaren Position weiterhin auf
+              // Klicks, oft leicht versetzt zu unserem eigenen Icon darunter -
+              // das fühlte sich an, als würde der Picker gar nicht mehr aufgehen).
+              // Stattdessen öffnet unser eigenes Icon (Button daneben) den Picker
+              // aktiv über showPicker(). Firefox kennt dieses Pseudo-Element
+              // nicht, zeigt dort weiterhin sein eigenes Icon zusätzlich an.
+              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 pr-10 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
               required
             />
             {/* Eigenes Uhr-Icon rechts statt der nativen Icons - links waere
-                inkonsistent mit den anderen Feldern (px-4 ohne Icon). */}
-            <svg
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+                inkonsistent mit den anderen Feldern (px-4 ohne Icon). Klickbar:
+                oeffnet den nativen Picker explizit ueber showPicker(), statt
+                sich auf einen (unsichtbar gemachten) nativen Klickbereich zu
+                verlassen. */}
+            <button
+              type="button"
+              onClick={() => usageDateInputRef.current?.showPicker?.()}
+              aria-label={t('usageDateLabel')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
             >
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 7v5l3 3" />
-            </svg>
+              <svg
+                className="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 3" />
+              </svg>
+            </button>
           </div>
         </div>
 
