@@ -43,6 +43,7 @@
     "loadingVehicles": "Chargement des véhicules...",
     "noVehiclesAvailable": "Aucun véhicule disponible",
     "usageDateLabel": "Fin de l'utilisation",
+    "nowButton": "Maintenant",
     "startHoursLabel": "Heures de service - début",
     "loadingHours": "(chargement...)",
     "endHoursLabel": "Heures de service - fin",

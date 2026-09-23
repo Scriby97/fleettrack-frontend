@@ -43,6 +43,7 @@
     "loadingVehicles": "Loading vehicles...",
     "noVehiclesAvailable": "No vehicles available",
     "usageDateLabel": "End of usage",
+    "nowButton": "Now",
     "startHoursLabel": "Start operating hours",
     "loadingHours": "(loading...)",
     "endHoursLabel": "End operating hours",

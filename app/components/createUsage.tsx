@@ -496,17 +496,45 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
 
         {/* Erfassungsdatum */}
         <div className="space-y-2">
-          <label htmlFor="usageDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            {t('usageDateLabel')}
-          </label>
-          <input
-            id="usageDate"
-            type="datetime-local"
-            value={formData.usageDate}
-            onChange={(e) => setFormData((prev) => ({ ...prev, usageDate: e.target.value }))}
-            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
-            required
-          />
+          <div className="flex items-center justify-between gap-2">
+            <label htmlFor="usageDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              {t('usageDateLabel')}
+            </label>
+            <button
+              type="button"
+              onClick={() => setFormData((prev) => ({ ...prev, usageDate: toDatetimeLocalValue(new Date()) }))}
+              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 3" />
+              </svg>
+              {t('nowButton')}
+            </button>
+          </div>
+          <div className="relative">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 pointer-events-none"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 3" />
+            </svg>
+            <input
+              id="usageDate"
+              type="datetime-local"
+              value={formData.usageDate}
+              onChange={(e) => setFormData((prev) => ({ ...prev, usageDate: e.target.value }))}
+              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 pl-10 pr-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+              required
+            />
+          </div>
         </div>
 
         {/* Start-Zählerstand (Betriebsstunden oder Kilometer) */}
