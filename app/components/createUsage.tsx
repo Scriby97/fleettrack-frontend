@@ -518,13 +518,17 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
               type="datetime-local"
               value={formData.usageDate}
               onChange={(e) => setFormData((prev) => ({ ...prev, usageDate: e.target.value }))}
-              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 pr-11 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+              // Natives Kalender-/Uhr-Icon (Chrome/Edge/Safari) ausblenden - der
+              // Klickbereich bleibt trotzdem aktiv (opacity statt display:none),
+              // nur unser eigenes Icon direkt darunter ist sichtbar. Firefox kennt
+              // dieses Pseudo-Element nicht, zeigt dort weiterhin sein eigenes.
+              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 pr-10 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:opacity-0"
               required
             />
-            {/* Eigenes Uhr-Icon rechts, vor dem nativen Picker-Pfeil des Browsers -
-                links waere inkonsistent mit den anderen Feldern (px-4 ohne Icon). */}
+            {/* Eigenes Uhr-Icon rechts statt der nativen Icons - links waere
+                inkonsistent mit den anderen Feldern (px-4 ohne Icon). */}
             <svg
-              className="absolute right-8 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
