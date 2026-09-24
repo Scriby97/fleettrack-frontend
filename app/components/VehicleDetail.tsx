@@ -59,14 +59,9 @@ interface VehicleUsageItemProps {
   entry: VehicleUsageEntry;
   usesKm: boolean;
   canManage: boolean;
-  // Faerbt den Rahmen ein, wenn dieser Eintrag Teil einer Luecke (gelb) oder
-  // Ueberschneidung (rot) mit einem chronologisch benachbarten Eintrag ist -
-  // dieselbe Markierung wie im "Nur inkonsistente Nutzungen"-Filter, aber
-  // auch in der normalen (ungefilterten) Liste sichtbar.
-  issueType?: 'gap' | 'overlap' | null;
 }
 
-const VehicleUsageItem: FC<VehicleUsageItemProps> = ({ entry, usesKm, canManage, issueType }) => {
+const VehicleUsageItem: FC<VehicleUsageItemProps> = ({ entry, usesKm, canManage }) => {
   const t = useTranslations('usagesOverview');
   const dateLocale = useDateLocale();
   const unit = usesKm ? 'km' : 'h';
@@ -74,15 +69,9 @@ const VehicleUsageItem: FC<VehicleUsageItemProps> = ({ entry, usesKm, canManage,
   const creatorName = entry.creatorFirstName || entry.creatorLastName
     ? `${entry.creatorFirstName || ''} ${entry.creatorLastName || ''}`.trim()
     : entry.creatorEmail ?? null;
-  const borderClass =
-    issueType === 'overlap'
-      ? 'border-2 border-red-400 bg-red-50 dark:bg-red-900/10'
-      : issueType === 'gap'
-        ? 'border-2 border-yellow-400 bg-yellow-50 dark:bg-yellow-900/10'
-        : 'border border-zinc-200 dark:border-zinc-700';
 
   return (
-    <div className={`rounded-lg p-4 ${borderClass}`}>
+    <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
       <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
         {entry.usageDate && (
           <p>
@@ -110,42 +99,89 @@ const VehicleUsageItem: FC<VehicleUsageItemProps> = ({ entry, usesKm, canManage,
   );
 };
 
-interface InconsistentPairCardProps {
-  pair: InconsistentUsagePair;
+interface InconsistentGroupCardProps {
+  pairs: InconsistentUsagePair[];
+  entries: VehicleUsageEntry[];
   usesKm: boolean;
   canManage: boolean;
 }
 
-// Zeigt ein Paar chronologisch aufeinanderfolgender Nutzungen, die nicht
-// luecklos ineinander uebergehen: gelb umrandet bei einer Luecke, rot
-// umrandet bei einer Ueberschneidung (siehe Backend UsagesService.
-// findInconsistentPairs).
-const InconsistentPairCard: FC<InconsistentPairCardProps> = ({ pair, usesKm, canManage }) => {
+// Rahmt aufeinanderfolgende Nutzungen ein, die nicht luecklos ineinander
+// uebergehen: gelb bei einer Luecke, rot bei einer Ueberschneidung (rot,
+// sobald eine der Verbindungen eine Ueberschneidung ist), mit der Groesse des
+// Problems darueber (siehe Backend UsagesService.findInconsistentPairs).
+// Gleiche Darstellung im "Nur inkonsistente"-Filter und in der normalen Liste.
+const InconsistentGroupCard: FC<InconsistentGroupCardProps> = ({ pairs, entries, usesKm, canManage }) => {
   const t = useTranslations('usagesOverview');
   const unit = usesKm ? 'km' : 'h';
   const fmt = (n: number) => (usesKm ? Math.round(n).toString() : n.toFixed(1));
-  const isGap = pair.type === 'gap';
+  const hasOverlap = pairs.some((p) => p.type === 'overlap');
 
   return (
     <div
       className={`rounded-lg border-2 p-3 space-y-2 ${
-        isGap
-          ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/10'
-          : 'border-red-400 bg-red-50 dark:bg-red-900/10'
+        hasOverlap
+          ? 'border-red-400 bg-red-50 dark:bg-red-900/10'
+          : 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/10'
       }`}
     >
-      <p
-        className={`text-xs font-semibold ${
-          isGap ? 'text-yellow-700 dark:text-yellow-400' : 'text-red-700 dark:text-red-400'
-        }`}
-      >
-        {isGap ? t('inconsistentGapLabel') : t('inconsistentOverlapLabel')} {fmt(pair.hours)} {unit}
-      </p>
-      <VehicleUsageItem entry={mapUsageEntry(pair.previous)} usesKm={usesKm} canManage={canManage} />
-      <VehicleUsageItem entry={mapUsageEntry(pair.current)} usesKm={usesKm} canManage={canManage} />
+      {pairs.map((pair) => (
+        <p
+          key={`${pair.previous.id}-${pair.current.id}`}
+          className={`text-xs font-semibold ${
+            pair.type === 'gap' ? 'text-yellow-700 dark:text-yellow-400' : 'text-red-700 dark:text-red-400'
+          }`}
+        >
+          {pair.type === 'gap' ? t('inconsistentGapLabel') : t('inconsistentOverlapLabel')} {fmt(pair.hours)} {unit}
+        </p>
+      ))}
+      {entries.map((entry) => (
+        <VehicleUsageItem key={entry.id} entry={entry} usesKm={usesKm} canManage={canManage} />
+      ))}
     </div>
   );
 };
+
+// Gruppiert die (neueste zuerst sortierte) Liste: aufeinanderfolgende Eintraege,
+// die ueber eine Luecke/Ueberschneidung verbunden sind, bilden eine Gruppe;
+// alle anderen bleiben einzelne, normale Eintraege.
+type UsageListItem =
+  | { kind: 'single'; entry: VehicleUsageEntry }
+  | { kind: 'group'; entries: VehicleUsageEntry[]; pairs: InconsistentUsagePair[] };
+
+function groupUsageEntries(entries: VehicleUsageEntry[], pairs: InconsistentUsagePair[]): UsageListItem[] {
+  const pairByCurrent = new Map<string, InconsistentUsagePair>();
+  const pairsByUsage = new Map<string, InconsistentUsagePair[]>();
+  for (const pair of pairs) {
+    pairByCurrent.set(String(pair.current.id), pair);
+    for (const id of [String(pair.previous.id), String(pair.current.id)]) {
+      pairsByUsage.set(id, [...(pairsByUsage.get(id) ?? []), pair]);
+    }
+  }
+
+  const items: UsageListItem[] = [];
+  let i = 0;
+  while (i < entries.length) {
+    const run = [entries[i]];
+    while (i + 1 < entries.length) {
+      const link = pairByCurrent.get(String(entries[i].id));
+      if (!link || String(link.previous.id) !== String(entries[i + 1].id)) break;
+      run.push(entries[i + 1]);
+      i++;
+    }
+    i++;
+
+    const runPairs = new Map<string, InconsistentUsagePair>();
+    for (const entry of run) {
+      for (const pair of pairsByUsage.get(String(entry.id)) ?? []) {
+        runPairs.set(`${pair.previous.id}-${pair.current.id}`, pair);
+      }
+    }
+    if (runPairs.size === 0) items.push({ kind: 'single', entry: run[0] });
+    else items.push({ kind: 'group', entries: run, pairs: Array.from(runPairs.values()) });
+  }
+  return items;
+}
 
 export interface DetailVehicle {
   id: string;
@@ -233,22 +269,12 @@ const VehicleDetail = ({
   const [isLoadingInconsistentPairs, setIsLoadingInconsistentPairs] = useState(false);
   const [inconsistentPairsError, setInconsistentPairsError] = useState<string | null>(null);
 
-  // Ordnet jeder betroffenen Nutzung-ID ihr (schlimmstes) Problem zu - fuer
-  // die gelb/rot umrandete Markierung einzelner Eintraege auch in der
-  // normalen (ungefilterten) Liste. Eine Ueberschneidung wiegt schwerer als
-  // eine Luecke, falls ein Eintrag (mit beiden Nachbarn) beide Probleme hat.
-  const issueTypeByUsageId = useMemo(() => {
-    const map = new Map<string, 'gap' | 'overlap'>();
-    for (const pair of inconsistentPairs) {
-      for (const usage of [pair.previous, pair.current]) {
-        const id = String(usage.id);
-        if (pair.type === 'overlap' || map.get(id) !== 'overlap') {
-          map.set(id, pair.type);
-        }
-      }
-    }
-    return map;
-  }, [inconsistentPairs]);
+  // Normale Liste: betroffene, aufeinanderfolgende Eintraege werden wie im
+  // Filter zu gelb/rot umrahmten Gruppen zusammengefasst.
+  const groupedUsageEntries = useMemo(
+    () => groupUsageEntries(usageEntries, inconsistentPairs),
+    [usageEntries, inconsistentPairs],
+  );
 
   const rangeInvalid =
     Boolean(rangeStart) && Boolean(rangeEnd) && new Date(rangeStart) > new Date(rangeEnd);
@@ -724,9 +750,10 @@ const VehicleDetail = ({
               ) : inconsistentPairs.length > 0 ? (
                 <div className="grid gap-3">
                   {inconsistentPairs.map((pair) => (
-                    <InconsistentPairCard
+                    <InconsistentGroupCard
                       key={`${pair.previous.id}-${pair.current.id}`}
-                      pair={pair}
+                      pairs={[pair]}
+                      entries={[mapUsageEntry(pair.previous), mapUsageEntry(pair.current)]}
                       usesKm={usesKm}
                       canManage={canManageSelectedOrganization}
                     />
@@ -761,15 +788,24 @@ const VehicleDetail = ({
               ) : usageEntries.length > 0 ? (
                 <>
                   <div className="grid gap-3">
-                    {usageEntries.map((entry) => (
-                      <VehicleUsageItem
-                        key={entry.id}
-                        entry={entry}
-                        usesKm={usesKm}
-                        canManage={canManageSelectedOrganization}
-                        issueType={issueTypeByUsageId.get(String(entry.id))}
-                      />
-                    ))}
+                    {groupedUsageEntries.map((item) =>
+                      item.kind === 'group' ? (
+                        <InconsistentGroupCard
+                          key={item.entries.map((e) => e.id).join('-')}
+                          pairs={item.pairs}
+                          entries={item.entries}
+                          usesKm={usesKm}
+                          canManage={canManageSelectedOrganization}
+                        />
+                      ) : (
+                        <VehicleUsageItem
+                          key={item.entry.id}
+                          entry={item.entry}
+                          usesKm={usesKm}
+                          canManage={canManageSelectedOrganization}
+                        />
+                      ),
+                    )}
                   </div>
                   {usagesNextCursor && (
                     <div ref={usagesSentinelRef} className="py-4 text-center">
