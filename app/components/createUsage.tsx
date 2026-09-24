@@ -102,7 +102,7 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
     vehicleId: '',
     startOperatingHours: '',
     endOperatingHours: '',
-    fuel: '',
+    fuel: '0',
     usageDate: getNowDateTime(),
   });
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -162,7 +162,7 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
       vehicleId: draft?.vehicleId ?? '',
       startOperatingHours: draft?.startOperatingHours ?? '',
       endOperatingHours: draft?.endOperatingHours ?? '',
-      fuel: draft?.fuel ?? '',
+      fuel: draft?.fuel || '0',
       usageDate: draft?.usageDate ?? getNowDateTime(),
     });
     setCalculatedHours(
@@ -282,7 +282,7 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
     // voreingestellt (statt auf das erste Fahrzeug der Liste zurueckzufallen) -
     // Start-Zaehlerstand wird dafuer frisch vom Server nachgeladen, da sich
     // dieser durch die soeben gespeicherte Nutzung veraendert hat.
-    setFormData({ vehicleId, startOperatingHours: '', endOperatingHours: '', fuel: '', usageDate: getNowDateTime() });
+    setFormData({ vehicleId, startOperatingHours: '', endOperatingHours: '', fuel: '0', usageDate: getNowDateTime() });
     setCalculatedHours(null);
     showToast(t('saveSuccess'), 'success');
     if (vehicleId) {

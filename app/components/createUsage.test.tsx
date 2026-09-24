@@ -396,7 +396,7 @@ describe('Nutzung erfassen', () => {
         usageDate: new Date(defaultUsageDateLocal()).toISOString(),
       })
       expect(endInput().value).toBe('')
-      expect(fuelInput().value).toBe('')
+      expect(fuelInput().value).toBe('0')
       expect(vehicleSelect().value).toBe('v1')
       // neuer Start = zuletzt gespeicherter Endstand, frisch vom Server
       await waitFor(() => expect(startInput().value).toBe('645.1'))
@@ -559,6 +559,12 @@ describe('Nutzung erfassen', () => {
       expect(readDraft('org-2')).toBeNull()
     })
 
+    it('defaults the fuel to 0 without a draft, and treats an empty drafted fuel as 0', async () => {
+      renderWithIntl(<CreateUsage />)
+      await waitFor(() => expect(startInput().value).toBe('636.7'))
+      expect(fuelInput().value).toBe('0')
+    })
+
     it('restores a draft (end, fuel, date) but always refreshes the start from the server', async () => {
       // lastHours.v2 = 12000 (siehe beforeEach) - bewusst abweichend vom
       // Entwurf, um zu pruefen, dass der frische Serverwert den (moeglicherweise
@@ -594,7 +600,7 @@ describe('Nutzung erfassen', () => {
         vehicleId: 'v1',
         startOperatingHours: '636.7',
         endOperatingHours: '650',
-        fuel: '',
+        fuel: '5',
         usageDate: '2026-09-12T08:00',
       }
       window.localStorage.setItem(DRAFT_KEY('org-1'), JSON.stringify(draft))
@@ -683,7 +689,7 @@ describe('Nutzung erfassen', () => {
       await screen.findByText('Nutzung erfolgreich gespeichert')
 
       await waitFor(() => expect(readDraft('org-1')?.endOperatingHours).toBe(''))
-      expect(readDraft('org-1')?.fuel).toBe('')
+      expect(readDraft('org-1')?.fuel).toBe('0')
       expect(readDraft('org-1')?.vehicleId).toBe('v1')
     })
   })
