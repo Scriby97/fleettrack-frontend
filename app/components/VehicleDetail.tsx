@@ -15,8 +15,9 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { VehicleTypeIcon } from './VehicleTypeIcon';
 import { ActivityBarChart } from './ActivityBarChart';
 import { InconsistencyBadge } from './InconsistencyBadge';
+import { UsageEditDialog } from './UsageEditDialog';
 import { vehicleUsesKm, counterDecimals } from '@/lib/vehicles/metric';
-import { getVehicleUsageHistory, type VehicleUsageHistory } from '@/lib/api/vehicles';
+import { getVehicleUsageHistory, getOrganizationVehicles, type OrganizationVehicle, type VehicleUsageHistory } from '@/lib/api/vehicles';
 import { getUsagesWithVehicles, getInconsistentPairs, type UsageWithVehicle, type InconsistentUsagePair } from '@/lib/api/usages';
 
 // Nutzungen-Tab: so viele Eintraege pro Seite, weitere laden beim Scrollen nach
@@ -25,6 +26,7 @@ const USAGES_PAGE_SIZE = 10;
 
 interface VehicleUsageEntry {
   id: number | string;
+  vehicleId?: string;
   startOperatingHours: number;
   endOperatingHours: number;
   fuel: number;
@@ -44,6 +46,7 @@ function toNumber(value: unknown, fallback = 0): number {
 function mapUsageEntry(u: UsageWithVehicle): VehicleUsageEntry {
   return {
     id: u.id,
+    vehicleId: u.vehicleId,
     startOperatingHours: toNumber(u.startOperatingHours),
     endOperatingHours: toNumber(u.endOperatingHours),
     fuel: toNumber(u.fuelLitersRefilled),
@@ -58,11 +61,14 @@ function mapUsageEntry(u: UsageWithVehicle): VehicleUsageEntry {
 interface VehicleUsageItemProps {
   entry: VehicleUsageEntry;
   usesKm: boolean;
-  canManage: boolean;
+  // Die ganze Flottenuebersicht sehen nur Admin/Owner - keine eigene Rechtepruefung noetig.
+  onEdit?: (entry: VehicleUsageEntry) => void;
+  onDelete?: (id: number | string) => void;
 }
 
-const VehicleUsageItem: FC<VehicleUsageItemProps> = ({ entry, usesKm, canManage }) => {
+const VehicleUsageItem: FC<VehicleUsageItemProps> = ({ entry, usesKm, onEdit, onDelete }) => {
   const t = useTranslations('usagesOverview');
+  const tCommon = useTranslations('common');
   const dateLocale = useDateLocale();
   const unit = usesKm ? 'km' : 'h';
   const fmt = (n: number) => (usesKm ? Math.round(n).toString() : n.toFixed(1));
@@ -71,8 +77,8 @@ const VehicleUsageItem: FC<VehicleUsageItemProps> = ({ entry, usesKm, canManage 
     : entry.creatorEmail ?? null;
 
   return (
-    <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
-      <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+    <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 flex justify-between items-start">
+      <div className="flex-1 space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
         {entry.usageDate && (
           <p>
             <span className="font-medium">{t('usageDateLabel')}:</span>{' '}
@@ -89,12 +95,39 @@ const VehicleUsageItem: FC<VehicleUsageItemProps> = ({ entry, usesKm, canManage 
         <p>
           <span className="font-medium">{t('fuelSummaryLabel')}</span> {entry.fuel.toFixed(2)} L
         </p>
-        {canManage && creatorName && (
+        {creatorName && (
           <p>
             <span className="font-medium">{t('createdByLabel')}</span> {creatorName}
           </p>
         )}
       </div>
+
+      {(onEdit || onDelete) && (
+        <div className="flex gap-2 ml-4 flex-shrink-0">
+          {onEdit && (
+            <button
+              onClick={() => onEdit(entry)}
+              className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
+              title={tCommon('edit')}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(entry.id)}
+              className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
+              title={tCommon('delete')}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -103,7 +136,8 @@ interface InconsistentGroupCardProps {
   pairs: InconsistentUsagePair[];
   entries: VehicleUsageEntry[];
   usesKm: boolean;
-  canManage: boolean;
+  onEdit?: (entry: VehicleUsageEntry) => void;
+  onDelete?: (id: number | string) => void;
 }
 
 // Rahmt aufeinanderfolgende Nutzungen ein, die nicht luecklos ineinander
@@ -111,7 +145,7 @@ interface InconsistentGroupCardProps {
 // sobald eine der Verbindungen eine Ueberschneidung ist), mit der Groesse des
 // Problems darueber (siehe Backend UsagesService.findInconsistentPairs).
 // Gleiche Darstellung im "Nur inkonsistente"-Filter und in der normalen Liste.
-const InconsistentGroupCard: FC<InconsistentGroupCardProps> = ({ pairs, entries, usesKm, canManage }) => {
+const InconsistentGroupCard: FC<InconsistentGroupCardProps> = ({ pairs, entries, usesKm, onEdit, onDelete }) => {
   const t = useTranslations('usagesOverview');
   const unit = usesKm ? 'km' : 'h';
   const fmt = (n: number) => (usesKm ? Math.round(n).toString() : n.toFixed(1));
@@ -136,7 +170,7 @@ const InconsistentGroupCard: FC<InconsistentGroupCardProps> = ({ pairs, entries,
         </p>
       ))}
       {entries.map((entry) => (
-        <VehicleUsageItem key={entry.id} entry={entry} usesKm={usesKm} canManage={canManage} />
+        <VehicleUsageItem key={entry.id} entry={entry} usesKm={usesKm} onEdit={onEdit} onDelete={onDelete} />
       ))}
     </div>
   );
@@ -231,8 +265,8 @@ const VehicleDetail = ({
   const tUsages = useTranslations('usagesOverview');
   const getApiErrorMessage = useApiErrorMessage();
   const { toasts, showToast, removeToast } = useToast();
-  const { selectedOrgId, canManageSelectedOrganization } = useOrganization();
-  const { inconsistentVehicleIds } = useFleetConsistency();
+  const { selectedOrgId } = useOrganization();
+  const { inconsistentVehicleIds, refresh: refreshFleetConsistency } = useFleetConsistency();
   const hasInconsistentUsages = inconsistentVehicleIds.has(initialVehicle.id);
 
   const [tab, setTab] = useState<'overview' | 'usages'>('overview');
@@ -264,6 +298,13 @@ const VehicleDetail = ({
   // Nutzungen mit Luecke/Ueberschneidung (siehe getInconsistentPairs). Bewusst
   // ohne Pagination - diese Liste ist eine Liste von Problemen, die behoben
   // werden sollen, keine vollstaendige Historie.
+  // Nach Bearbeiten/Loeschen einer Nutzung: Liste (erste Seite) und
+  // Luecken-/Ueberschneidungs-Paare neu laden.
+  const [usagesReloadKey, setUsagesReloadKey] = useState(0);
+  const [editingEntry, setEditingEntry] = useState<VehicleUsageEntry | null>(null);
+  // Fahrzeuge der Organisation fuer den Fahrzeugwechsel im Bearbeiten-Dialog.
+  const [orgVehicles, setOrgVehicles] = useState<OrganizationVehicle[]>([]);
+  const [confirmDeleteUsageId, setConfirmDeleteUsageId] = useState<number | string | null>(null);
   const [showOnlyInconsistent, setShowOnlyInconsistent] = useState(false);
   const [inconsistentPairs, setInconsistentPairs] = useState<InconsistentUsagePair[]>([]);
   const [isLoadingInconsistentPairs, setIsLoadingInconsistentPairs] = useState(false);
@@ -358,7 +399,7 @@ const VehicleDetail = ({
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, initialVehicle.id, selectedOrgId]);
+  }, [tab, initialVehicle.id, selectedOrgId, usagesReloadKey]);
 
   const loadMoreUsages = useCallback(async () => {
     if (!usagesNextCursor || loadingMoreUsagesRef.current) return;
@@ -440,7 +481,7 @@ const VehicleDetail = ({
     load();
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, initialVehicle.id, selectedOrgId]);
+  }, [tab, initialVehicle.id, selectedOrgId, usagesReloadKey]);
 
   const openEdit = useCallback(() => {
     setEditForm({
@@ -501,6 +542,37 @@ const VehicleDetail = ({
     } catch (err) {
       console.error('Fehler beim Löschen des Fahrzeugs:', err);
       showToast(getApiErrorMessage(err, t('deleteErrorToast')), 'error');
+    }
+  };
+
+  useEffect(() => {
+    if (!editingEntry || !selectedOrgId || orgVehicles.length > 0) return;
+    const controller = new AbortController();
+    getOrganizationVehicles(selectedOrgId, { signal: controller.signal })
+      .then(setOrgVehicles)
+      .catch((err) => {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        console.error('Fehler beim Laden der Fahrzeuge:', err);
+      });
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingEntry, selectedOrgId]);
+
+  const reloadAfterUsageChange = () => {
+    setUsagesReloadKey((k) => k + 1);
+    setReloadKey((k) => k + 1);
+    void refreshFleetConsistency();
+  };
+
+  const handleDeleteUsage = async (id: number | string) => {
+    try {
+      const res = await authenticatedFetch(buildApiUrl(`/usages/${id}`), { method: 'DELETE' });
+      if (!res.ok) await throwApiError(res, tUsages('deleteErrorGeneric', { status: res.status }));
+      showToast(tUsages('deleteSuccess'), 'success');
+      reloadAfterUsageChange();
+    } catch (err) {
+      console.error('Fehler beim Löschen der Nutzung:', err);
+      showToast(getApiErrorMessage(err, tUsages('deleteErrorToast')), 'error');
     }
   };
 
@@ -755,7 +827,8 @@ const VehicleDetail = ({
                       pairs={[pair]}
                       entries={[mapUsageEntry(pair.previous), mapUsageEntry(pair.current)]}
                       usesKm={usesKm}
-                      canManage={canManageSelectedOrganization}
+                      onEdit={setEditingEntry}
+                      onDelete={setConfirmDeleteUsageId}
                     />
                   ))}
                 </div>
@@ -795,14 +868,16 @@ const VehicleDetail = ({
                           pairs={item.pairs}
                           entries={item.entries}
                           usesKm={usesKm}
-                          canManage={canManageSelectedOrganization}
+                          onEdit={setEditingEntry}
+                          onDelete={setConfirmDeleteUsageId}
                         />
                       ) : (
                         <VehicleUsageItem
                           key={item.entry.id}
                           entry={item.entry}
                           usesKm={usesKm}
-                          canManage={canManageSelectedOrganization}
+                          onEdit={setEditingEntry}
+                          onDelete={setConfirmDeleteUsageId}
                         />
                       ),
                     )}
@@ -946,6 +1021,37 @@ const VehicleDetail = ({
         </div>
       )}
 
+      {editingEntry && (
+        <UsageEditDialog
+          key={editingEntry.id}
+          usage={{ ...editingEntry, vehicleId: editingEntry.vehicleId ?? initialVehicle.id, vehicleType: vehicle.vehicleType ?? undefined }}
+          vehicles={[
+            { id: initialVehicle.id, name: vehicle.name, plate: vehicle.plate ?? undefined, vehicleType: vehicle.vehicleType ?? undefined },
+            ...orgVehicles.filter((v) => v.id !== initialVehicle.id),
+          ]}
+          canEdit
+          onClose={() => setEditingEntry(null)}
+          onSaved={() => {
+            setEditingEntry(null);
+            showToast(tUsages('updateSuccess'), 'success');
+            reloadAfterUsageChange();
+          }}
+          onSaveError={() => showToast(tUsages('updateErrorToast'), 'error')}
+        />
+      )}
+      {confirmDeleteUsageId !== null && (
+        <ConfirmDialog
+          title={tUsages('confirmDeleteTitle')}
+          message={tUsages('confirmDeleteMessage')}
+          confirmLabel={tCommon('delete')}
+          cancelLabel={tCommon('cancel')}
+          onConfirm={() => {
+            void handleDeleteUsage(confirmDeleteUsageId);
+            setConfirmDeleteUsageId(null);
+          }}
+          onCancel={() => setConfirmDeleteUsageId(null)}
+        />
+      )}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       {confirmDelete && (
         <ConfirmDialog
