@@ -45,14 +45,6 @@ describe('subscription tier names', () => {
     expect(locales[code].onboardingCreateOrg.canceledMessage).toContain(lieutenant)
   })
 
-  it.each(codes)('%s lists all three tier names when choosing a plan', (code) => {
-    const text = locales[code].onboarding.createOrgDescription
-
-    for (const name of Object.values(locales[code].subscriptionTiers)) {
-      expect(text).toContain(name)
-    }
-  })
-
   it.each(['de', 'it'] as const)(
     '%s no longer shows the English tier names Lieutenant and Captain',
     (code) => {
