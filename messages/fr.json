@@ -221,6 +221,9 @@
     "vehicleTypeGroomer": "Dameuse",
     "vehicleTypeSkidoo": "Motoneige",
     "vehicleTypeQuad": "Quad",
+    "currentHoursLabel": "Compteur d'heures actuel",
+    "currentKmLabel": "Kilométrage actuel",
+    "currentReadingHint": "Le relevé actuel du véhicule - sert de point de départ pour les prochaines utilisations.",
     "fuelTypeLabel": "Carburant",
     "fuelTypeDiesel": "Diesel",
     "fuelTypeGasoline": "Essence",
@@ -229,6 +232,8 @@
     "submitButton": "Ajouter le véhicule",
     "submitting": "Ajout en cours...",
     "allFieldsRequiredError": "Tous les champs sont requis",
+    "currentHoursRequiredError": "Merci d'indiquer le compteur d'heures actuel",
+    "currentKmRequiredError": "Merci d'indiquer le kilométrage actuel",
     "genericError": "Une erreur s'est produite",
     "addSuccess": "Véhicule ajouté avec succès",
     "addErrorToast": "Erreur lors de l'ajout du véhicule"

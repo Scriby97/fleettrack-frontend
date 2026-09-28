@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
+import { vehicleUsesKm } from '@/lib/vehicles/metric';
 import { ToastContainer } from './Toast';
 
 interface FormState {
@@ -19,6 +20,7 @@ interface FormState {
   vehicleType: string;
   fuelType: string;
   notes: string;
+  currentOperatingHours: string;
 }
 
 const CreateVehicle: FC = () => {
@@ -36,9 +38,16 @@ const CreateVehicle: FC = () => {
     vehicleType: '',
     fuelType: '',
     notes: '',
+    currentOperatingHours: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Pistenfahrzeuge erfassen Betriebsstunden, alle anderen Typen Kilometer -
+  // gleiche Unterscheidung wie beim Erfassen einer Nutzung (siehe lib/vehicles/metric.ts).
+  const usesKm = vehicleUsesKm(formData.vehicleType);
+  const counterStep = usesKm ? '1' : '0.1';
+  const currentReadingLabel = usesKm ? t('currentKmLabel') : t('currentHoursLabel');
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -50,10 +59,18 @@ const CreateVehicle: FC = () => {
       return;
     }
 
+    const parsedCurrentOperatingHours = parseFloat(formData.currentOperatingHours);
+    if (formData.currentOperatingHours.trim() === '' || Number.isNaN(parsedCurrentOperatingHours) || parsedCurrentOperatingHours < 0) {
+      setError(usesKm ? t('currentKmRequiredError') : t('currentHoursRequiredError'));
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const payload = selectedOrgId ? { ...formData, organizationId: selectedOrgId } : formData;
+      const { currentOperatingHours: _currentOperatingHoursRaw, ...rest } = formData;
+      const body = { ...rest, currentOperatingHours: parsedCurrentOperatingHours };
+      const payload = selectedOrgId ? { ...body, organizationId: selectedOrgId } : body;
 
       const res = await authenticatedFetch(buildApiUrl('/vehicles'), {
         method: 'POST',
@@ -66,7 +83,7 @@ const CreateVehicle: FC = () => {
 
       await res.json();
 
-      setFormData({ name: '', plate: '', snowsatNumber: '', location: '', vehicleType: '', fuelType: '', notes: '' });
+      setFormData({ name: '', plate: '', snowsatNumber: '', location: '', vehicleType: '', fuelType: '', notes: '', currentOperatingHours: '' });
       showToast(t('addSuccess'), 'success');
     } catch (err) {
       console.error('Fehler beim Erstellen des Fahrzeugs:', err);
@@ -198,6 +215,24 @@ const CreateVehicle: FC = () => {
             <option value="Skidoo">{t('vehicleTypeSkidoo')}</option>
             <option value="Quad">{t('vehicleTypeQuad')}</option>
           </select>
+        </div>
+
+        {/* Aktueller Betriebsstunden-/Kilometerstand */}
+        <div className="space-y-2">
+          <label htmlFor="currentOperatingHours" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            {currentReadingLabel}
+          </label>
+          <input
+            id="currentOperatingHours"
+            type="number"
+            value={formData.currentOperatingHours}
+            onChange={(e) => handleChange('currentOperatingHours', e.target.value)}
+            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+            min="0"
+            step={counterStep}
+            required
+          />
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('currentReadingHint')}</p>
         </div>
 
         {/* Treibstoff */}

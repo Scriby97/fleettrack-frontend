@@ -221,6 +221,9 @@
     "vehicleTypeGroomer": "Gatto delle nevi",
     "vehicleTypeSkidoo": "Motoslitta",
     "vehicleTypeQuad": "Quad",
+    "currentHoursLabel": "Attuale contatore ore di esercizio",
+    "currentKmLabel": "Attuale chilometraggio",
+    "currentReadingHint": "Il valore che il veicolo ha adesso - serve come punto di partenza per gli utilizzi successivi.",
     "fuelTypeLabel": "Carburante",
     "fuelTypeDiesel": "Diesel",
     "fuelTypeGasoline": "Benzina",
@@ -229,6 +232,8 @@
     "submitButton": "Aggiungi veicolo",
     "submitting": "Aggiunta in corso...",
     "allFieldsRequiredError": "Tutti i campi sono obbligatori",
+    "currentHoursRequiredError": "Indica l'attuale contatore ore di esercizio",
+    "currentKmRequiredError": "Indica l'attuale chilometraggio",
     "genericError": "Si è verificato un errore",
     "addSuccess": "Veicolo aggiunto con successo",
     "addErrorToast": "Errore durante l'aggiunta del veicolo"

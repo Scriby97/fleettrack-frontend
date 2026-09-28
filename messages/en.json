@@ -221,6 +221,9 @@
     "vehicleTypeGroomer": "Snow groomer",
     "vehicleTypeSkidoo": "Snowmobile",
     "vehicleTypeQuad": "Quad",
+    "currentHoursLabel": "Current operating hours reading",
+    "currentKmLabel": "Current mileage reading",
+    "currentReadingHint": "The reading the vehicle has right now - used as the starting point for later usages.",
     "fuelTypeLabel": "Fuel",
     "fuelTypeDiesel": "Diesel",
     "fuelTypeGasoline": "Gasoline",
@@ -229,6 +232,8 @@
     "submitButton": "Add vehicle",
     "submitting": "Adding...",
     "allFieldsRequiredError": "All fields are required",
+    "currentHoursRequiredError": "Please enter the current operating hours reading",
+    "currentKmRequiredError": "Please enter the current mileage reading",
     "genericError": "An error occurred",
     "addSuccess": "Vehicle added successfully",
     "addErrorToast": "Error adding vehicle"

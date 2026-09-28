@@ -221,6 +221,9 @@
     "vehicleTypeGroomer": "Pistenfahrzeug",
     "vehicleTypeSkidoo": "Skidoo",
     "vehicleTypeQuad": "Quad",
+    "currentHoursLabel": "Aktueller Betriebsstundenstand",
+    "currentKmLabel": "Aktueller Kilometerstand",
+    "currentReadingHint": "Der Stand, den das Fahrzeug jetzt gerade hat - dient als Ausgangspunkt für spätere Nutzungen.",
     "fuelTypeLabel": "Treibstoff",
     "fuelTypeDiesel": "Diesel",
     "fuelTypeGasoline": "Benzin",
@@ -229,6 +232,8 @@
     "submitButton": "Fahrzeug hinzufügen",
     "submitting": "Wird hinzugefügt...",
     "allFieldsRequiredError": "Alle Felder sind erforderlich",
+    "currentHoursRequiredError": "Bitte den aktuellen Betriebsstundenstand angeben",
+    "currentKmRequiredError": "Bitte den aktuellen Kilometerstand angeben",
     "genericError": "Ein Fehler ist aufgetreten",
     "addSuccess": "Fahrzeug erfolgreich erfasst",
     "addErrorToast": "Fehler beim Erstellen des Fahrzeugs"
