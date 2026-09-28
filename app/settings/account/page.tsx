@@ -5,17 +5,25 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
+import { leaveOrganization } from '@/lib/api/organizations'
+import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 import { useToast } from '@/lib/hooks/useToast'
 import { ToastContainer } from '@/app/components/Toast'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
+import { ConfirmDialog } from '@/app/components/ConfirmDialog'
+import type { OrganizationMembership } from '@/lib/types/user'
 
 export default function SettingsAccountPage() {
   const router = useRouter()
-  const { supabaseUser, loading: authLoading, signOut } = useAuth()
+  const { supabaseUser, loading: authLoading, signOut, organizationMemberships, refreshOrganizations } = useAuth()
   const { toasts, showToast, removeToast } = useToast()
   const [signingOut, setSigningOut] = useState(false)
+  const [leaveTarget, setLeaveTarget] = useState<OrganizationMembership | null>(null)
+  const [leaving, setLeaving] = useState(false)
   const t = useTranslations('settingsAccount')
   const tSettings = useTranslations('settings')
+  const tRole = useTranslations('userMenu')
+  const getApiErrorMessage = useApiErrorMessage()
   const supabase = useMemo(() => createClient(), [])
 
   const [formData, setFormData] = useState({
@@ -73,6 +81,36 @@ export default function SettingsAccountPage() {
     await signOut()
     router.push('/login')
     router.refresh()
+  }
+
+  const roleLabel = (role: OrganizationMembership['role']) => {
+    if (role === 'owner') return tRole('roleOwner')
+    if (role === 'admin') return tRole('roleAdmin')
+    return tRole('roleEmployee')
+  }
+
+  const handleLeaveOrganization = async () => {
+    if (!leaveTarget) return
+    setLeaving(true)
+    try {
+      await leaveOrganization(leaveTarget.organizationId)
+      const orgName = leaveTarget.organization?.name ?? ''
+      setLeaveTarget(null)
+      // Gibt die aktualisierte Liste zurueck (siehe AuthProvider) - damit
+      // kann direkt entschieden werden, ob der User nun ganz ohne
+      // Organisation dasteht, statt auf eine (jetzt ggf. ungueltige)
+      // selectedOrgId in OrganizationContext zu vertrauen.
+      const remaining = await refreshOrganizations()
+      if (remaining.length === 0) {
+        router.replace('/onboarding')
+        return
+      }
+      showToast(t('leaveSuccess', { name: orgName }), 'success')
+    } catch (err) {
+      showToast(getApiErrorMessage(err, t('leaveErrorGeneric')), 'error')
+    } finally {
+      setLeaving(false)
+    }
   }
 
   if (authLoading) {
@@ -175,6 +213,50 @@ export default function SettingsAccountPage() {
             </form>
           </section>
 
+          {organizationMemberships.length > 0 && (
+            <section className="border-t border-zinc-200 dark:border-zinc-700 pt-6 space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                  {t('organizationsTitle')}
+                </h2>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  {t('organizationsSubtitle')}
+                </p>
+              </div>
+              <ul className="space-y-3">
+                {organizationMemberships.map((membership) => (
+                  <li
+                    key={membership.organizationId}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 dark:border-zinc-700 p-3"
+                  >
+                    <div>
+                      <p className="font-medium text-zinc-900 dark:text-zinc-50">
+                        {membership.organization?.name ?? membership.organizationId}
+                      </p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        {roleLabel(membership.role)}
+                      </p>
+                    </div>
+                    {membership.role === 'owner' ? (
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-[60%] text-right">
+                        {t('leaveOwnerHint')}
+                      </p>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setLeaveTarget(membership)}
+                        disabled={leaving}
+                        className="px-3 py-1.5 text-sm font-semibold rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {t('leaveButton')}
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <section className="border-t border-zinc-200 dark:border-zinc-700 pt-6 space-y-3">
             <div>
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('sessionTitle')}</h2>
@@ -192,6 +274,17 @@ export default function SettingsAccountPage() {
           </section>
         </div>
       </div>
+
+      {leaveTarget && (
+        <ConfirmDialog
+          title={t('leaveConfirmTitle')}
+          message={t('leaveConfirmMessage', { name: leaveTarget.organization?.name ?? '' })}
+          confirmLabel={leaving ? t('leaving') : t('leaveConfirmLabel')}
+          cancelLabel={t('leaveConfirmCancelLabel')}
+          onConfirm={handleLeaveOrganization}
+          onCancel={() => setLeaveTarget(null)}
+        />
+      )}
     </div>
   )
 }

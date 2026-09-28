@@ -203,6 +203,22 @@ export async function deleteOwnOrganization(organizationId: string): Promise<voi
 }
 
 /**
+ * The currently authenticated user leaves an organization (removes their own
+ * membership). Any role (employee/admin) except the sole owner, who has to
+ * transfer ownership first - the backend rejects that with MEMBER_LAST_OWNER.
+ */
+export async function leaveOrganization(organizationId: string): Promise<void> {
+  const response = await authenticatedFetch(
+    buildApiUrl(`/organizations/${organizationId}/leave`),
+    { method: 'DELETE' }
+  )
+
+  if (!response.ok) {
+    await throwApiError(response, 'Fehler beim Verlassen der Organisation')
+  }
+}
+
+/**
  * Permanently deletes an organization and all its data (Super Admin only).
  * Only allowed once the owner has released the organization for deletion
  * via deleteOwnOrganization.
