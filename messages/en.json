@@ -429,7 +429,7 @@
     "createOrgCta": "Create organization",
     "option2Label": "Option 2",
     "invitesTitle": "Organization invitations",
-    "invitesDescription": "You have pending invitations to an organization. Review them and accept or decline.",
+    "invitesDescription": "Check your organization invitations. If an organization has invited you, you can join it right away.",
     "invitesCta": "View invitations",
     "signOutButton": "Sign out"
   },
