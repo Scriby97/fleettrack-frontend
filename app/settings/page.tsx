@@ -257,6 +257,23 @@ export default function SettingsPage() {
             {t('infoSectionTitle')}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
+            <a
+              href="https://deerworks.ch/projekte/fleettrack/dokumentation/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+            >
+              <SettingsIcon>
+                <path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" />
+                <path d="M14 2v5h5" />
+                <path d="M8.5 12h7M8.5 15.5h7M8.5 8.5h3" />
+              </SettingsIcon>
+              <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('documentationTitle')}</div>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                {t('documentationDescription')}
+              </p>
+            </a>
+
             <Link
               href="/impressum"
               className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"

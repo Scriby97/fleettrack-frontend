@@ -121,6 +121,15 @@ describe('Einstellungen', () => {
         expect(hasLink(href)).toBe(true)
       }
     })
+
+    it('links the documentation tile to the external Deerworks page', () => {
+      renderWithIntl(<SettingsPage />)
+
+      const link = document.querySelector('a[href="https://deerworks.ch/projekte/fleettrack/dokumentation/"]')
+      expect(link).not.toBeNull()
+      expect(link).toHaveAttribute('target', '_blank')
+      expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'))
+    })
   })
 
   describe('login redirect', () => {

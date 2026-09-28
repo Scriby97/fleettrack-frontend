@@ -288,6 +288,8 @@
     "organizationProfileTitle": "Organisation",
     "organizationProfileDescription": "Modifier le nom et le logo de l'organisation.",
     "infoSectionTitle": "Infos",
+    "documentationTitle": "Documentation",
+    "documentationDescription": "Toutes les fonctionnalités de l'app expliquées en détail, avec captures d'écran. S'ouvre sur deerworks.ch.",
     "impressumTitle": "Mentions légales",
     "impressumDescription": "Informations légales sur l'éditeur de cette app."
   },
