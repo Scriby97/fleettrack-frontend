@@ -275,6 +275,34 @@ export default function SettingsPage() {
             </a>
 
             <Link
+              href="/datenschutz"
+              className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+            >
+              <SettingsIcon>
+                <path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z" />
+                <path d="m9 12 2 2 4-4" />
+              </SettingsIcon>
+              <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('datenschutzTitle')}</div>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                {t('datenschutzDescription')}
+              </p>
+            </Link>
+
+            <Link
+              href="/agb"
+              className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+            >
+              <SettingsIcon>
+                <path d="M9 2h6l3 3v15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" />
+                <path d="M9 9h6M9 13h6M9 17h3" />
+              </SettingsIcon>
+              <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('agbTitle')}</div>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                {t('agbDescription')}
+              </p>
+            </Link>
+
+            <Link
               href="/impressum"
               className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
             >

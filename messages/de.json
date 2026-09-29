@@ -250,6 +250,8 @@
     "forgotPasswordLink": "Passwort vergessen?",
     "redirecting": "Weiterleitung...",
     "registeredSuccessMessage": "Registrierung erfolgreich. Du kannst dich jetzt anmelden.",
+    "datenschutzLink": "Datenschutz",
+    "agbLink": "AGB",
     "impressumLink": "Impressum"
   },
   "register": {
@@ -265,7 +267,9 @@
     "alreadyHaveAccount": "Bereits ein Konto?",
     "loginLink": "Zum Login",
     "passwordMismatchError": "Passwörter stimmen nicht überein.",
-    "passwordTooShortError": "Passwort muss mindestens 6 Zeichen lang sein."
+    "passwordTooShortError": "Passwort muss mindestens 6 Zeichen lang sein.",
+    "consentLabel": "Ich akzeptiere die <agb>AGB</agb> und die <datenschutz>Datenschutzerklärung</datenschutz>.",
+    "consentRequiredError": "Bitte akzeptiere die AGB und die Datenschutzerklärung, um fortzufahren."
   },
   "settings": {
     "title": "Einstellungen",
@@ -296,6 +300,10 @@
     "infoSectionTitle": "Info",
     "documentationTitle": "Dokumentation",
     "documentationDescription": "Alle Funktionen der App im Detail erklärt, mit Screenshots. Öffnet auf deerworks.ch.",
+    "datenschutzTitle": "Datenschutzerklärung",
+    "datenschutzDescription": "Wie wir deine Daten bearbeiten und schützen.",
+    "agbTitle": "AGB",
+    "agbDescription": "Allgemeine Geschäftsbedingungen für die Nutzung von FleetTrack.",
     "impressumTitle": "Impressum",
     "impressumDescription": "Rechtliche Angaben zum Anbieter dieser App."
   },
@@ -305,6 +313,14 @@
     "contactTitle": "Kontakt",
     "developedByTitle": "Entwicklung",
     "developedByText": "FleetTrack wird entwickelt von",
+    "backToApp": "Zurück zur App"
+  },
+  "datenschutz": {
+    "title": "Datenschutzerklärung",
+    "backToApp": "Zurück zur App"
+  },
+  "agb": {
+    "title": "AGB",
     "backToApp": "Zurück zur App"
   },
   "settingsAccount": {

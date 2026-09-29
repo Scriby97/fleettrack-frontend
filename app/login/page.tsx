@@ -185,10 +185,24 @@ const LoginPage: FC = () => {
           </div>
         </div>
 
-        <div className="text-center">
+        <div className="text-center text-sm text-zinc-500 dark:text-zinc-400 space-x-2">
+          <Link
+            href="/datenschutz"
+            className="hover:text-zinc-700 dark:hover:text-zinc-200"
+          >
+            {t('datenschutzLink')}
+          </Link>
+          <span aria-hidden="true">&middot;</span>
+          <Link
+            href="/agb"
+            className="hover:text-zinc-700 dark:hover:text-zinc-200"
+          >
+            {t('agbLink')}
+          </Link>
+          <span aria-hidden="true">&middot;</span>
           <Link
             href="/impressum"
-            className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+            className="hover:text-zinc-700 dark:hover:text-zinc-200"
           >
             {t('impressumLink')}
           </Link>

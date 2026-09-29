@@ -17,6 +17,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [consentAccepted, setConsentAccepted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -31,6 +32,13 @@ export default function RegisterPage() {
 
     if (password.length < 6) {
       setError(t('passwordTooShortError'))
+      return
+    }
+
+    // Eigene statt nativer Checkbox-Validierung (kein `required` am Input) -
+    // dessen Meldung ist nie uebersetzt, egal welche UI-Sprache eingestellt ist.
+    if (!consentAccepted) {
+      setError(t('consentRequiredError'))
       return
     }
 
@@ -143,6 +151,40 @@ export default function RegisterPage() {
                 className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-zinc-700 dark:text-zinc-100"
                 placeholder="••••••••"
               />
+            </div>
+
+            <div className="flex items-start gap-2">
+              <input
+                id="consent"
+                type="checkbox"
+                checked={consentAccepted}
+                onChange={(e) => setConsentAccepted(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-zinc-300 dark:border-zinc-600 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="consent" className="text-sm text-zinc-600 dark:text-zinc-400">
+                {t.rich('consentLabel', {
+                  agb: (chunks) => (
+                    <Link
+                      href="/agb"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                    >
+                      {chunks}
+                    </Link>
+                  ),
+                  datenschutz: (chunks) => (
+                    <Link
+                      href="/datenschutz"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                    >
+                      {chunks}
+                    </Link>
+                  ),
+                })}
+              </label>
             </div>
 
             {error && (
