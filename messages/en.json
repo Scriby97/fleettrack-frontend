@@ -636,7 +636,10 @@
     "createSuccess": "Invitation created",
     "createErrorGeneric": "Error creating the invitation",
     "deleteErrorGeneric": "Error deleting the invitation",
-    "copyErrorGeneric": "Error copying to clipboard"
+    "copyErrorGeneric": "Error copying to clipboard",
+    "renewButton": "Renew",
+    "renewingLabel": "Renewing...",
+    "renewErrorGeneric": "Failed to renew invite"
   },
   "memberManagement": {
     "tabLabel": "Members",
@@ -765,6 +768,7 @@
     "INVITE_EXPIRED": "This invite has expired.",
     "INVITE_EMAIL_MISMATCH": "This invite is not addressed to your email address.",
     "INVITE_DELETE_FORBIDDEN": "You can only delete invites from your own organization.",
+    "INVITE_RENEW_FORBIDDEN": "You can only renew invites from your own organization.",
     "SUBSCRIPTION_NOT_FOUND": "No subscription found for this organization.",
     "SUBSCRIPTION_NO_STRIPE_SUBSCRIPTION": "No active Stripe subscription found for this organization.",
     "SUBSCRIPTION_NO_STRIPE_CUSTOMER": "This organization does not have a Stripe customer yet (Lieutenant/free plan).",

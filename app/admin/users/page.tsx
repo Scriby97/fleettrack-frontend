@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useOrganization } from '@/lib/contexts/OrganizationContext'
-import { createInvite, deleteInvite, getOrganizationInvites } from '@/lib/api/invites'
+import { createInvite, deleteInvite, getOrganizationInvites, renewInvite } from '@/lib/api/invites'
 import { getOrganizationMembers, updateMemberRole, transferOwnership, removeMember } from '@/lib/api/organizationMembers'
 import { canPromoteToAdmin, canDemoteToEmployee, canTransferOwnership, canRemoveMember } from '@/lib/permissions/organizationMembers'
 import type { InviteEntity, InviteStatus, OrganizationMemberDetail } from '@/lib/types/user'
@@ -57,6 +57,7 @@ export default function UsersPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [renewingInviteId, setRenewingInviteId] = useState<string | null>(null)
 
   const [members, setMembers] = useState<OrganizationMemberDetail[]>([])
   const [membersError, setMembersError] = useState<string | null>(null)
@@ -259,6 +260,19 @@ export default function UsersPage() {
     }
   }
 
+  const handleRenewInvite = async (inviteId: string) => {
+    setRenewingInviteId(inviteId)
+    try {
+      const renewed = await renewInvite(inviteId)
+      setInvites((prev) => prev.map((invite) => (invite.id === inviteId ? renewed : invite)))
+    } catch (err) {
+      const message = getApiErrorMessage(err, tInv('renewErrorGeneric'))
+      setError(message)
+    } finally {
+      setRenewingInviteId(null)
+    }
+  }
+
   const handleCloseModal = () => {
     setShowInviteModal(false)
     setInviteEmail('')
@@ -409,7 +423,16 @@ export default function UsersPage() {
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex flex-wrap gap-2">
-                                {status === 'pending' && (
+                                {status === 'expired' && (
+                                  <button
+                                    onClick={() => handleRenewInvite(invite.id)}
+                                    disabled={renewingInviteId === invite.id}
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60 disabled:opacity-50"
+                                  >
+                                    {renewingInviteId === invite.id ? tInv('renewingLabel') : tInv('renewButton')}
+                                  </button>
+                                )}
+                                {(status === 'pending' || status === 'expired') && (
                                   <button
                                     onClick={() => handleDeleteInvite(invite.id)}
                                     className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
@@ -459,7 +482,16 @@ export default function UsersPage() {
                           <span className="font-medium">{tInv('expiryColumnLabel')}</span> {new Date(invite.expiresAt).toLocaleDateString(dateLocale)}
                         </div>
                         <div className="flex flex-wrap gap-2 pt-1">
-                          {status === 'pending' && (
+                          {status === 'expired' && (
+                            <button
+                              onClick={() => handleRenewInvite(invite.id)}
+                              disabled={renewingInviteId === invite.id}
+                              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60 disabled:opacity-50"
+                            >
+                              {renewingInviteId === invite.id ? tInv('renewingLabel') : tInv('renewButton')}
+                            </button>
+                          )}
+                          {(status === 'pending' || status === 'expired') && (
                             <button
                               onClick={() => handleDeleteInvite(invite.id)}
                               className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"

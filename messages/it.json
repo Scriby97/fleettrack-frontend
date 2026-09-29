@@ -636,7 +636,10 @@
     "createSuccess": "Invito creato",
     "createErrorGeneric": "Errore durante la creazione dell'invito",
     "deleteErrorGeneric": "Errore durante l'eliminazione dell'invito",
-    "copyErrorGeneric": "Errore durante la copia"
+    "copyErrorGeneric": "Errore durante la copia",
+    "renewButton": "Rinnova",
+    "renewingLabel": "Rinnovo...",
+    "renewErrorGeneric": "Errore durante il rinnovo dell'invito"
   },
   "memberManagement": {
     "tabLabel": "Membri",
@@ -765,6 +768,7 @@
     "INVITE_EXPIRED": "Questo invito è scaduto.",
     "INVITE_EMAIL_MISMATCH": "Questo invito non è indirizzato al tuo indirizzo email.",
     "INVITE_DELETE_FORBIDDEN": "Puoi eliminare solo gli inviti della tua organizzazione.",
+    "INVITE_RENEW_FORBIDDEN": "Puoi rinnovare solo gli inviti della tua organizzazione.",
     "SUBSCRIPTION_NOT_FOUND": "Nessun abbonamento trovato per questa organizzazione.",
     "SUBSCRIPTION_NO_STRIPE_SUBSCRIPTION": "Nessun abbonamento Stripe attivo trovato per questa organizzazione.",
     "SUBSCRIPTION_NO_STRIPE_CUSTOMER": "Questa organizzazione non ha ancora un cliente Stripe (piano Tenente/gratuito).",

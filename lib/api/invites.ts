@@ -105,3 +105,21 @@ export async function deleteInvite(inviteId: string, _organizationId?: string): 
     await throwApiError(response, 'Fehler beim Löschen der Einladung')
   }
 }
+
+/**
+ * Renew an invite (requires authentication): generates a fresh token and
+ * resets its expiry to 7 days from now, in place - same permission check as
+ * deleteInvite. Used for expired invites instead of deleting + recreating,
+ * so no duplicate row is left behind for the same email.
+ */
+export async function renewInvite(inviteId: string): Promise<InviteEntity> {
+  const response = await authenticatedFetch(buildApiUrl(`/organizations/invites/${inviteId}/renew`), {
+    method: 'PATCH',
+  })
+
+  if (!response.ok) {
+    await throwApiError(response, 'Fehler beim Erneuern der Einladung')
+  }
+
+  return response.json()
+}

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { renderWithIntl } from '@/test/renderWithIntl'
 
 const router = { push: vi.fn(), back: vi.fn() }
@@ -29,9 +30,12 @@ vi.mock('@/lib/contexts/OrganizationContext', () => ({
 }))
 
 const getOrganizationInvites = vi.fn()
+const deleteInvite = vi.fn()
+const renewInvite = vi.fn()
 vi.mock('@/lib/api/invites', () => ({
   createInvite: vi.fn(),
-  deleteInvite: vi.fn(),
+  deleteInvite: (...args: unknown[]) => deleteInvite(...args),
+  renewInvite: (...args: unknown[]) => renewInvite(...args),
   getOrganizationInvites: (...args: unknown[]) => getOrganizationInvites(...args),
 }))
 
@@ -64,6 +68,8 @@ describe('User Management (Organisation)', () => {
     orgState.isLoading = false
     getOrganizationInvites.mockReset()
     getOrganizationMembers.mockReset()
+    deleteInvite.mockReset()
+    renewInvite.mockReset()
     getOrganizationInvites.mockResolvedValue([])
     getOrganizationMembers.mockResolvedValue([member('employee')])
   })
@@ -151,6 +157,86 @@ describe('User Management (Organisation)', () => {
       renderWithIntl(<UsersPage />)
 
       expect(router.push).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('invite actions', () => {
+    const pendingInvite = {
+      id: 'invite-pending',
+      token: 't1',
+      email: 'ausstehend@example.test',
+      role: 'employee',
+      expiresAt: '2099-01-01T00:00:00.000Z',
+      usedAt: null,
+      usedBy: null,
+      invitedBy: 'me',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      organizationId: 'org-1',
+    }
+    const expiredInvite = {
+      id: 'invite-expired',
+      token: 't2',
+      email: 'abgelaufen@example.test',
+      role: 'employee',
+      expiresAt: '2020-01-01T00:00:00.000Z',
+      usedAt: null,
+      usedBy: null,
+      invitedBy: 'me',
+      createdAt: '2019-12-01T00:00:00.000Z',
+      organizationId: 'org-1',
+    }
+
+    beforeEach(() => {
+      orgState.selectedOrganizationRole = 'owner'
+      getOrganizationInvites.mockResolvedValue([pendingInvite, expiredInvite])
+    })
+
+    it('only offers "Erneuern" for the expired invite, and "Löschen" for both', async () => {
+      renderWithIntl(<UsersPage />)
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Einladungen' }))
+      await screen.findAllByText('abgelaufen@example.test')
+
+      // "Löschen" erscheint zweimal (pro Ansicht/Zeile je einmal wird durch die
+      // jeweilige Tabelle vs. Mobil-Karten-Variante bestimmt - im Test-DOM sind
+      // beide Layouts gerendert), "Erneuern" nur für die abgelaufene Einladung.
+      expect(screen.getAllByRole('button', { name: 'Löschen' }).length).toBeGreaterThan(0)
+      expect(screen.getAllByRole('button', { name: 'Erneuern' }).length).toBeGreaterThan(0)
+    })
+
+    it('renews an expired invite and replaces it in the list with the refreshed one', async () => {
+      const renewed = { ...expiredInvite, expiresAt: '2099-06-01T00:00:00.000Z' }
+      renewInvite.mockResolvedValue(renewed)
+
+      renderWithIntl(<UsersPage />)
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Einladungen' }))
+      await screen.findAllByText('abgelaufen@example.test')
+
+      const renewButtons = screen.getAllByRole('button', { name: 'Erneuern' })
+      await userEvent.click(renewButtons[0])
+
+      await waitFor(() => expect(renewInvite).toHaveBeenCalledWith('invite-expired'))
+      // Nach dem Erneuern zeigt die Zeile kein "Erneuern" mehr an, da sie nicht
+      // mehr abgelaufen ist.
+      await waitFor(() => expect(screen.queryAllByRole('button', { name: 'Erneuern' }).length).toBe(0))
+    })
+
+    it('deletes an expired invite and removes it from the list', async () => {
+      deleteInvite.mockResolvedValue(undefined)
+
+      renderWithIntl(<UsersPage />)
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Einladungen' }))
+      await screen.findAllByText('abgelaufen@example.test')
+
+      const deleteButtons = screen.getAllByRole('button', { name: 'Löschen' })
+      // Zweiter "Löschen"-Button gehört zur abgelaufenen Einladung (Reihenfolge
+      // folgt sortedInvites: neueste zuerst, pendingInvite vor expiredInvite).
+      await userEvent.click(deleteButtons[1])
+
+      await waitFor(() => expect(deleteInvite).toHaveBeenCalledWith('invite-expired', 'org-1'))
+      await waitFor(() => expect(screen.queryAllByText('abgelaufen@example.test').length).toBe(0))
     })
   })
 })

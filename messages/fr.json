@@ -636,7 +636,10 @@
     "createSuccess": "Invitation créée",
     "createErrorGeneric": "Erreur lors de la création de l'invitation",
     "deleteErrorGeneric": "Erreur lors de la suppression de l'invitation",
-    "copyErrorGeneric": "Erreur lors de la copie"
+    "copyErrorGeneric": "Erreur lors de la copie",
+    "renewButton": "Renouveler",
+    "renewingLabel": "Renouvellement...",
+    "renewErrorGeneric": "Erreur lors du renouvellement de l'invitation"
   },
   "memberManagement": {
     "tabLabel": "Membres",
@@ -765,6 +768,7 @@
     "INVITE_EXPIRED": "Cette invitation a expiré.",
     "INVITE_EMAIL_MISMATCH": "Cette invitation n'est pas adressée à votre adresse e-mail.",
     "INVITE_DELETE_FORBIDDEN": "Vous ne pouvez supprimer que les invitations de votre propre organisation.",
+    "INVITE_RENEW_FORBIDDEN": "Vous ne pouvez renouveler que les invitations de votre propre organisation.",
     "SUBSCRIPTION_NOT_FOUND": "Aucun abonnement trouvé pour cette organisation.",
     "SUBSCRIPTION_NO_STRIPE_SUBSCRIPTION": "Aucun abonnement Stripe actif trouvé pour cette organisation.",
     "SUBSCRIPTION_NO_STRIPE_CUSTOMER": "Cette organisation n'a pas encore de client Stripe (forfait Lieutenant/gratuit).",

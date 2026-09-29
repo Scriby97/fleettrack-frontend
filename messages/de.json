@@ -636,7 +636,10 @@
     "createSuccess": "Einladung erstellt",
     "createErrorGeneric": "Fehler beim Erstellen der Einladung",
     "deleteErrorGeneric": "Fehler beim Löschen der Einladung",
-    "copyErrorGeneric": "Fehler beim Kopieren"
+    "copyErrorGeneric": "Fehler beim Kopieren",
+    "renewButton": "Erneuern",
+    "renewingLabel": "Erneuere...",
+    "renewErrorGeneric": "Fehler beim Erneuern der Einladung"
   },
   "memberManagement": {
     "tabLabel": "Mitglieder",
@@ -765,6 +768,7 @@
     "INVITE_EXPIRED": "Diese Einladung ist abgelaufen.",
     "INVITE_EMAIL_MISMATCH": "Diese Einladung ist nicht an deine E-Mail-Adresse gerichtet.",
     "INVITE_DELETE_FORBIDDEN": "Du kannst nur Einladungen deiner eigenen Organisation löschen.",
+    "INVITE_RENEW_FORBIDDEN": "Du kannst nur Einladungen deiner eigenen Organisation erneuern.",
     "SUBSCRIPTION_NOT_FOUND": "Keine Subscription für diese Organisation gefunden.",
     "SUBSCRIPTION_NO_STRIPE_SUBSCRIPTION": "Keine aktive Stripe-Subscription für diese Organisation gefunden.",
     "SUBSCRIPTION_NO_STRIPE_CUSTOMER": "Diese Organisation hat noch keinen Stripe-Kunden (Leutnant/Free-Tarif).",
