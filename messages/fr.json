@@ -96,6 +96,7 @@
     "updateSuccess": "Utilisation mise à jour avec succès",
     "updateErrorToast": "Erreur lors de la mise à jour de l'utilisation",
     "updateErrorGeneric": "Erreur lors de la mise à jour",
+    "invalidNumberError": "Format de nombre invalide",
     "deleteErrorGeneric": "Erreur lors de la suppression : {status}",
     "deleteSuccess": "Utilisation supprimée avec succès",
     "deleteErrorToast": "Erreur lors de la suppression de l'utilisation",

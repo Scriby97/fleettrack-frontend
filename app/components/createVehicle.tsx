@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
-import { vehicleUsesKm } from '@/lib/vehicles/metric';
+import { vehicleUsesKm, counterDecimals, decimalPlaces } from '@/lib/vehicles/metric';
 import { ToastContainer } from './Toast';
 
 interface FormState {
@@ -60,7 +60,14 @@ const CreateVehicle: FC = () => {
     }
 
     const parsedCurrentOperatingHours = parseFloat(formData.currentOperatingHours);
-    if (formData.currentOperatingHours.trim() === '' || Number.isNaN(parsedCurrentOperatingHours) || parsedCurrentOperatingHours < 0) {
+    // Ersetzt die native step/min-Validierung (siehe noValidate unten) -
+    // deren Meldung ist nie uebersetzt, egal welche UI-Sprache eingestellt ist.
+    if (
+      formData.currentOperatingHours.trim() === '' ||
+      Number.isNaN(parsedCurrentOperatingHours) ||
+      parsedCurrentOperatingHours < 0 ||
+      decimalPlaces(formData.currentOperatingHours) > counterDecimals(usesKm)
+    ) {
       setError(usesKm ? t('currentKmRequiredError') : t('currentHoursRequiredError'));
       return;
     }
@@ -128,7 +135,11 @@ const CreateVehicle: FC = () => {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
+      {/* noValidate: eigene Validierung oben deckt required/min/step bereits
+          ab - ohne das blockt der Browser bei step-Verletzungen (z.B. zu
+          viele Nachkommastellen) mit einem rein englischen, nie übersetzten
+          Tooltip, unabhängig von der UI-Sprache der Seite. */}
+      <form onSubmit={handleSubmit} className="max-w-2xl space-y-5" noValidate>
         {/* Error Message */}
         {error && (
           <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">

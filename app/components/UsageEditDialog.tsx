@@ -8,7 +8,7 @@ import { ApiError, throwApiError } from '@/lib/api/ApiError';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { appendSecondaryContinuityIssue } from '@/lib/i18n/continuityWarning';
 import { toDatetimeLocalValue } from '@/lib/dates/rangeDefaults';
-import { vehicleUsesKm } from '@/lib/vehicles/metric';
+import { vehicleUsesKm, counterDecimals, decimalPlaces } from '@/lib/vehicles/metric';
 import type { UsageWithVehicle } from '@/lib/api/usages';
 import { ConfirmDialog } from './ConfirmDialog';
 import { DateTimePicker } from './DateTimePicker';
@@ -105,14 +105,35 @@ export const UsageEditDialog: FC<UsageEditDialogProps> = ({
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setError(null);
+
+    // Ersetzt die native step/min-Validierung (siehe noValidate am <form>
+    // unten) - deren Meldung ist nie uebersetzt, egal welche UI-Sprache
+    // eingestellt ist.
+    const parsedStart = parseFloat(form.startOperatingHours);
+    const parsedEnd = parseFloat(form.endOperatingHours);
+    const maxCounterDecimals = counterDecimals(usesKm);
+    const parsedFuel = form.fuel.trim() === '' ? 0 : parseFloat(form.fuel);
+    if (
+      Number.isNaN(parsedStart) ||
+      Number.isNaN(parsedEnd) ||
+      parsedStart < 0 ||
+      parsedEnd < 0 ||
+      decimalPlaces(form.startOperatingHours) > maxCounterDecimals ||
+      decimalPlaces(form.endOperatingHours) > maxCounterDecimals ||
+      (form.fuel.trim() !== '' && (Number.isNaN(parsedFuel) || parsedFuel < 0 || decimalPlaces(form.fuel) > 2))
+    ) {
+      setError(t('invalidNumberError'));
+      return;
+    }
+
+    setIsSubmitting(true);
 
     const payload = {
       vehicleId: form.vehicleId,
-      startOperatingHours: parseFloat(form.startOperatingHours),
-      endOperatingHours: parseFloat(form.endOperatingHours),
-      fuelLitersRefilled: parseFloat(form.fuel) || 0,
+      startOperatingHours: parsedStart,
+      endOperatingHours: parsedEnd,
+      fuelLitersRefilled: parsedFuel,
       // form.usageDate ist ein datetime-local-Wert ohne Zeitzonenangabe -
       // new Date(...) interpretiert den als lokale Zeit.
       usageDate: new Date(form.usageDate).toISOString(),
@@ -183,7 +204,11 @@ export const UsageEditDialog: FC<UsageEditDialogProps> = ({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          {/* noValidate: eigene Validierung in handleSubmit deckt required/
+              min/step bereits ab - ohne das blockt der Browser bei
+              step-Verletzungen mit einem rein englischen, nie übersetzten
+              Tooltip, unabhängig von der UI-Sprache der Seite. */}
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <div className="space-y-2">
               <label htmlFor="edit-vehicle" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 {t('vehicleField')}

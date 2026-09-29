@@ -96,6 +96,7 @@
     "updateSuccess": "Nutzung erfolgreich aktualisiert",
     "updateErrorToast": "Fehler beim Aktualisieren der Nutzung",
     "updateErrorGeneric": "Fehler beim Aktualisieren",
+    "invalidNumberError": "Ungültiges Zahlenformat",
     "deleteErrorGeneric": "Fehler beim Löschen: {status}",
     "deleteSuccess": "Nutzung erfolgreich gelöscht",
     "deleteErrorToast": "Fehler beim Löschen der Nutzung",

@@ -96,6 +96,7 @@
     "updateSuccess": "Usage updated successfully",
     "updateErrorToast": "Error updating usage",
     "updateErrorGeneric": "Error updating",
+    "invalidNumberError": "Invalid number format",
     "deleteErrorGeneric": "Error deleting: {status}",
     "deleteSuccess": "Usage deleted successfully",
     "deleteErrorToast": "Error deleting usage",

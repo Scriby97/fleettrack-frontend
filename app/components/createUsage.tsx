@@ -10,7 +10,7 @@ import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { appendSecondaryContinuityIssue } from '@/lib/i18n/continuityWarning';
-import { vehicleUsesKm } from '@/lib/vehicles/metric';
+import { vehicleUsesKm, counterDecimals, decimalPlaces } from '@/lib/vehicles/metric';
 import { toDatetimeLocalValue } from '@/lib/dates/rangeDefaults';
 import { ToastContainer } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -325,12 +325,30 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
 
       const parsedStart = parseFloat(formData.startOperatingHours);
       const parsedEnd = parseFloat(formData.endOperatingHours);
-      if (Number.isNaN(parsedStart) || Number.isNaN(parsedEnd)) throw new Error(t('invalidNumberError'));
+      const maxCounterDecimals = counterDecimals(usesKm);
+      // Ersetzt die native step/min-Validierung (siehe noValidate oben) -
+      // deren Meldung ist nie uebersetzt, egal welche UI-Sprache eingestellt ist.
+      if (
+        Number.isNaN(parsedStart) ||
+        Number.isNaN(parsedEnd) ||
+        parsedStart < 0 ||
+        parsedEnd < 0 ||
+        decimalPlaces(formData.startOperatingHours) > maxCounterDecimals ||
+        decimalPlaces(formData.endOperatingHours) > maxCounterDecimals
+      ) {
+        throw new Error(t('invalidNumberError'));
+      }
       if (parsedEnd <= parsedStart) {
         throw new Error(usesKm ? t('endKmMustBeGreaterError') : t('endMustBeGreaterError'));
       }
 
       const parsedFuel = formData.fuel.trim() === '' ? NaN : parseFloat(formData.fuel);
+      if (
+        !Number.isNaN(parsedFuel) &&
+        (parsedFuel < 0 || decimalPlaces(formData.fuel) > 2)
+      ) {
+        throw new Error(t('invalidNumberError'));
+      }
       const fuelLitersRefilled = Number.isNaN(parsedFuel) ? 0 : parsedFuel;
 
       payload = {
@@ -468,7 +486,11 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
+      {/* noValidate: eigene Validierung unten deckt required/min/step bereits
+          ab - ohne das blockt der Browser bei step-Verletzungen (z.B. zu
+          viele Nachkommastellen) mit einem rein englischen, nie übersetzten
+          Tooltip, unabhängig von der UI-Sprache der Seite. */}
+      <form onSubmit={handleSubmit} className="max-w-2xl space-y-5" noValidate>
         {/* Fahrzeug */}
           {/* Error Message */}
           {error && (
