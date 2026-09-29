@@ -50,7 +50,7 @@ export default function CreateOrganizationOnboardingPage() {
     {
       id: 'captain',
       label: tTier('captain'),
-      price: `CHF 49.- ${t('perMonthSuffix')}`,
+      price: `CHF 79.- ${t('perMonthSuffix')}`,
       maxVehicles: '20',
       maxMembers: '50',
       paid: true,
@@ -59,7 +59,7 @@ export default function CreateOrganizationOnboardingPage() {
     {
       id: 'general',
       label: tTier('general'),
-      price: `CHF 99.- ${t('perMonthSuffix')}`,
+      price: `CHF 149.- ${t('perMonthSuffix')}`,
       maxVehicles: t('unlimitedLabel'),
       maxMembers: t('unlimitedLabel'),
       paid: true,
