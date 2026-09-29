@@ -75,6 +75,12 @@ export const UsageEditDialog: FC<UsageEditDialogProps> = ({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Feldspezifische Meldungen statt nur der generischen Banner-Meldung oben -
+  // direkt unter dem jeweiligen Feld angezeigt, damit erkennbar ist, WELCHES
+  // Feld ungueltig ist.
+  const [startError, setStartError] = useState<string | null>(null);
+  const [endError, setEndError] = useState<string | null>(null);
+  const [fuelError, setFuelError] = useState<string | null>(null);
   // Haelt den Payload fest, damit "Trotzdem speichern" denselben Request mit
   // confirmDespiteWarning=true wiederholen kann.
   const [continuityWarning, setContinuityWarning] = useState<{
@@ -106,26 +112,45 @@ export const UsageEditDialog: FC<UsageEditDialogProps> = ({
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setStartError(null);
+    setEndError(null);
+    setFuelError(null);
 
     // Ersetzt die native step/min-Validierung (siehe noValidate am <form>
     // unten) - deren Meldung ist nie uebersetzt, egal welche UI-Sprache
-    // eingestellt ist.
+    // eingestellt ist. Jedes Feld bekommt seine eigene Meldung direkt
+    // darunter, statt einer einzigen generischen Banner-Meldung, aus der
+    // nicht hervorgeht, welches Feld betroffen ist.
     const parsedStart = parseFloat(form.startOperatingHours);
     const parsedEnd = parseFloat(form.endOperatingHours);
     const maxCounterDecimals = counterDecimals(usesKm);
     const parsedFuel = form.fuel.trim() === '' ? 0 : parseFloat(form.fuel);
+
+    let hasFieldError = false;
     if (
       Number.isNaN(parsedStart) ||
-      Number.isNaN(parsedEnd) ||
       parsedStart < 0 ||
-      parsedEnd < 0 ||
-      decimalPlaces(form.startOperatingHours) > maxCounterDecimals ||
-      decimalPlaces(form.endOperatingHours) > maxCounterDecimals ||
-      (form.fuel.trim() !== '' && (Number.isNaN(parsedFuel) || parsedFuel < 0 || decimalPlaces(form.fuel) > 2))
+      decimalPlaces(form.startOperatingHours) > maxCounterDecimals
     ) {
-      setError(t('invalidNumberError'));
-      return;
+      setStartError(t('invalidNumberError'));
+      hasFieldError = true;
     }
+    if (
+      Number.isNaN(parsedEnd) ||
+      parsedEnd < 0 ||
+      decimalPlaces(form.endOperatingHours) > maxCounterDecimals
+    ) {
+      setEndError(t('invalidNumberError'));
+      hasFieldError = true;
+    }
+    if (
+      form.fuel.trim() !== '' &&
+      (Number.isNaN(parsedFuel) || parsedFuel < 0 || decimalPlaces(form.fuel) > 2)
+    ) {
+      setFuelError(t('invalidNumberError'));
+      hasFieldError = true;
+    }
+    if (hasFieldError) return;
 
     setIsSubmitting(true);
 
@@ -181,6 +206,10 @@ export const UsageEditDialog: FC<UsageEditDialogProps> = ({
 
   const inputClass =
     'block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500';
+  const inputClassFor = (hasError: boolean) =>
+    hasError
+      ? 'block w-full rounded-lg border border-red-500 dark:border-red-500 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-red-500 focus:ring-blue-500'
+      : inputClass;
 
   return (
     <>
@@ -251,13 +280,19 @@ export const UsageEditDialog: FC<UsageEditDialogProps> = ({
                 id="edit-startOperatingHours"
                 type="number"
                 value={form.startOperatingHours}
-                onChange={(e) => setForm((prev) => ({ ...prev, startOperatingHours: e.target.value }))}
-                className={inputClass}
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, startOperatingHours: e.target.value }));
+                  setStartError(null);
+                }}
+                className={inputClassFor(!!startError)}
                 min="0"
                 step={counterStep}
                 required
                 disabled={!canEdit}
               />
+              {startError && (
+                <p className="mt-2 text-sm text-red-700 dark:text-red-200">{startError}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -268,13 +303,19 @@ export const UsageEditDialog: FC<UsageEditDialogProps> = ({
                 id="edit-endOperatingHours"
                 type="number"
                 value={form.endOperatingHours}
-                onChange={(e) => setForm((prev) => ({ ...prev, endOperatingHours: e.target.value }))}
-                className={inputClass}
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, endOperatingHours: e.target.value }));
+                  setEndError(null);
+                }}
+                className={inputClassFor(!!endError)}
                 min="0"
                 step={counterStep}
                 required
                 disabled={!canEdit}
               />
+              {endError && (
+                <p className="mt-2 text-sm text-red-700 dark:text-red-200">{endError}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -285,12 +326,18 @@ export const UsageEditDialog: FC<UsageEditDialogProps> = ({
                 id="edit-fuel"
                 type="number"
                 value={form.fuel}
-                onChange={(e) => setForm((prev) => ({ ...prev, fuel: e.target.value }))}
-                className={inputClass}
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, fuel: e.target.value }));
+                  setFuelError(null);
+                }}
+                className={inputClassFor(!!fuelError)}
                 min="0"
                 step="0.01"
                 disabled={!canEdit}
               />
+              {fuelError && (
+                <p className="mt-2 text-sm text-red-700 dark:text-red-200">{fuelError}</p>
+              )}
             </div>
 
             {error && (

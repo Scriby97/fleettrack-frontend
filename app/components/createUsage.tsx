@@ -112,6 +112,13 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeError, setTimeError] = useState<string | null>(null);
+  // Feldspezifische Meldungen (statt nur der generischen Banner-Meldung oben)
+  // fuer Start-Betriebsstunden/Treibstoff - direkt unter dem jeweiligen Feld
+  // angezeigt, damit erkennbar ist, WELCHES Feld ungueltig ist. Fuer
+  // End-Betriebsstunden wird stattdessen das bereits vorhandene timeError
+  // wiederverwendet (gleiche Anzeigeposition).
+  const [startError, setStartError] = useState<string | null>(null);
+  const [fuelError, setFuelError] = useState<string | null>(null);
   const [loadingOperatingHours, setLoadingOperatingHours] = useState(false);
   // Keep a ref of the current vehicleId so the vehicles-fetching effect can check
   // if the currently selected vehicle is still valid without being in its dep array.
@@ -252,6 +259,10 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
     const hours = calculateHoursDifference(newValues.startOperatingHours, newValues.endOperatingHours);
     setCalculatedHours(hours);
 
+    // Feldspezifische Submit-Validierung (siehe handleSubmit) nicht als
+    // veraltete Meldung stehen lassen, sobald das jeweilige Feld bearbeitet wird.
+    if (field === 'startOperatingHours') setStartError(null);
+
     // Inline validation: ensure end > start
     const parsedStart = parseFloat(newValues.startOperatingHours);
     const parsedEnd = parseFloat(newValues.endOperatingHours);
@@ -311,6 +322,64 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setStartError(null);
+    setFuelError(null);
+
+    if (!formData.vehicleId) {
+      setError(t('selectVehicleError'));
+      return;
+    }
+    if (!formData.startOperatingHours || !formData.endOperatingHours) {
+      setError(usesKm ? t('kmRequiredError') : t('hoursRequiredError'));
+      return;
+    }
+
+    const parsedStart = parseFloat(formData.startOperatingHours);
+    const parsedEnd = parseFloat(formData.endOperatingHours);
+    const maxCounterDecimals = counterDecimals(usesKm);
+    const parsedFuel = formData.fuel.trim() === '' ? NaN : parseFloat(formData.fuel);
+
+    // Ersetzt die native step/min-Validierung (siehe noValidate oben) - deren
+    // Meldung ist nie uebersetzt, egal welche UI-Sprache eingestellt ist. Jedes
+    // Feld bekommt seine eigene Meldung direkt darunter, statt einer einzigen
+    // generischen Banner-Meldung, aus der nicht hervorgeht, welches Feld
+    // betroffen ist.
+    let hasFieldError = false;
+    if (
+      Number.isNaN(parsedStart) ||
+      parsedStart < 0 ||
+      decimalPlaces(formData.startOperatingHours) > maxCounterDecimals
+    ) {
+      setStartError(t('invalidNumberError'));
+      hasFieldError = true;
+    }
+    if (
+      Number.isNaN(parsedEnd) ||
+      parsedEnd < 0 ||
+      decimalPlaces(formData.endOperatingHours) > maxCounterDecimals
+    ) {
+      setTimeError(t('invalidNumberError'));
+      hasFieldError = true;
+    }
+    if (!Number.isNaN(parsedFuel) && (parsedFuel < 0 || decimalPlaces(formData.fuel) > 2)) {
+      setFuelError(t('invalidNumberError'));
+      hasFieldError = true;
+    }
+    if (hasFieldError) return;
+
+    if (parsedEnd <= parsedStart) {
+      const message = usesKm ? t('endKmMustBeGreaterError') : t('endMustBeGreaterError');
+      // Gleiche Meldung zusaetzlich oben wie bisher (Live-Validierung in
+      // handleOperatingHoursChange setzt timeError schon, hier zusaetzlich
+      // fuer den Fall, dass per fireEvent.submit direkt gespeichert wird).
+      setTimeError(message);
+      setError(message);
+      return;
+    }
+    setTimeError(null);
+
+    const fuelLitersRefilled = Number.isNaN(parsedFuel) ? 0 : parsedFuel;
+
     setIsSubmitting(true);
 
     // Ausserhalb des try deklariert, damit der catch-Block bei einer
@@ -318,39 +387,6 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
     let payload: Record<string, unknown> | undefined;
 
     try {
-      if (!formData.vehicleId) throw new Error(t('selectVehicleError'));
-      if (!formData.startOperatingHours || !formData.endOperatingHours) {
-        throw new Error(usesKm ? t('kmRequiredError') : t('hoursRequiredError'));
-      }
-
-      const parsedStart = parseFloat(formData.startOperatingHours);
-      const parsedEnd = parseFloat(formData.endOperatingHours);
-      const maxCounterDecimals = counterDecimals(usesKm);
-      // Ersetzt die native step/min-Validierung (siehe noValidate oben) -
-      // deren Meldung ist nie uebersetzt, egal welche UI-Sprache eingestellt ist.
-      if (
-        Number.isNaN(parsedStart) ||
-        Number.isNaN(parsedEnd) ||
-        parsedStart < 0 ||
-        parsedEnd < 0 ||
-        decimalPlaces(formData.startOperatingHours) > maxCounterDecimals ||
-        decimalPlaces(formData.endOperatingHours) > maxCounterDecimals
-      ) {
-        throw new Error(t('invalidNumberError'));
-      }
-      if (parsedEnd <= parsedStart) {
-        throw new Error(usesKm ? t('endKmMustBeGreaterError') : t('endMustBeGreaterError'));
-      }
-
-      const parsedFuel = formData.fuel.trim() === '' ? NaN : parseFloat(formData.fuel);
-      if (
-        !Number.isNaN(parsedFuel) &&
-        (parsedFuel < 0 || decimalPlaces(formData.fuel) > 2)
-      ) {
-        throw new Error(t('invalidNumberError'));
-      }
-      const fuelLitersRefilled = Number.isNaN(parsedFuel) ? 0 : parsedFuel;
-
       payload = {
         vehicleId: formData.vehicleId,
         startOperatingHours: parsedStart,
@@ -550,12 +586,15 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
             type="number"
             value={formData.startOperatingHours}
             onChange={(e) => handleOperatingHoursChange('startOperatingHours', e.target.value)}
-            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+            className={`block w-full rounded-lg border bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:ring-blue-500 ${startError ? 'border-red-500 dark:border-red-500 focus:border-red-500' : 'border-zinc-300 dark:border-zinc-600 focus:border-blue-500'}`}
             min="0"
             step={counterStep}
             required
             disabled={loadingOperatingHours}
           />
+          {startError && (
+            <p className="mt-2 text-sm text-red-700 dark:text-red-200">{startError}</p>
+          )}
         </div>
 
         {/* End-Zählerstand */}
@@ -568,7 +607,7 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
             type="number"
             value={formData.endOperatingHours}
             onChange={(e) => handleOperatingHoursChange('endOperatingHours', e.target.value)}
-            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+            className={`block w-full rounded-lg border bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:ring-blue-500 ${timeError ? 'border-red-500 dark:border-red-500 focus:border-red-500' : 'border-zinc-300 dark:border-zinc-600 focus:border-blue-500'}`}
             min="0"
             step={counterStep}
             required
@@ -600,11 +639,17 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
             id="fuel"
             type="number"
             value={formData.fuel}
-            onChange={(e) => setFormData((prev) => ({ ...prev, fuel: e.target.value }))}
-            className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+            onChange={(e) => {
+              setFormData((prev) => ({ ...prev, fuel: e.target.value }));
+              setFuelError(null);
+            }}
+            className={`block w-full rounded-lg border bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:ring-blue-500 ${fuelError ? 'border-red-500 dark:border-red-500 focus:border-red-500' : 'border-zinc-300 dark:border-zinc-600 focus:border-blue-500'}`}
             min="0"
             step="0.01"
           />
+          {fuelError && (
+            <p className="mt-2 text-sm text-red-700 dark:text-red-200">{fuelError}</p>
+          )}
         </div>
 
         {/* Submit Button */}

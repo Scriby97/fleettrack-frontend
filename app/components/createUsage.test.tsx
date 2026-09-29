@@ -362,6 +362,50 @@ describe('Nutzung erfassen', () => {
       expect(postCalls()).toHaveLength(0)
     })
 
+    it('shows too-many-decimal-places error under the End field, not just a generic banner', async () => {
+      await renderReady()
+      await fillEnd('3380.4654')
+
+      fireEvent.submit(submitButton().closest('form')!)
+
+      // Genau einmal (unter dem Feld) - anders als beim End<=Start-Fall gibt
+      // es hier keine zusaetzliche generische Banner-Meldung oben, siehe
+      // handleSubmit: das war der ursprüngliche Bug-Report ("man weiss ja
+      // jetzt gar nicht welches Feld falsch war").
+      const messages = await screen.findAllByText('Ungültiges Zahlenformat')
+      expect(messages).toHaveLength(1)
+      expect(endInput().parentElement?.contains(messages[0])).toBe(true)
+      expect(postCalls()).toHaveLength(0)
+    })
+
+    it('shows an invalid-number error under the Start field for a negative value', async () => {
+      await renderReady()
+      await fillEnd('700')
+      await userEvent.clear(startInput())
+      await userEvent.type(startInput(), '-5')
+
+      fireEvent.submit(submitButton().closest('form')!)
+
+      const messages = await screen.findAllByText('Ungültiges Zahlenformat')
+      expect(messages).toHaveLength(1)
+      expect(startInput().parentElement?.contains(messages[0])).toBe(true)
+      expect(postCalls()).toHaveLength(0)
+    })
+
+    it('shows an invalid-number error under the Fuel field for too many decimal places', async () => {
+      await renderReady()
+      await fillEnd('700')
+      await userEvent.clear(fuelInput())
+      await userEvent.type(fuelInput(), '105.694')
+
+      fireEvent.submit(submitButton().closest('form')!)
+
+      const messages = await screen.findAllByText('Ungültiges Zahlenformat')
+      expect(messages).toHaveLength(1)
+      expect(fuelInput().parentElement?.contains(messages[0])).toBe(true)
+      expect(postCalls()).toHaveLength(0)
+    })
+
     it('rejects a submit without any vehicle', async () => {
       vehiclesByOrg['org-1'] = []
       renderWithIntl(<CreateUsage />)
