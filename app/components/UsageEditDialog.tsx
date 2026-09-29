@@ -118,37 +118,47 @@ export const UsageEditDialog: FC<UsageEditDialogProps> = ({
 
     // Ersetzt die native step/min-Validierung (siehe noValidate am <form>
     // unten) - deren Meldung ist nie uebersetzt, egal welche UI-Sprache
-    // eingestellt ist. Jedes Feld bekommt seine eigene Meldung direkt
-    // darunter, statt einer einzigen generischen Banner-Meldung, aus der
-    // nicht hervorgeht, welches Feld betroffen ist.
+    // eingestellt ist. Jedes Feld bekommt seine eigene, moeglichst konkrete
+    // Meldung direkt darunter (statt nur "ungueltig") - sagt dem User
+    // direkt, wie es richtig waere, statt ihn raten zu lassen.
     const parsedStart = parseFloat(form.startOperatingHours);
     const parsedEnd = parseFloat(form.endOperatingHours);
     const maxCounterDecimals = counterDecimals(usesKm);
     const parsedFuel = form.fuel.trim() === '' ? 0 : parseFloat(form.fuel);
+    const counterErrorMessage = maxCounterDecimals === 0 ? t('wholeNumberError') : t('oneDecimalError');
 
     let hasFieldError = false;
-    if (
-      Number.isNaN(parsedStart) ||
-      parsedStart < 0 ||
-      decimalPlaces(form.startOperatingHours) > maxCounterDecimals
-    ) {
+    if (Number.isNaN(parsedStart)) {
       setStartError(t('invalidNumberError'));
       hasFieldError = true;
+    } else if (parsedStart < 0) {
+      setStartError(t('negativeNumberError'));
+      hasFieldError = true;
+    } else if (decimalPlaces(form.startOperatingHours) > maxCounterDecimals) {
+      setStartError(counterErrorMessage);
+      hasFieldError = true;
     }
-    if (
-      Number.isNaN(parsedEnd) ||
-      parsedEnd < 0 ||
-      decimalPlaces(form.endOperatingHours) > maxCounterDecimals
-    ) {
+    if (Number.isNaN(parsedEnd)) {
       setEndError(t('invalidNumberError'));
       hasFieldError = true;
-    }
-    if (
-      form.fuel.trim() !== '' &&
-      (Number.isNaN(parsedFuel) || parsedFuel < 0 || decimalPlaces(form.fuel) > 2)
-    ) {
-      setFuelError(t('invalidNumberError'));
+    } else if (parsedEnd < 0) {
+      setEndError(t('negativeNumberError'));
       hasFieldError = true;
+    } else if (decimalPlaces(form.endOperatingHours) > maxCounterDecimals) {
+      setEndError(counterErrorMessage);
+      hasFieldError = true;
+    }
+    if (form.fuel.trim() !== '') {
+      if (Number.isNaN(parsedFuel)) {
+        setFuelError(t('invalidNumberError'));
+        hasFieldError = true;
+      } else if (parsedFuel < 0) {
+        setFuelError(t('negativeNumberError'));
+        hasFieldError = true;
+      } else if (decimalPlaces(form.fuel) > 2) {
+        setFuelError(t('twoDecimalsError'));
+        hasFieldError = true;
+      }
     }
     if (hasFieldError) return;
 

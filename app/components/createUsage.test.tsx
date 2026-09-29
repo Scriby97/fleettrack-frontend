@@ -362,7 +362,7 @@ describe('Nutzung erfassen', () => {
       expect(postCalls()).toHaveLength(0)
     })
 
-    it('shows too-many-decimal-places error under the End field, not just a generic banner', async () => {
+    it('shows a specific "at most 1 decimal" error under the End field, not just a generic banner', async () => {
       await renderReady()
       await fillEnd('3380.4654')
 
@@ -371,14 +371,15 @@ describe('Nutzung erfassen', () => {
       // Genau einmal (unter dem Feld) - anders als beim End<=Start-Fall gibt
       // es hier keine zusaetzliche generische Banner-Meldung oben, siehe
       // handleSubmit: das war der ursprüngliche Bug-Report ("man weiss ja
-      // jetzt gar nicht welches Feld falsch war").
-      const messages = await screen.findAllByText('Ungültiges Zahlenformat')
+      // jetzt gar nicht welches Feld falsch war"). Konkrete statt nur
+      // generischer Meldung: sagt direkt, wie es richtig waere.
+      const messages = await screen.findAllByText('Bitte höchstens 1 Nachkommastelle eingeben')
       expect(messages).toHaveLength(1)
       expect(endInput().parentElement?.contains(messages[0])).toBe(true)
       expect(postCalls()).toHaveLength(0)
     })
 
-    it('shows an invalid-number error under the Start field for a negative value', async () => {
+    it('shows a specific "must not be negative" error under the Start field', async () => {
       await renderReady()
       await fillEnd('700')
       await userEvent.clear(startInput())
@@ -386,13 +387,13 @@ describe('Nutzung erfassen', () => {
 
       fireEvent.submit(submitButton().closest('form')!)
 
-      const messages = await screen.findAllByText('Ungültiges Zahlenformat')
+      const messages = await screen.findAllByText('Darf nicht negativ sein')
       expect(messages).toHaveLength(1)
       expect(startInput().parentElement?.contains(messages[0])).toBe(true)
       expect(postCalls()).toHaveLength(0)
     })
 
-    it('shows an invalid-number error under the Fuel field for too many decimal places', async () => {
+    it('shows a specific "at most 2 decimals" error under the Fuel field', async () => {
       await renderReady()
       await fillEnd('700')
       await userEvent.clear(fuelInput())
@@ -400,9 +401,23 @@ describe('Nutzung erfassen', () => {
 
       fireEvent.submit(submitButton().closest('form')!)
 
-      const messages = await screen.findAllByText('Ungültiges Zahlenformat')
+      const messages = await screen.findAllByText('Bitte höchstens 2 Nachkommastellen eingeben')
       expect(messages).toHaveLength(1)
       expect(fuelInput().parentElement?.contains(messages[0])).toBe(true)
+      expect(postCalls()).toHaveLength(0)
+    })
+
+    it('shows a "whole number" error for a decimal km reading on a non-groomer vehicle', async () => {
+      await renderReady()
+      await userEvent.selectOptions(vehicleSelect(), 'v2')
+      await waitFor(() => expect(startInput().value).toBe('12000'))
+      await fillEnd('12120.5')
+
+      fireEvent.submit(submitButton().closest('form')!)
+
+      const messages = await screen.findAllByText('Bitte eine ganze Zahl eingeben')
+      expect(messages).toHaveLength(1)
+      expect(endInput().parentElement?.contains(messages[0])).toBe(true)
       expect(postCalls()).toHaveLength(0)
     })
 

@@ -60,15 +60,21 @@ const CreateVehicle: FC = () => {
     }
 
     const parsedCurrentOperatingHours = parseFloat(formData.currentOperatingHours);
-    // Ersetzt die native step/min-Validierung (siehe noValidate unten) -
-    // deren Meldung ist nie uebersetzt, egal welche UI-Sprache eingestellt ist.
-    if (
-      formData.currentOperatingHours.trim() === '' ||
-      Number.isNaN(parsedCurrentOperatingHours) ||
-      parsedCurrentOperatingHours < 0 ||
-      decimalPlaces(formData.currentOperatingHours) > counterDecimals(usesKm)
-    ) {
+    const maxCounterDecimals = counterDecimals(usesKm);
+    // Ersetzt die native step/min-Validierung (siehe noValidate unten) - deren
+    // Meldung ist nie uebersetzt, egal welche UI-Sprache eingestellt ist.
+    // Moeglichst konkrete Meldung statt nur "bitte angeben" - sagt direkt, wie
+    // es richtig waere, auch wenn schon ein (nur ungueltiger) Wert drinsteht.
+    if (formData.currentOperatingHours.trim() === '' || Number.isNaN(parsedCurrentOperatingHours)) {
       setError(usesKm ? t('currentKmRequiredError') : t('currentHoursRequiredError'));
+      return;
+    }
+    if (parsedCurrentOperatingHours < 0) {
+      setError(t('negativeNumberError'));
+      return;
+    }
+    if (decimalPlaces(formData.currentOperatingHours) > maxCounterDecimals) {
+      setError(maxCounterDecimals === 0 ? t('wholeNumberError') : t('oneDecimalError'));
       return;
     }
 

@@ -341,29 +341,39 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
 
     // Ersetzt die native step/min-Validierung (siehe noValidate oben) - deren
     // Meldung ist nie uebersetzt, egal welche UI-Sprache eingestellt ist. Jedes
-    // Feld bekommt seine eigene Meldung direkt darunter, statt einer einzigen
-    // generischen Banner-Meldung, aus der nicht hervorgeht, welches Feld
-    // betroffen ist.
+    // Feld bekommt seine eigene, moeglichst konkrete Meldung direkt darunter
+    // (statt nur "ungueltig") - sagt dem User direkt, wie es richtig waere,
+    // statt ihn raten zu lassen.
+    const counterErrorMessage = maxCounterDecimals === 0 ? t('wholeNumberError') : t('oneDecimalError');
     let hasFieldError = false;
-    if (
-      Number.isNaN(parsedStart) ||
-      parsedStart < 0 ||
-      decimalPlaces(formData.startOperatingHours) > maxCounterDecimals
-    ) {
+    if (Number.isNaN(parsedStart)) {
       setStartError(t('invalidNumberError'));
       hasFieldError = true;
+    } else if (parsedStart < 0) {
+      setStartError(t('negativeNumberError'));
+      hasFieldError = true;
+    } else if (decimalPlaces(formData.startOperatingHours) > maxCounterDecimals) {
+      setStartError(counterErrorMessage);
+      hasFieldError = true;
     }
-    if (
-      Number.isNaN(parsedEnd) ||
-      parsedEnd < 0 ||
-      decimalPlaces(formData.endOperatingHours) > maxCounterDecimals
-    ) {
+    if (Number.isNaN(parsedEnd)) {
       setTimeError(t('invalidNumberError'));
       hasFieldError = true;
-    }
-    if (!Number.isNaN(parsedFuel) && (parsedFuel < 0 || decimalPlaces(formData.fuel) > 2)) {
-      setFuelError(t('invalidNumberError'));
+    } else if (parsedEnd < 0) {
+      setTimeError(t('negativeNumberError'));
       hasFieldError = true;
+    } else if (decimalPlaces(formData.endOperatingHours) > maxCounterDecimals) {
+      setTimeError(counterErrorMessage);
+      hasFieldError = true;
+    }
+    if (!Number.isNaN(parsedFuel)) {
+      if (parsedFuel < 0) {
+        setFuelError(t('negativeNumberError'));
+        hasFieldError = true;
+      } else if (decimalPlaces(formData.fuel) > 2) {
+        setFuelError(t('twoDecimalsError'));
+        hasFieldError = true;
+      }
     }
     if (hasFieldError) return;
 
