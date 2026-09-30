@@ -48,8 +48,8 @@ export default function SettingsBillingPage() {
 
   const plans: PlanDefinition[] = [
     { id: 'lieutenant', label: tTier('lieutenant'), price: t('freeLabel'), maxVehicles: '2', maxMembers: '5', paid: false },
-    { id: 'captain', label: tTier('captain'), price: `CHF 79.- ${t('perMonthSuffix')}`, maxVehicles: '20', maxMembers: '50', paid: true },
-    { id: 'general', label: tTier('general'), price: `CHF 149.- ${t('perMonthSuffix')}`, maxVehicles: t('unlimitedLabel'), maxMembers: t('unlimitedLabel'), paid: true },
+    { id: 'captain', label: tTier('captain'), price: `CHF 69.- ${t('perMonthSuffix')}`, maxVehicles: '20', maxMembers: '50', paid: true },
+    { id: 'general', label: tTier('general'), price: `CHF 139.- ${t('perMonthSuffix')}`, maxVehicles: t('unlimitedLabel'), maxMembers: t('unlimitedLabel'), paid: true },
   ]
 
   useEffect(() => {
