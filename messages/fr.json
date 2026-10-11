@@ -128,6 +128,13 @@
     "inconsistentGapLabel": "Lacune de",
     "inconsistentOverlapLabel": "Chevauchement de"
   },
+  "calendar": {
+    "today": "Aujourd'hui",
+    "month": "Mois",
+    "week": "Semaine",
+    "previous": "Précédent",
+    "next": "Suivant"
+  },
   "fleetOverview": {
     "title": "Aperçu de la flotte",
     "vehiclesInFleetCount": "{count} véhicules dans la flotte",

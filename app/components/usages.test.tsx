@@ -413,7 +413,7 @@ describe('Übersicht Nutzungen', () => {
       )
       getUsagesWithVehicles.mockClear()
 
-      await userEvent.click(screen.getByRole('button', { name: '>' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Weiter' }))
 
       await waitFor(() => expect(getUsagesWithVehicles).toHaveBeenCalledTimes(1))
       expect(getUsagesWithVehicles.mock.calls[0][1].startDate).toBe(

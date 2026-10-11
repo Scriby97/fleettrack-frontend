@@ -128,6 +128,13 @@
     "inconsistentGapLabel": "Gap of",
     "inconsistentOverlapLabel": "Overlap of"
   },
+  "calendar": {
+    "today": "Today",
+    "month": "Month",
+    "week": "Week",
+    "previous": "Previous",
+    "next": "Next"
+  },
   "fleetOverview": {
     "title": "Fleet overview",
     "vehiclesInFleetCount": "{count} vehicles in the fleet",

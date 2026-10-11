@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
+import { renderWithIntl as render } from '../../test/renderWithIntl'
 import userEvent from '@testing-library/user-event'
 import CalendarView from './CalendarView'
 
@@ -37,13 +38,13 @@ describe('CalendarView', () => {
       render(<CalendarView events={[]} onVisibleRangeChange={onRange} />)
       onRange.mockClear()
 
-      await userEvent.click(screen.getByRole('button', { name: '>' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Weiter' }))
       let { start, end } = onRange.mock.calls.at(-1)![0] as { start: Date; end: Date }
       expect(start.getTime()).toBe(local(2026, 9, 28))
       expect(end.getTime()).toBe(local(2026, 11, 1, 23, 59, 59, 999))
 
-      await userEvent.click(screen.getByRole('button', { name: '<' }))
-      await userEvent.click(screen.getByRole('button', { name: '<' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Zurück' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Zurück' }))
       ;({ start, end } = onRange.mock.calls.at(-1)![0] as { start: Date; end: Date })
       expect(start.getTime()).toBe(local(2026, 7, 27))
       expect(end.getTime()).toBe(local(2026, 9, 6, 23, 59, 59, 999))
@@ -63,7 +64,7 @@ describe('CalendarView', () => {
     it('jumps back to the current month with "Heute"', async () => {
       const onRange = vi.fn()
       render(<CalendarView events={[]} onVisibleRangeChange={onRange} />)
-      await userEvent.click(screen.getByRole('button', { name: '>' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Weiter' }))
 
       await userEvent.click(screen.getByRole('button', { name: 'Heute' }))
 
