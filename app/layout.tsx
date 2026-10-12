@@ -35,9 +35,35 @@ export const viewport: Viewport = {
   themeColor: "#0a1222",
 };
 
+// Text fuer die Link-Vorschau - gleiche Aussage wie die SEO-Description von
+// /login (siehe app/login/layout.tsx).
+const shareDescription =
+  "Betriebsstunden und Diesel pro Pistenfahrzeug in Sekunden erfassen – für eine lückenlose Mineralölsteuer-Rückerstattung.";
+
 export const metadata: Metadata = {
+  // Absolute Basis-URL fuer Open-Graph-Bilder (WhatsApp & Co. brauchen
+  // absolute URLs). fleettrack.ch leitet auf www weiter.
+  metadataBase: new URL("https://www.fleettrack.ch"),
   title: "FleetTrack - Flottenverwaltung",
   description: "Verwalte deine Fahrzeugflotte mit FleetTrack",
+  // Link-Vorschau beim Teilen (WhatsApp, Teams, Mail ...) - z.B. ueber
+  // "App teilen" in der Mitarbeiterverwaltung. Unterseiten ohne eigenes
+  // openGraph erben diese Angaben.
+  openGraph: {
+    type: "website",
+    siteName: "FleetTrack",
+    title: "FleetTrack",
+    description: shareDescription,
+    url: "/",
+    locale: "de_CH",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "FleetTrack" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "FleetTrack",
+    description: shareDescription,
+    images: ["/og-image.png"],
+  },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
