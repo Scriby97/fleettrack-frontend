@@ -7,6 +7,15 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+// Wird vom Inline-Script in app/layout.tsx gesetzt, das beforeinstallprompt
+// schon vor dem Hydrieren abfaengt (das Event kommt nur einmal und oft, bevor
+// diese Komponente gemountet ist - z.B. direkt nach einem Neuladen).
+declare global {
+  interface Window {
+    __deferredInstallPrompt?: BeforeInstallPromptEvent | null;
+  }
+}
+
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
@@ -15,24 +24,21 @@ export function InstallPrompt() {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setIsInstallable(true);
+    const syncFromWindow = () => {
+      const captured = window.__deferredInstallPrompt ?? null;
+      setDeferredPrompt(captured);
+      setIsInstallable(Boolean(captured) || (!isStandalone && isIOS));
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
+    // Bereits (vor dem Mount) abgefangenes Event uebernehmen und auf spaetere
+    // Aenderungen (Event kommt doch noch / App wurde installiert) reagieren.
+    // Bewusst per Effect (nicht als useState-Lazy-Initializer): der Server
+    // rendert immer isInstallable=false (kein window/navigator dort), ein
+    // Lazy-Initializer verursachte einen Hydration-Mismatch.
+    syncFromWindow();
+    window.addEventListener('installpromptchange', syncFromWindow);
 
-    // Bewusst per Effect (nicht als useState-Lazy-Initializer) gesetzt: der
-    // Server rendert immer isInstallable=false (kein window/navigator dort),
-    // ein Lazy-Initializer wuerde auf iOS-Clients sofort true berechnen und
-    // damit einen Hydration-Mismatch verursachen.
-    if (!isStandalone && isIOS) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- s.o.
-      setIsInstallable(true);
-    }
-
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('installpromptchange', syncFromWindow);
   }, []);
 
   const handleInstallClick = async () => {
@@ -42,12 +48,14 @@ export function InstallPrompt() {
     }
 
     deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      setIsInstallable(false);
-    }
-    
+    await deferredPrompt.userChoice;
+
+    // Ein beforeinstallprompt-Event laesst sich nur einmal verwenden.
+    // Auch nach "Abbrechen" ausblenden - ohne Event wuerde ein weiterer Klick
+    // sonst nur den iOS-Hinweis zeigen. Bietet Chrome die Installation spaeter
+    // erneut an, blendet installpromptchange den Button wieder ein.
+    window.__deferredInstallPrompt = null;
+    setIsInstallable(false);
     setDeferredPrompt(null);
   };
 
@@ -59,17 +67,17 @@ export function InstallPrompt() {
       className="flex items-center gap-2 px-4 py-2 bg-signal-600 hover:bg-signal-700 text-white rounded-lg transition-colors text-sm font-medium"
       aria-label="App installieren"
     >
-      <svg 
-        className="w-5 h-5" 
-        fill="none" 
-        stroke="currentColor" 
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
         viewBox="0 0 24 24"
       >
-        <path 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          strokeWidth={2} 
-          d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" 
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
         />
       </svg>
       <span className="hidden sm:inline">App installieren</span>
