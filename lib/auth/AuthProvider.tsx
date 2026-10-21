@@ -128,12 +128,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return null
       }
 
-      // Backend is available, now fetch actual user data
-      const response = await authenticatedFetch(buildApiUrl('/auth/me'), {
-        retries: 2,
-        retryDelay: 1000,
-        skipLoadingIndicator: true,
-      })
+      // Backend is available, now fetch actual user data. /auth/me and
+      // /organizations/mine only need the JWT (not each other's response),
+      // so run them together instead of waiting for /auth/me before even
+      // starting the organizations call - cuts one full round trip off
+      // every cold load/login.
+      const [response] = await Promise.all([
+        authenticatedFetch(buildApiUrl('/auth/me'), {
+          retries: 2,
+          retryDelay: 1000,
+          skipLoadingIndicator: true,
+        }),
+        fetchOrganizationMemberships(),
+      ])
 
       if (!response.ok) {
         console.error('Fehler beim Abrufen des Benutzerprofils:', response.status)
@@ -147,7 +154,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const profile: User = await response.json()
       setUserProfile(profile)
-      await fetchOrganizationMemberships()
 
       fetchingCountRef.current--
       if (fetchingCountRef.current === 0) {
