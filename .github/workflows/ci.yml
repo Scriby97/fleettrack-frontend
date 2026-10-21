@@ -14,8 +14,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
+      # Kein cache: npm hier mehr - ein einzelner, offenbar beschaedigter
+      # Actions-Cache-Eintrag (gleicher Lockfile-Hash ueber mehrere Pushes
+      # hinweg) liess "npm ci" wiederholt sofort (<1s) fehlschlagen, lokal
+      # und in einem frischen Checkout aber reproduzierbar erfolgreich. Ohne
+      # Cache macht jeder Lauf einen echten Install - etwas langsamer, aber
+      # kein Risiko einer erneut haengenbleibenden kaputten Cache-Zeile.
       - run: npm ci
 
       - name: Type check
