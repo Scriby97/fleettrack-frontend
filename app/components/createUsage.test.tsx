@@ -147,6 +147,26 @@ describe('Nutzung erfassen', () => {
       expect(new URL(call[0] as string).searchParams.get('organizationId')).toBe('org-1')
     })
 
+    it('requests lastOperatingHours directly on /vehicles and skips the separate request when the server provides it', async () => {
+      // Backend liefert lastOperatingHours gleich mit der Fahrzeugliste mit
+      // (dank includeLastOperatingHours=true) - dann darf kein zweiter
+      // Request mehr an /vehicles/:id/last-operating-hours gehen.
+      vehiclesByOrg = {
+        'org-1': [
+          { ...groomer, lastOperatingHours: 636.7 },
+          { ...transporter, lastOperatingHours: 12000 },
+        ],
+      }
+
+      await renderReady()
+
+      expect(startInput().value).toBe('636.7')
+      expect(lastHoursCalls()).toHaveLength(0)
+
+      const [call] = authenticatedFetch.mock.calls
+      expect(new URL(call[0] as string).searchParams.get('includeLastOperatingHours')).toBe('true')
+    })
+
     it('defaults the usage date to today', async () => {
       await renderReady()
 

@@ -29,6 +29,10 @@ interface Vehicle {
   plate: string;
   snowsatNumber?: string;
   vehicleType?: string;
+  // Nur gesetzt, wenn /vehicles mit includeLastOperatingHours=true
+  // abgefragt wurde (siehe fetchVehicles unten) - spart den sonst noetigen
+  // zweiten Request fuer den Start-Zaehlerstand des Standardfahrzeugs.
+  lastOperatingHours?: number | null;
 }
 
 interface FormState {
@@ -464,6 +468,10 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
         if (selectedOrgId) {
           url.searchParams.set('organizationId', selectedOrgId);
         }
+        // Spart den sonst noetigen zweiten Roundtrip fuer den Start-Zaehlerstand
+        // des Standardfahrzeugs (siehe unten) - der verzoegert sonst jeden
+        // ersten Render dieses Formulars um einen vollen Request.
+        url.searchParams.set('includeLastOperatingHours', 'true');
 
         const res = await authenticatedFetch(url.toString(), { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -471,19 +479,26 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
         if (Array.isArray(data)) {
           setVehicles(data);
           const currentValid = data.find((v: Vehicle) => v.id === currentVehicleIdRef.current);
-          const selectedVehicleId = currentValid ? currentVehicleIdRef.current : data[0]?.id ?? '';
+          const selectedVehicle = currentValid ?? data[0];
+          const selectedVehicleId = selectedVehicle?.id ?? '';
 
           setFormData((prev) => ({ ...prev, vehicleId: selectedVehicleId }));
           currentVehicleIdRef.current = selectedVehicleId;
 
-          // Immer frisch vom Server laden, nie einen (moeglicherweise laengst
+          // Die Antwort liefert lastOperatingHours fuer das Standardfahrzeug
+          // bereits mit (dank includeLastOperatingHours=true oben) - kein
+          // separater Request mehr noetig. Nie einen (moeglicherweise laengst
           // veralteten) Entwurfswert stehen lassen - die Start-Betriebsstunden
           // muessen zuverlaessig den End-Betriebsstunden der zuletzt erfassten
-          // Nutzung entsprechen. fetchVehicleEndOperatingHours() selbst behaelt
-          // bei einem echten Netzwerkfehler (offline) den aktuellen Wert bei,
-          // ueberschreibt also nicht faelschlich mit 0 (siehe dort).
+          // Nutzung entsprechen.
           if (selectedVehicleId) {
-            fetchVehicleEndOperatingHours(selectedVehicleId);
+            if (selectedVehicle.lastOperatingHours !== undefined) {
+              setStartOperatingHoursAndRecalc(String(selectedVehicle.lastOperatingHours ?? 0));
+            } else {
+              // Fallback, falls das Feld aus irgendeinem Grund fehlt (z.B.
+              // waehrend eines Rollouts mit altem Backend-Stand).
+              fetchVehicleEndOperatingHours(selectedVehicleId);
+            }
           }
         } else {
           throw new Error('Unexpected response format');
@@ -503,7 +518,7 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchVehicleEndOperatingHours, selectedOrgId]);
+  }, [fetchVehicleEndOperatingHours, selectedOrgId, setStartOperatingHoursAndRecalc]);
 
   return (
     <section className="space-y-6">
