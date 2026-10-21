@@ -3,7 +3,7 @@
 import { useAuth } from '@/lib/auth/AuthProvider'
 import { useOrganization } from '@/lib/contexts/OrganizationContext'
 import { usePendingInvites } from '@/lib/contexts/PendingInvitesContext'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import type { FC } from 'react'
 
@@ -11,7 +11,6 @@ const UserMenu: FC = () => {
   const { supabaseUser, userProfile, isAdmin, userRole } = useAuth()
   const { selectedOrganizationRole } = useOrganization()
   const { pendingInvites, hasPendingInvites } = usePendingInvites()
-  const router = useRouter()
   const t = useTranslations('userMenu')
 
   if (!supabaseUser) return null
@@ -47,10 +46,13 @@ const UserMenu: FC = () => {
         )}
       </div>
 
-      {/* Einstellungen (buendelt Account, Ansicht inkl. Sprache, User Management, Organizations je nach Rolle) */}
-      <button
-        onClick={() => router.push('/settings')}
-        className="relative w-full px-4 py-2 text-sm bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-lg transition-colors text-left"
+      {/* Einstellungen (buendelt Account, Ansicht inkl. Sprache, User Management, Organizations je nach Rolle).
+          Bewusst <Link> statt <button onClick={() => router.push(...)}> - Next.js prefetcht
+          die Route automatisch, sobald der Link in den Viewport kommt (hier: fast immer, die
+          Sidebar ist staendig sichtbar), statt erst beim Klick mit dem Laden zu beginnen. */}
+      <Link
+        href="/settings"
+        className="relative block w-full px-4 py-2 text-sm bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-lg transition-colors text-left"
       >
         ⚙️ {t('settings')}
         {hasPendingInvites && (
@@ -58,7 +60,7 @@ const UserMenu: FC = () => {
             {pendingInvites.length}
           </span>
         )}
-      </button>
+      </Link>
     </div>
   )
 }
