@@ -9,6 +9,7 @@ import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
 import { throwApiError } from '@/lib/api/ApiError';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
+import { useDataFreshness } from '@/lib/contexts/DataFreshnessContext';
 import { getUsagesWithVehicles, type UsageWithVehicle } from '@/lib/api/usages';
 import { getOrganizationVehicles } from '@/lib/api/vehicles';
 import { useToast } from '@/lib/hooks/useToast';
@@ -200,6 +201,7 @@ function mergeVehicles(prev: Vehicle[], usages: UsageWithVehicle[]): Vehicle[] {
 const UebersichtEintraege: FC = () => {
   const { isAdmin, userProfile } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId, canManageSelectedOrganization } = useOrganization();
+  const { dataVersion, markStale } = useDataFreshness();
   const t = useTranslations('usagesOverview');
   const tCommon = useTranslations('common');
   const getApiErrorMessage = useApiErrorMessage();
@@ -300,6 +302,7 @@ const UebersichtEintraege: FC = () => {
       setReports((prev) => prev.filter((report) => report.id !== id));
       setCalendarReports((prev) => prev.filter((report) => report.id !== id));
       showToast(t('deleteSuccess'), 'success');
+      markStale();
     } catch (err) {
       console.error('Fehler beim Löschen der Nutzung:', err);
       showToast(getApiErrorMessage(err, t('deleteErrorToast')), 'error');
@@ -353,8 +356,11 @@ const UebersichtEintraege: FC = () => {
       requestRef.current++;
       controller.abort();
     };
+    // dataVersion (DataFreshnessContext): laedt die erste Seite neu, sobald
+    // sich irgendwo Nutzungen/Fahrzeuge geaendert haben koennten - noetig,
+    // seit Tabs nicht mehr bei jedem Wechsel neu gemountet werden.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, selectedOrgId]);
+  }, [view, selectedOrgId, dataVersion]);
 
   const loadMore = useCallback(async () => {
     if (!nextCursor || !selectedOrgId || loadingMoreRef.current) return;
@@ -421,7 +427,7 @@ const UebersichtEintraege: FC = () => {
         console.error('Fehler beim Laden der Fahrzeuge:', err);
       });
     return () => controller.abort();
-  }, [selectedOrgId]);
+  }, [selectedOrgId, dataVersion]);
 
   // Kalenderansicht: genau den sichtbaren Monat/die sichtbare Woche laden
   // (ohne limit - der Zeitraum ist von sich aus klein).
@@ -462,7 +468,7 @@ const UebersichtEintraege: FC = () => {
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, selectedOrgId, calendarRange]);
+  }, [view, selectedOrgId, calendarRange, dataVersion]);
 
   return (
     <section className="space-y-4">
@@ -524,6 +530,7 @@ const UebersichtEintraege: FC = () => {
             applyUsageUpdate(editingReport.id, updated);
             setEditingReport(null);
             showToast(t('updateSuccess'), 'success');
+            markStale();
           }}
           onSaveError={() => showToast(t('updateErrorToast'), 'error')}
         />

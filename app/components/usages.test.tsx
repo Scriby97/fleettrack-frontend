@@ -34,6 +34,11 @@ vi.mock('@/lib/contexts/OrganizationContext', () => ({
   useOrganization: () => ({ ...orgState }),
 }))
 
+const markStale = vi.fn()
+vi.mock('@/lib/contexts/DataFreshnessContext', () => ({
+  useDataFreshness: () => ({ dataVersion: 0, markStale }),
+}))
+
 import UebersichtEintraege from './usages'
 
 // --- Helfer -----------------------------------------------------------------
@@ -485,6 +490,8 @@ describe('Übersicht Nutzungen', () => {
       expect(authenticatedFetch.mock.calls[0][0]).toBe('https://api.example.test/api/usages/u1')
       expect(authenticatedFetch.mock.calls[0][1]).toMatchObject({ method: 'DELETE' })
       expect(await screen.findByText('Nutzung erfolgreich gelöscht')).toBeInTheDocument()
+      // Andere Tabs/Geraete sollen neu laden - siehe DataFreshnessContext.
+      expect(markStale).toHaveBeenCalled()
     })
 
     it('keeps the entry when the server rejects the deletion', async () => {
@@ -595,6 +602,8 @@ describe('Übersicht Nutzungen', () => {
       })
       expect(await screen.findByText('Nutzung erfolgreich aktualisiert')).toBeInTheDocument()
       expect(screen.getByText(/999\.0 h/)).toBeInTheDocument()
+      // Andere Tabs/Geraete sollen neu laden - siehe DataFreshnessContext.
+      expect(markStale).toHaveBeenCalled()
     })
   })
 })

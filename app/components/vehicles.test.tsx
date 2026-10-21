@@ -38,6 +38,12 @@ vi.mock('@/lib/contexts/FleetConsistencyContext', () => ({
   useFleetConsistency: () => ({ ...fleetConsistencyState }),
 }))
 
+const markStale = vi.fn()
+const freshnessState = { dataVersion: 0 }
+vi.mock('@/lib/contexts/DataFreshnessContext', () => ({
+  useDataFreshness: () => ({ ...freshnessState, markStale }),
+}))
+
 // Kindkomponenten werden separat getestet - hier nur, wie die Uebersicht sie ansteuert.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let detailProps: any
@@ -94,6 +100,8 @@ describe('Flottenübersicht', () => {
     detailProps = undefined
     exportProps = undefined
     window.localStorage.clear()
+    freshnessState.dataVersion = 0
+    markStale.mockReset()
   })
 
   afterEach(() => {
@@ -217,6 +225,20 @@ describe('Flottenübersicht', () => {
       await screen.findByText('Neu')
       expect(firstSignal?.aborted).toBe(true)
       expect(new URL(authenticatedFetch.mock.calls[1][0] as string).searchParams.get('organizationId')).toBe('org-2')
+    })
+
+    it('reloads when dataVersion changes (DataFreshnessContext), without switching organizations', async () => {
+      respondWith([stat('v1', 'Alt')])
+      const { rerender } = renderWithIntl(<FlottenUebersicht />)
+      await screen.findByText('Alt')
+      expect(authenticatedFetch).toHaveBeenCalledTimes(1)
+
+      respondWith([stat('v1', 'Neu')])
+      freshnessState.dataVersion = 1
+      rerender(<FlottenUebersicht />)
+
+      await screen.findByText('Neu')
+      expect(authenticatedFetch).toHaveBeenCalledTimes(2)
     })
   })
 

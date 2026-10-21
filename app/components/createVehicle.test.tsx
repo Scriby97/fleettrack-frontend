@@ -22,6 +22,11 @@ vi.mock('@/lib/contexts/OrganizationContext', () => ({
   useOrganization: () => ({ ...orgState }),
 }))
 
+const markStale = vi.fn()
+vi.mock('@/lib/contexts/DataFreshnessContext', () => ({
+  useDataFreshness: () => ({ dataVersion: 0, markStale }),
+}))
+
 import CreateVehicle from './createVehicle'
 
 // --- Helfer -----------------------------------------------------------------
@@ -89,6 +94,8 @@ describe('Fahrzeug erfassen', () => {
       const body = JSON.parse((options as { body: string }).body)
       expect(body.currentOperatingHours).toBe(907)
       expect(body.name).toBe('Leitwolf')
+      // Andere Tabs/Geraete sollen neu laden - siehe DataFreshnessContext.
+      expect(markStale).toHaveBeenCalled()
     })
 
     it('sends a decimal operating-hours reading for a groomer', async () => {

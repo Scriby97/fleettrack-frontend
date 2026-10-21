@@ -7,6 +7,7 @@ import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
 import { ApiError, throwApiError } from '@/lib/api/ApiError';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
+import { useDataFreshness } from '@/lib/contexts/DataFreshnessContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { appendSecondaryContinuityIssue } from '@/lib/i18n/continuityWarning';
@@ -90,6 +91,7 @@ interface CreateUsageProps {
 const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
   const { isAdmin } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId, canManageSelectedOrganization } = useOrganization();
+  const { markStale } = useDataFreshness();
   const { toasts, showToast, removeToast } = useToast();
   const t = useTranslations('createUsage');
   const tCommon = useTranslations('common');
@@ -300,6 +302,11 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
     setFormData({ vehicleId, startOperatingHours: '', endOperatingHours: '', fuel: '0', usageDate: getNowDateTime() });
     setCalculatedHours(null);
     showToast(t('saveSuccess'), 'success');
+    // Andere offene Tabs/Geraete (Flottenuebersicht, Nutzungsliste) sollen
+    // ihre Daten neu laden - siehe DataFreshnessContext. Das Backend meldet
+    // dieselbe Aenderung zusaetzlich per SSE, aber das hier ist sofort statt
+    // vom Roundtrip ueber den Server abzuhaengen.
+    markStale();
     if (vehicleId) {
       fetchVehicleEndOperatingHours(vehicleId);
     }

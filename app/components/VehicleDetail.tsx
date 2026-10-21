@@ -10,6 +10,7 @@ import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { useToast } from '@/lib/hooks/useToast';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useFleetConsistency } from '@/lib/contexts/FleetConsistencyContext';
+import { useDataFreshness } from '@/lib/contexts/DataFreshnessContext';
 import { ToastContainer } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import { VehicleTypeIcon } from './VehicleTypeIcon';
@@ -267,6 +268,7 @@ const VehicleDetail = ({
   const { toasts, showToast, removeToast } = useToast();
   const { selectedOrgId } = useOrganization();
   const { inconsistentVehicleIds, refresh: refreshFleetConsistency } = useFleetConsistency();
+  const { dataVersion, markStale } = useDataFreshness();
   const hasInconsistentUsages = inconsistentVehicleIds.has(initialVehicle.id);
 
   const [tab, setTab] = useState<'overview' | 'usages'>('overview');
@@ -351,8 +353,11 @@ const VehicleDetail = ({
 
     load();
     return () => controller.abort();
+    // dataVersion (DataFreshnessContext) - neu laden, sobald sich irgendwo
+    // Nutzungen/Fahrzeuge geaendert haben koennten, nicht mehr nur bei
+    // lokalen Aenderungen (reloadKey).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialVehicle.id, rangeStart, rangeEnd, rangeInvalid, reloadKey]);
+  }, [initialVehicle.id, rangeStart, rangeEnd, rangeInvalid, reloadKey, dataVersion]);
 
   // Nutzungen-Tab: erste Seite (neueste zuerst) erst laden, wenn der Tab
   // tatsaechlich geoeffnet wird - spart den Request, solange niemand hinschaut.
@@ -399,7 +404,7 @@ const VehicleDetail = ({
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, initialVehicle.id, selectedOrgId, usagesReloadKey]);
+  }, [tab, initialVehicle.id, selectedOrgId, usagesReloadKey, dataVersion]);
 
   const loadMoreUsages = useCallback(async () => {
     if (!usagesNextCursor || loadingMoreUsagesRef.current) return;
@@ -481,7 +486,7 @@ const VehicleDetail = ({
     load();
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, initialVehicle.id, selectedOrgId, usagesReloadKey]);
+  }, [tab, initialVehicle.id, selectedOrgId, usagesReloadKey, dataVersion]);
 
   const openEdit = useCallback(() => {
     setEditForm({
@@ -520,6 +525,7 @@ const VehicleDetail = ({
       setEditing(false);
       showToast(t('updateSuccess'), 'success');
       setReloadKey((k) => k + 1);
+      markStale();
       onChanged();
     } catch (err) {
       console.error('Fehler beim Aktualisieren des Fahrzeugs:', err);
@@ -538,6 +544,7 @@ const VehicleDetail = ({
       });
       if (!res.ok) await throwApiError(res, t('deleteErrorGeneric', { status: res.status }));
       showToast(t('deleteSuccess'), 'success');
+      markStale();
       onDeleted();
     } catch (err) {
       console.error('Fehler beim Löschen des Fahrzeugs:', err);
@@ -561,6 +568,7 @@ const VehicleDetail = ({
   const reloadAfterUsageChange = () => {
     setUsagesReloadKey((k) => k + 1);
     setReloadKey((k) => k + 1);
+    markStale();
     void refreshFleetConsistency();
   };
 

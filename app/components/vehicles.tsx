@@ -8,6 +8,7 @@ import { buildApiUrl, getApiBaseUrlOrNull } from '@/lib/api/url';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useFleetConsistency } from '@/lib/contexts/FleetConsistencyContext';
+import { useDataFreshness } from '@/lib/contexts/DataFreshnessContext';
 import { VehicleTypeIcon } from './VehicleTypeIcon';
 import { InconsistencyBadge } from './InconsistencyBadge';
 import VehicleDetail from './VehicleDetail';
@@ -153,6 +154,7 @@ interface FlottenUebersichtProps {
 const FlottenUebersicht: FC<FlottenUebersichtProps> = ({ onAddVehicle }) => {
   const { isAdmin } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
+  const { dataVersion } = useDataFreshness();
   const t = useTranslations('fleetOverview');
   const tCommon = useTranslations('common');
   const tNav = useTranslations('nav');
@@ -276,8 +278,11 @@ const FlottenUebersicht: FC<FlottenUebersichtProps> = ({ onAddVehicle }) => {
 
     fetchVehicles();
     return () => controller.abort();
+    // dataVersion (siehe DataFreshnessContext) loest hier ein Neuladen aus,
+    // sobald sich Fahrzeuge/Nutzungen irgendwo geaendert haben - noetig, seit
+    // die Tabs in page.tsx nicht mehr bei jedem Wechsel neu gemountet werden.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedOrgId, reloadKey]);
+  }, [selectedOrgId, reloadKey, dataVersion]);
 
   const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId) ?? null;
 

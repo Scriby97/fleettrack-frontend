@@ -7,6 +7,7 @@ import { buildApiUrl } from '@/lib/api/url';
 import { throwApiError } from '@/lib/api/ApiError';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
+import { useDataFreshness } from '@/lib/contexts/DataFreshnessContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { vehicleUsesKm, counterDecimals, decimalPlaces } from '@/lib/vehicles/metric';
@@ -26,6 +27,7 @@ interface FormState {
 const CreateVehicle: FC = () => {
   const { isAdmin } = useAuth();
   const { organizations, selectedOrgId, setSelectedOrgId } = useOrganization();
+  const { markStale } = useDataFreshness();
   const { toasts, showToast, removeToast } = useToast();
   const t = useTranslations('createVehicle');
   const tCommon = useTranslations('common');
@@ -98,6 +100,7 @@ const CreateVehicle: FC = () => {
 
       setFormData({ name: '', plate: '', snowsatNumber: '', location: '', vehicleType: '', fuelType: '', notes: '', currentOperatingHours: '' });
       showToast(t('addSuccess'), 'success');
+      markStale();
     } catch (err) {
       console.error('Fehler beim Erstellen des Fahrzeugs:', err);
       setError(getApiErrorMessage(err, t('genericError')));

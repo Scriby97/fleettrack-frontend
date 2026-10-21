@@ -27,6 +27,11 @@ vi.mock('@/lib/contexts/OrganizationContext', () => ({
   useOrganization: () => ({ ...orgState }),
 }))
 
+const markStale = vi.fn()
+vi.mock('@/lib/contexts/DataFreshnessContext', () => ({
+  useDataFreshness: () => ({ dataVersion: 0, markStale }),
+}))
+
 // Hat eine eigene Logik (Push-Berechtigung) - hier nur, ob sie eingeblendet wird.
 vi.mock('./NotificationPermissionPrompt', () => ({
   NotificationPermissionPrompt: () => <div data-testid="notification-prompt" />,
@@ -480,6 +485,8 @@ describe('Nutzung erfassen', () => {
       // neuer Start = zuletzt gespeicherter Endstand, frisch vom Server
       await waitFor(() => expect(startInput().value).toBe('645.1'))
       expect(screen.queryByText(/Gesamtdauer/)).not.toBeInTheDocument()
+      // Andere Tabs/Geraete sollen neu laden - siehe DataFreshnessContext.
+      expect(markStale).toHaveBeenCalled()
     })
 
     it('records 0 liters when no fuel was entered', async () => {

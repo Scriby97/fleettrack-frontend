@@ -158,13 +158,34 @@ export default function Home() {
       <MobileHeader />
 
       {/* Main content */}
+      {/* Tabs bleiben alle gemountet (CSS display:none statt bedingtem Rendern) -
+          sonst wuerde jeder Tab-Wechsel seine Daten komplett neu laden, selbst
+          wenn sich seit dem letzten Besuch nichts geaendert hat. Echtes
+          Neuladen uebernimmt jetzt DataFreshnessContext (siehe dort): jede
+          Tab-Komponente laedt neu, sobald sich dataVersion aendert, nicht mehr
+          bei jedem blossen Tab-Wechsel. Fahrzeug-bezogene Tabs nur ueberhaupt
+          mounten, wenn canManageOrganization erlaubt ist - sonst wuerden sie
+          unberechtigt (nur unsichtbar) Daten laden, fuer die kein Zugriff
+          besteht. */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-10 pt-20 md:pt-10 pb-24 md:pb-10">
-        {active === "nutzung" && <CreateUsage onNavigateToAddVehicle={() => goToTab("fahrzeug")} />}
-        {active === "uebersichtEintraege" && <UebersichtEintraege />}
-        {active === "uebersicht" && (canManageOrganization ? (
-          <FlottenUebersicht onAddVehicle={() => goToTab("fahrzeug")} />
-        ) : <AccessDenied />)}
-        {active === "fahrzeug" && (canManageOrganization ? <FahrzeugErfassen /> : <AccessDenied />)}
+        <div style={{ display: active === "nutzung" ? undefined : "none" }}>
+          <CreateUsage onNavigateToAddVehicle={() => goToTab("fahrzeug")} />
+        </div>
+        <div style={{ display: active === "uebersichtEintraege" ? undefined : "none" }}>
+          <UebersichtEintraege />
+        </div>
+        {canManageOrganization ? (
+          <>
+            <div style={{ display: active === "uebersicht" ? undefined : "none" }}>
+              <FlottenUebersicht onAddVehicle={() => goToTab("fahrzeug")} />
+            </div>
+            <div style={{ display: active === "fahrzeug" ? undefined : "none" }}>
+              <FahrzeugErfassen />
+            </div>
+          </>
+        ) : (
+          (active === "uebersicht" || active === "fahrzeug") && <AccessDenied />
+        )}
       </main>
 
       <BottomNav active={active} onNavigate={goToTab} showFleetTab={canManageOrganization} />
