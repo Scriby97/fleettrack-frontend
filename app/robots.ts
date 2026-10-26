@@ -15,6 +15,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://fleettrack.ch/sitemap.xml',
+    sitemap: 'https://www.fleettrack.ch/sitemap.xml',
   }
 }

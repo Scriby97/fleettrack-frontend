@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 
-const BASE_URL = 'https://fleettrack.ch'
+const BASE_URL = 'https://www.fleettrack.ch'
 
 // Nur die oeffentlich erreichbaren Seiten (siehe app/robots.ts) - alles
 // andere liegt hinter dem Login und waere fuer Google nur ein Redirect.
