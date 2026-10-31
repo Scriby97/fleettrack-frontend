@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import { renderWithIntl as render } from '../../test/renderWithIntl'
 import userEvent from '@testing-library/user-event'
 import CalendarView from './CalendarView'
@@ -89,55 +89,47 @@ describe('CalendarView', () => {
     })
   })
 
-  describe('events', () => {
-    const event = (id: string, title: string, day: string) => ({
+  describe('Tage', () => {
+    const event = (id: string, start: Date, end: Date) => ({
       id,
-      title,
-      start: day,
-      end: day,
+      title: id,
+      start: start.toISOString(),
+      end: end.toISOString(),
+    })
+    const dayButton = (label: RegExp) => screen.getByRole('button', { name: label })
+
+    it('zeigt pro Tag die Anzahl Nutzungen - auch bei vielen Eintraegen', () => {
+      // 7 Nutzungen am 16.09.
+      const events = Array.from({ length: 7 }, (_, i) =>
+        event(`e${i}`, new Date(2026, 8, 16, 7 + i, 0), new Date(2026, 8, 16, 7 + i, 0)),
+      )
+      render(<CalendarView events={events} />)
+
+      const day16 = dayButton(/16\. September: 7 Nutzungen/)
+      expect(day16).toBeInTheDocument()
+      expect(dayButton(/15\. September: keine Nutzungen/)).toBeInTheDocument()
+      expect(within(day16).getByText('7')).toBeInTheDocument()
     })
 
-    it('shows an event on its day and reports clicks with the event id', async () => {
-      const onEventClick = vi.fn()
-      render(
-        <CalendarView
-          events={[event('u1', 'Pistenbully: 8.4 h', new Date(2026, 8, 16, 8, 0).toISOString())]}
-          onEventClick={onEventClick}
-        />,
-      )
+    it('meldet den angetippten Tag und hebt den gewaehlten Tag hervor', async () => {
+      const onSelectDate = vi.fn()
+      const { rerender } = render(<CalendarView events={[]} onSelectDate={onSelectDate} />)
 
-      await userEvent.click(screen.getByText('Pistenbully: 8.4 h'))
+      await userEvent.click(dayButton(/18\. September/))
+      expect(onSelectDate).toHaveBeenCalledWith(new Date(2026, 8, 18))
 
-      expect(onEventClick).toHaveBeenCalledWith('u1')
+      rerender(<CalendarView events={[]} selectedDate={new Date(2026, 8, 18)} onSelectDate={onSelectDate} />)
+      expect(dayButton(/18\. September/)).toHaveAttribute('aria-pressed', 'true')
+      expect(dayButton(/17\. September/)).toHaveAttribute('aria-pressed', 'false')
     })
 
-    it('collapses more than two events per day into a "+N" hint in month view', () => {
-      const day = new Date(2026, 8, 16, 8, 0).toISOString()
-      render(
-        <CalendarView
-          events={[event('a', 'A', day), event('b', 'B', day), event('c', 'C', day)]}
-        />,
-      )
+    it('"Heute" waehlt den heutigen Tag', async () => {
+      const onSelectDate = vi.fn()
+      render(<CalendarView events={[]} onSelectDate={onSelectDate} />)
 
-      expect(screen.getByText('A')).toBeInTheDocument()
-      expect(screen.getByText('B')).toBeInTheDocument()
-      expect(screen.queryByText('C')).not.toBeInTheDocument()
-      expect(screen.getByText('+1')).toBeInTheDocument()
-    })
+      await userEvent.click(screen.getByRole('button', { name: 'Heute' }))
 
-    it('lists all events of a day in week view', async () => {
-      const day = new Date(2026, 8, 16, 8, 0).toISOString()
-      render(
-        <CalendarView
-          events={[event('a', 'A', day), event('b', 'B', day), event('c', 'C', day)]}
-        />,
-      )
-
-      await userEvent.click(screen.getByRole('button', { name: 'Woche' }))
-
-      expect(screen.getByText('A')).toBeInTheDocument()
-      expect(screen.getByText('B')).toBeInTheDocument()
-      expect(screen.getByText('C')).toBeInTheDocument()
+      expect(onSelectDate).toHaveBeenCalledWith(new Date(2026, 8, 16))
     })
   })
 })

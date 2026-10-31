@@ -203,7 +203,9 @@ const UebersichtEintraege: FC = () => {
   const { organizations, selectedOrgId, setSelectedOrgId, canManageSelectedOrganization } = useOrganization();
   const { dataVersion, markStale } = useDataFreshness();
   const t = useTranslations('usagesOverview');
+  const tCalendar = useTranslations('calendar');
   const tCommon = useTranslations('common');
+  const dateLocale = useDateLocale();
   const getApiErrorMessage = useApiErrorMessage();
   // Ein Mitarbeiter darf zusaetzlich seine eigenen Nutzungen bearbeiten (aber
   // nicht loeschen) - siehe assertCanEditUsage im Backend.
@@ -233,11 +235,20 @@ const UebersichtEintraege: FC = () => {
   const listRequestRef = useRef(0);
   const loadingMoreRef = useRef(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const [view, setView] = useState<'list' | 'calendar'>('list');
+  // Kalender ist die Standardansicht; Umschalten auf die Liste bleibt moeglich.
+  const [view, setView] = useState<'list' | 'calendar'>('calendar');
+  // Im Kalender gewaehlter Tag - dessen Nutzungen werden darunter vollstaendig
+  // aufgelistet (Standard: heute).
+  const [selectedDay, setSelectedDay] = useState<Date | null>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  });
   const [editingReport, setEditingReport] = useState<Report | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | string | null>(null);
   const handleVisibleRangeChange = useCallback(({ start, end }: { start: Date; end: Date }) => {
     setCalendarRange({ start: start.toISOString(), end: end.toISOString() });
+    // Gewaehlten Tag verwerfen, wenn er nach dem Blaettern nicht mehr sichtbar ist.
+    setSelectedDay((day) => (day && day >= start && day <= end ? day : null));
   }, []);
 
   const calendarEvents = calendarReports
@@ -253,15 +264,16 @@ const UebersichtEintraege: FC = () => {
       };
     });
 
+  const selectedDayReports = useMemo(() => {
+    if (!selectedDay) return [];
+    const key = selectedDay.toDateString();
+    return calendarReports
+      .filter((r) => r.usageDate && new Date(r.usageDate).toDateString() === key)
+      .sort((a, b) => new Date(a.usageDate!).getTime() - new Date(b.usageDate!).getTime());
+  }, [selectedDay, calendarReports]);
+
   const handleEdit = (report: Report) => {
     setEditingReport(report);
-  };
-
-  const handleEventClick = (eventId: string | number) => {
-    const report = calendarReports.find(r => String(r.id) === String(eventId));
-    if (report) {
-      handleEdit(report);
-    }
   };
 
   const applyUsageUpdate = (targetId: number | string, updatedUsage: UsageWithVehicle) => {
@@ -507,8 +519,8 @@ const UebersichtEintraege: FC = () => {
                     : t('usagesFoundCount', { count: reports.length })}
             </p>
             <div className="flex gap-2">
-              <button onClick={() => setView('list')} className={`px-2 sm:px-3 py-1 text-sm rounded ${view === 'list' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}`}>{t('listView')}</button>
               <button onClick={() => setView('calendar')} className={`px-2 sm:px-3 py-1 text-sm rounded ${view === 'calendar' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}`}>{t('calendarView')}</button>
+              <button onClick={() => setView('list')} className={`px-2 sm:px-3 py-1 text-sm rounded ${view === 'list' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}`}>{t('listView')}</button>
             </div>
           </div>
         </div>
@@ -539,11 +551,44 @@ const UebersichtEintraege: FC = () => {
       {view === 'calendar' ? (
         // Immer gemountet (auch waehrend des Ladens), sonst ginge beim Blaettern
         // der gewaehlte Monat verloren.
-        <CalendarView
-          events={calendarEvents}
-          onEventClick={handleEventClick}
-          onVisibleRangeChange={handleVisibleRangeChange}
-        />
+        <div className="space-y-4">
+          <CalendarView
+            events={calendarEvents}
+            selectedDate={selectedDay}
+            onSelectDate={setSelectedDay}
+            onVisibleRangeChange={handleVisibleRangeChange}
+          />
+          {selectedDay ? (
+            <div className="space-y-2">
+              <div className="flex items-baseline justify-between gap-3 border-b border-zinc-200 dark:border-zinc-700 pb-1">
+                <h2 className="min-w-0 truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                  {selectedDay.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </h2>
+                <span className="shrink-0 text-sm text-zinc-600 dark:text-zinc-400">
+                  {selectedDayReports.length > 0 ? tCalendar('dayEntries', { count: selectedDayReports.length }) : tCalendar('dayNoEntries')}
+                </span>
+              </div>
+              {selectedDayReports.length === 0 ? (
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">{isLoading ? t('loadingUsagesEllipsis') : t('noUsagesFound')}</p>
+              ) : (
+                <div className="grid gap-3">
+                  {selectedDayReports.map((report) => (
+                    <ReportItem
+                      key={report.id}
+                      report={report}
+                      onEdit={handleEdit}
+                      onDelete={(id) => setConfirmDeleteId(id)}
+                      canManage={canManageSelectedOrganization}
+                      canEdit={canEditReport(report)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">{t('selectDayHint')}</p>
+          )}
+        </div>
       ) : isLoading ? (
         <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
           <p className="text-zinc-600 dark:text-zinc-400">{t('loadingUsagesEllipsis')}</p>

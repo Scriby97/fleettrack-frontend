@@ -126,14 +126,17 @@
     "onlyInconsistentFilter": "Show only inconsistent usages",
     "noInconsistentUsagesFound": "No inconsistent usages found",
     "inconsistentGapLabel": "Gap of",
-    "inconsistentOverlapLabel": "Overlap of"
+    "inconsistentOverlapLabel": "Overlap of",
+    "selectDayHint": "Select a day in the calendar to show its usages."
   },
   "calendar": {
     "today": "Today",
     "month": "Month",
     "week": "Week",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "dayEntries": "{count, plural, one {# usage} other {# usages}}",
+    "dayNoEntries": "no usages"
   },
   "fleetOverview": {
     "title": "Fleet overview",

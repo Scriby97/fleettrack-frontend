@@ -4,8 +4,10 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDateLocale } from '@/lib/i18n/formatDate';
 
-// Kalenderansicht (Monat/Woche) mit Uebersetzungen und lokalisierten
-// Wochentagen/Monatsnamen in der App-Sprache.
+// Kalenderansicht (Monat/Woche). Die Tage zeigen nur eine Uebersicht (Anzahl
+// Nutzungen) und sind antippbar; die Nutzungen des gewaehlten Tages listet
+// der Aufrufer darunter vollstaendig auf - so bleiben auch 5+ Eintraege pro
+// Tag lesbar/klickbar, auch auf schmalen Handy-Bildschirmen.
 
 export interface CalendarEvent {
   id: string | number;
@@ -16,7 +18,10 @@ export interface CalendarEvent {
 
 interface Props {
   events: CalendarEvent[];
-  onEventClick?: (eventId: string | number) => void;
+  /** Aktuell gewaehlter Tag (hervorgehoben), null = keiner. */
+  selectedDate?: Date | null;
+  /** Tipp auf einen Tag bzw. "Heute". */
+  onSelectDate?: (date: Date) => void;
   // Meldet den aktuell sichtbaren Zeitraum (inkl. angrenzender Tage im
   // Monatsraster) beim Anzeigen und bei jedem Blaettern/Moduswechsel, damit
   // der Aufrufer genau dafuer die Ereignisse nachladen kann.
@@ -40,7 +45,7 @@ function isSameDay(a: Date, b: Date) {
   return a.toDateString() === b.toDateString();
 }
 
-export default function CalendarView({ events, onEventClick, onVisibleRangeChange }: Props) {
+export default function CalendarView({ events, selectedDate, onSelectDate, onVisibleRangeChange }: Props) {
   const t = useTranslations('calendar');
   const dateLocale = useDateLocale();
   const [mode, setMode] = useState<'month' | 'week'>('month');
@@ -94,28 +99,59 @@ export default function CalendarView({ events, onEventClick, onVisibleRangeChang
     onVisibleRangeChangeRef.current?.({ start, end });
   }, [visibleStartMs, visibleEndMs]);
 
-  const eventsByDay = useMemo(() => {
-    const map = new Map<string, CalendarEvent[]>();
+  // Pro Tag: Anzahl Nutzungen (Eintraege gehen nicht ueber Mitternacht - der
+  // Starttag zaehlt).
+  const countByDay = useMemo(() => {
+    const map = new Map<string, number>();
     events.forEach((ev) => {
-      const s = new Date(ev.start);
-      const e = new Date(ev.end);
-      for (let d = new Date(s); d <= e; d = addDays(d, 1)) {
-        const key = d.toDateString();
-        const list = map.get(key) ?? [];
-        list.push(ev);
-        map.set(key, list);
-      }
+      const key = new Date(ev.start).toDateString();
+      map.set(key, (map.get(key) ?? 0) + 1);
     });
-    map.forEach((list) => list.sort((a, b) => a.start.localeCompare(b.start)));
     return map;
   }, [events]);
 
   const gotoPrev = () => setCursor((c) => (mode === 'month' ? new Date(c.getFullYear(), c.getMonth() - 1, 1) : addDays(c, -7)));
   const gotoNext = () => setCursor((c) => (mode === 'month' ? new Date(c.getFullYear(), c.getMonth() + 1, 1) : addDays(c, 7)));
-  const gotoToday = () => setCursor(new Date());
+  const gotoToday = () => {
+    const now = new Date();
+    setCursor(now);
+    onSelectDate?.(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
+  };
 
-  const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' });
+  const renderDay = (d: Date, label: string, dimmed: boolean, tall: boolean) => {
+    const key = d.toDateString();
+    const count = countByDay.get(key) ?? 0;
+    const isSelected = !!selectedDate && isSameDay(d, selectedDate);
+    const isToday = isSameDay(d, today);
+    const ariaLabel = [
+      d.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' }),
+      count > 0 ? t('dayEntries', { count }) : t('dayNoEntries'),
+    ].join(': ');
+    return (
+      <button
+        key={key}
+        type="button"
+        onClick={() => onSelectDate?.(new Date(d.getFullYear(), d.getMonth(), d.getDate()))}
+        aria-label={ariaLabel}
+        aria-pressed={isSelected}
+        className={`min-w-0 ${tall ? 'min-h-[80px] sm:min-h-[110px]' : 'min-h-[56px] sm:min-h-[84px]'} flex flex-col items-stretch rounded border p-1 sm:p-2 text-left transition-colors ${
+          isSelected
+            ? 'border-blue-500 ring-2 ring-blue-500/40 bg-blue-50 dark:bg-blue-900/30'
+            : `border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 ${dimmed ? 'text-zinc-400 bg-zinc-50 dark:bg-zinc-900/50' : ''}`
+        }`}
+      >
+        <span className={`text-[10px] sm:text-xs font-semibold ${isToday ? 'text-blue-600 dark:text-blue-400' : ''}`}>{label}</span>
+        {count > 0 && (
+          <span className="mt-auto flex items-center gap-1" aria-hidden="true">
+            <span className="text-[11px] sm:text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+              {count}
+            </span>
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400" />
+          </span>
+        )}
+      </button>
+    );
+  };
 
   return (
     <div className="space-y-3 sm:space-y-4">
@@ -144,50 +180,13 @@ export default function CalendarView({ events, onEventClick, onVisibleRangeChang
           {weekdayLabels.map((h) => (
             <div key={h} className="text-center text-xs sm:text-sm font-medium text-zinc-600 dark:text-zinc-400 py-1">{h}</div>
           ))}
-          {monthRange.map((d) => {
-            const key = d.toDateString();
-            const evs = eventsByDay.get(key) ?? [];
-            const inMonth = d.getMonth() === cursor.getMonth();
-            return (
-              <div key={key} className={`min-w-0 min-h-[60px] sm:min-h-[90px] border border-zinc-200 dark:border-zinc-700 rounded p-1 sm:p-2 ${inMonth ? '' : 'text-zinc-400 bg-zinc-50 dark:bg-zinc-900/50'}`}>
-                <div className={`text-[10px] sm:text-xs font-semibold ${isSameDay(d, today) ? 'text-blue-600 dark:text-blue-400' : ''}`}>{d.getDate()}</div>
-                <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1">
-                  {evs.slice(0, 2).map((ev) => (
-                    <div
-                      key={ev.id}
-                      className="text-[9px] sm:text-xs bg-blue-50 dark:bg-blue-900/30 rounded px-0.5 sm:px-1 py-0.5 truncate cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                      onClick={() => onEventClick?.(ev.id)}
-                      title={ev.title}
-                    >
-                      {ev.title}
-                    </div>
-                  ))}
-                  {evs.length > 2 && <div className="text-[9px] sm:text-xs text-zinc-500">+{evs.length - 2}</div>}
-                </div>
-              </div>
-            );
-          })}
+          {monthRange.map((d) => renderDay(d, String(d.getDate()), d.getMonth() !== cursor.getMonth(), false))}
         </div>
       ) : (
         <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
-          {weekRange.map((d) => (
-            <div key={d.toDateString()} className="min-w-0 min-h-[80px] sm:min-h-[120px] border border-zinc-200 dark:border-zinc-700 rounded p-1 sm:p-2">
-              <div className={`text-[10px] sm:text-xs font-semibold ${isSameDay(d, today) ? 'text-blue-600 dark:text-blue-400' : ''}`}>{d.toLocaleDateString(dateLocale, { weekday: 'short', day: 'numeric' })}</div>
-              <div className="mt-1 sm:mt-2 space-y-0.5 sm:space-y-1">
-                {(eventsByDay.get(d.toDateString()) ?? []).map((ev) => (
-                  <div
-                    key={ev.id}
-                    className="text-[9px] sm:text-sm bg-blue-50 dark:bg-blue-900/30 rounded px-0.5 sm:px-1 py-0.5 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                    onClick={() => onEventClick?.(ev.id)}
-                    title={ev.title}
-                  >
-                    <span className="block truncate">{ev.title}</span>
-                    <span className="hidden sm:inline text-xs text-zinc-500">{formatTime(ev.start)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+          {weekRange.map((d) =>
+            renderDay(d, d.toLocaleDateString(dateLocale, { weekday: 'short', day: 'numeric' }), false, true),
+          )}
         </div>
       )}
     </div>

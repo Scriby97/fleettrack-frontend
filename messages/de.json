@@ -126,14 +126,17 @@
     "onlyInconsistentFilter": "Nur inkonsistente Nutzungen anzeigen",
     "noInconsistentUsagesFound": "Keine inkonsistenten Nutzungen gefunden",
     "inconsistentGapLabel": "Lücke von",
-    "inconsistentOverlapLabel": "Überschneidung von"
+    "inconsistentOverlapLabel": "Überschneidung von",
+    "selectDayHint": "Wähle im Kalender einen Tag aus, um die Nutzungen anzuzeigen."
   },
   "calendar": {
     "today": "Heute",
     "month": "Monat",
     "week": "Woche",
     "previous": "Zurück",
-    "next": "Weiter"
+    "next": "Weiter",
+    "dayEntries": "{count, plural, one {# Nutzung} other {# Nutzungen}}",
+    "dayNoEntries": "keine Nutzungen"
   },
   "fleetOverview": {
     "title": "Flottenübersicht",

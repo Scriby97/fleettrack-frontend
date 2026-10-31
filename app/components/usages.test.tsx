@@ -116,6 +116,21 @@ async function reachEndOfList() {
 
 const cards = () => document.querySelectorAll('main h3, section h3')
 
+// Die Komponente startet immer in der Kalenderansicht (Standard) - die loest
+// beim Mounten automatisch einen Request fuer den sichtbar Monat aus. Fuer
+// Tests, die die Listenansicht pruefen, blendet dieser Helfer genau diesen
+// Bootstrap-Request aus (Ergebnis wird verworfen, Mock-Historie danach
+// geleert), damit die eigentlichen Listen-Assertions wieder bei Call 0 beginnen.
+async function renderBootstrapped() {
+  getUsagesWithVehicles.mockResolvedValueOnce(page([], null))
+  const result = renderWithIntl(<UebersichtEintraege />)
+  await waitFor(() => expect(getUsagesWithVehicles).toHaveBeenCalledTimes(1))
+  getUsagesWithVehicles.mockClear()
+  return result
+}
+
+const goToListView = () => userEvent.click(screen.getByRole('button', { name: 'Liste' }))
+
 describe('Übersicht Nutzungen', () => {
   beforeEach(() => {
     vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://api.example.test')
@@ -140,9 +155,10 @@ describe('Übersicht Nutzungen', () => {
 
   describe('list pagination', () => {
     it('loads only the first page (10, newest first) without any date filter', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(0, 10), 'c1'))
+      await renderBootstrapped()
+      getUsagesWithVehicles.mockResolvedValueOnce(page(usages(0, 10), 'c1'))
 
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
 
       expect(await screen.findByText('10 neueste Nutzungen angezeigt')).toBeInTheDocument()
       expect(getUsagesWithVehicles).toHaveBeenCalledTimes(1)
@@ -156,9 +172,10 @@ describe('Übersicht Nutzungen', () => {
     })
 
     it('does not show the loading hint or observe anything when everything fits on one page', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(0, 3), null))
+      await renderBootstrapped()
+      getUsagesWithVehicles.mockResolvedValueOnce(page(usages(0, 3), null))
 
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
 
       expect(await screen.findByText('3 Nutzungen gefunden')).toBeInTheDocument()
       expect(screen.queryByText('Lade weitere Nutzungen…')).not.toBeInTheDocument()
@@ -166,11 +183,12 @@ describe('Übersicht Nutzungen', () => {
     })
 
     it('loads the next page with the cursor when the end of the list becomes visible', async () => {
+      await renderBootstrapped()
       getUsagesWithVehicles
         .mockResolvedValueOnce(page(usages(0, 10), 'c1'))
         .mockResolvedValueOnce(page(usages(10, 2), null))
 
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('10 neueste Nutzungen angezeigt')
 
       await reachEndOfList()
@@ -182,10 +200,11 @@ describe('Übersicht Nutzungen', () => {
     })
 
     it('stops loading once the last page has been reached', async () => {
+      await renderBootstrapped()
       getUsagesWithVehicles
         .mockResolvedValueOnce(page(usages(0, 10), 'c1'))
         .mockResolvedValueOnce(page(usages(10, 2), null))
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('10 neueste Nutzungen angezeigt')
       await reachEndOfList()
       await screen.findByText('12 Nutzungen gefunden')
@@ -196,11 +215,12 @@ describe('Übersicht Nutzungen', () => {
     })
 
     it('follows a chain of cursors across several pages', async () => {
+      await renderBootstrapped()
       getUsagesWithVehicles
         .mockResolvedValueOnce(page(usages(0, 10), 'c1'))
         .mockResolvedValueOnce(page(usages(10, 10), 'c2'))
         .mockResolvedValueOnce(page(usages(20, 5), null))
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('10 neueste Nutzungen angezeigt')
 
       await reachEndOfList()
@@ -216,11 +236,12 @@ describe('Übersicht Nutzungen', () => {
     })
 
     it('does not show an entry twice when it appears on two pages', async () => {
+      await renderBootstrapped()
       getUsagesWithVehicles
         .mockResolvedValueOnce(page(usages(0, 10), 'c1'))
         // u9 wurde inzwischen erneut geliefert (z.B. Datum nachtraeglich geaendert)
         .mockResolvedValueOnce(page([makeUsage(9), makeUsage(10)], null))
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('10 neueste Nutzungen angezeigt')
 
       await reachEndOfList()
@@ -229,11 +250,12 @@ describe('Übersicht Nutzungen', () => {
     })
 
     it('ignores repeated "end visible" signals while a page is still loading', async () => {
+      await renderBootstrapped()
       const second = deferred<ReturnType<typeof page>>()
       getUsagesWithVehicles
         .mockResolvedValueOnce(page(usages(0, 10), 'c1'))
         .mockReturnValueOnce(second.promise)
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('10 neueste Nutzungen angezeigt')
 
       await reachEndOfList()
@@ -250,12 +272,13 @@ describe('Übersicht Nutzungen', () => {
     })
 
     it('pauses on a load-more error and only retries via the button', async () => {
+      await renderBootstrapped()
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
       getUsagesWithVehicles
         .mockResolvedValueOnce(page(usages(0, 10), 'c1'))
         .mockRejectedValueOnce(new Error('boom'))
         .mockResolvedValueOnce(page(usages(10, 2), null))
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('10 neueste Nutzungen angezeigt')
 
       await reachEndOfList()
@@ -276,18 +299,20 @@ describe('Übersicht Nutzungen', () => {
     })
 
     it('shows an empty state when there are no usages', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page([], null))
+      await renderBootstrapped()
+      getUsagesWithVehicles.mockResolvedValueOnce(page([], null))
 
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
 
       expect(await screen.findByText('Keine Nutzungen vorhanden')).toBeInTheDocument()
     })
 
     it('shows an error when the first page cannot be loaded', async () => {
+      await renderBootstrapped()
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
       getUsagesWithVehicles.mockRejectedValue(new Error('boom'))
 
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
 
       expect(await screen.findByText('Fehler beim Laden der Nutzungen')).toBeInTheDocument()
       consoleError.mockRestore()
@@ -304,10 +329,11 @@ describe('Übersicht Nutzungen', () => {
 
   describe('organization switch', () => {
     it('starts over with the first page of the new organization', async () => {
+      const { rerender } = await renderBootstrapped()
       getUsagesWithVehicles
         .mockResolvedValueOnce(page(usages(0, 10), 'c1'))
         .mockResolvedValueOnce(page(usages(100, 2), null))
-      const { rerender } = renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('10 neueste Nutzungen angezeigt')
 
       orgState.selectedOrgId = 'org-2'
@@ -320,6 +346,7 @@ describe('Übersicht Nutzungen', () => {
     })
 
     it('discards a late load-more response of the previous organization', async () => {
+      const { rerender } = await renderBootstrapped()
       const lateNextPage = deferred<ReturnType<typeof page>>()
       getUsagesWithVehicles
         .mockResolvedValueOnce(page(usages(0, 10), 'c1'))
@@ -327,7 +354,7 @@ describe('Übersicht Nutzungen', () => {
         .mockResolvedValueOnce(
           page([makeUsage(200, { vehicle: { ...vehicle, name: 'Neuer Bully' } })], null),
         )
-      const { rerender } = renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('10 neueste Nutzungen angezeigt')
       await reachEndOfList()
       await screen.findByText('Lade weitere Nutzungen…')
@@ -347,11 +374,12 @@ describe('Übersicht Nutzungen', () => {
     })
 
     it('discards a late response of the previous organization', async () => {
+      const { rerender } = await renderBootstrapped()
       const oldOrg = deferred<ReturnType<typeof page>>()
       getUsagesWithVehicles
         .mockReturnValueOnce(oldOrg.promise)
         .mockResolvedValueOnce(page([makeUsage(200, { vehicle: { ...vehicle, name: 'Neuer Bully' } })], null))
-      const { rerender } = renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
 
       orgState.selectedOrgId = 'org-2'
       rerender(<UebersichtEintraege />)
@@ -370,9 +398,10 @@ describe('Übersicht Nutzungen', () => {
 
   describe('list requests', () => {
     it('never restricts the request to a date range (no filter UI anymore)', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(0, 2), null))
+      await renderBootstrapped()
+      getUsagesWithVehicles.mockResolvedValueOnce(page(usages(0, 2), null))
 
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('2 Nutzungen gefunden')
 
       const [, options] = getUsagesWithVehicles.mock.calls[0]
@@ -382,7 +411,7 @@ describe('Übersicht Nutzungen', () => {
     })
   })
 
-  describe('calendar view', () => {
+  describe('calendar view (Standardansicht)', () => {
     beforeEach(() => {
       // Mittwoch, 16.09.2026 - Monatsraster: Mo 31.08. bis So 04.10.
       // Nur Date faken, damit userEvent/waitFor mit echten Timern laufen.
@@ -390,14 +419,10 @@ describe('Übersicht Nutzungen', () => {
       vi.setSystemTime(new Date(2026, 8, 16, 12, 0))
     })
 
-    it('loads exactly the visible month without a page limit', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(0, 10), 'c1'))
-      renderWithIntl(<UebersichtEintraege />)
-      await screen.findByText('10 neueste Nutzungen angezeigt')
-      getUsagesWithVehicles.mockClear()
+    it('loads exactly the visible month without a page limit on mount', async () => {
       getUsagesWithVehicles.mockResolvedValue(page(usages(0, 12), null))
 
-      await userEvent.click(screen.getByRole('button', { name: 'Kalender' }))
+      renderWithIntl(<UebersichtEintraege />)
 
       await waitFor(() => expect(getUsagesWithVehicles).toHaveBeenCalledTimes(1))
       const [orgId, options] = getUsagesWithVehicles.mock.calls[0]
@@ -412,10 +437,7 @@ describe('Übersicht Nutzungen', () => {
     it('fetches again for the newly visible month when paging', async () => {
       getUsagesWithVehicles.mockResolvedValue(page([], null))
       renderWithIntl(<UebersichtEintraege />)
-      await userEvent.click(await screen.findByRole('button', { name: 'Kalender' }))
-      await waitFor(() =>
-        expect(getUsagesWithVehicles.mock.calls.at(-1)![1].startDate).toBeDefined(),
-      )
+      await waitFor(() => expect(getUsagesWithVehicles).toHaveBeenCalledTimes(1))
       getUsagesWithVehicles.mockClear()
 
       await userEvent.click(screen.getByRole('button', { name: 'Weiter' }))
@@ -426,19 +448,29 @@ describe('Übersicht Nutzungen', () => {
       )
     })
 
-    it('reloads the first list page when switching back from the calendar', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(0, 2), null))
-      renderWithIntl(<UebersichtEintraege />)
-      await screen.findByText('2 Nutzungen gefunden')
-      await userEvent.click(screen.getByRole('button', { name: 'Kalender' }))
-      await waitFor(() =>
-        expect(getUsagesWithVehicles.mock.calls.at(-1)![1].startDate).toBeDefined(),
+    it('shows the usages of the selected day below the calendar', async () => {
+      getUsagesWithVehicles.mockResolvedValue(
+        page([makeUsage(1), makeUsage(2, { usageDate: new Date(2026, 8, 20, 8, 0).toISOString() })], null),
       )
-      getUsagesWithVehicles.mockClear()
-
-      await userEvent.click(screen.getByRole('button', { name: 'Liste' }))
-
+      renderWithIntl(<UebersichtEintraege />)
       await waitFor(() => expect(getUsagesWithVehicles).toHaveBeenCalledTimes(1))
+
+      // Heute (16.09.) ist vorausgewaehlt - u1 liegt an diesem Tag.
+      expect(await screen.findByText('Pistenbully 1')).toBeInTheDocument()
+      expect(cards()).toHaveLength(1)
+
+      await userEvent.click(screen.getByRole('button', { name: /20\. September/ }))
+
+      await waitFor(() => expect(cards()).toHaveLength(1))
+    })
+
+    it('reloads the first list page when switching back from the calendar', async () => {
+      await renderBootstrapped()
+      getUsagesWithVehicles.mockResolvedValueOnce(page(usages(0, 2), null))
+
+      await goToListView()
+
+      expect(await screen.findByText('2 Nutzungen gefunden')).toBeInTheDocument()
       expect(getUsagesWithVehicles.mock.calls[0][1]).toMatchObject({ limit: 10 })
       expect(getUsagesWithVehicles.mock.calls[0][1].startDate).toBeUndefined()
     })
@@ -446,11 +478,12 @@ describe('Übersicht Nutzungen', () => {
 
   describe('permissions', () => {
     it('lets managers edit and delete every entry', async () => {
-      getUsagesWithVehicles.mockResolvedValue(
+      await renderBootstrapped()
+      getUsagesWithVehicles.mockResolvedValueOnce(
         page([makeUsage(1, { creatorId: 'someone-else' })], null),
       )
 
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('1 Nutzungen gefunden')
 
       expect(screen.getByTitle('Bearbeiten')).toBeInTheDocument()
@@ -459,14 +492,15 @@ describe('Übersicht Nutzungen', () => {
 
     it('lets an employee edit only their own entries and never delete', async () => {
       orgState.canManageSelectedOrganization = false
-      getUsagesWithVehicles.mockResolvedValue(
+      await renderBootstrapped()
+      getUsagesWithVehicles.mockResolvedValueOnce(
         page(
           [makeUsage(1, { creatorId: 'me' }), makeUsage(2, { creatorId: 'someone-else' })],
           null,
         ),
       )
 
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('2 Nutzungen gefunden')
 
       expect(screen.getAllByTitle('Bearbeiten')).toHaveLength(1)
@@ -476,9 +510,10 @@ describe('Übersicht Nutzungen', () => {
 
   describe('delete', () => {
     it('removes the entry after confirming and calls DELETE', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(1, 2), null))
+      await renderBootstrapped()
+      getUsagesWithVehicles.mockResolvedValueOnce(page(usages(1, 2), null))
       authenticatedFetch.mockResolvedValue(new Response('{}', { status: 200 }))
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('2 Nutzungen gefunden')
 
       await userEvent.click(screen.getAllByTitle('Löschen')[0])
@@ -496,14 +531,15 @@ describe('Übersicht Nutzungen', () => {
 
     it('keeps the entry when the server rejects the deletion', async () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
-      getUsagesWithVehicles.mockResolvedValue(page(usages(1, 2), null))
+      await renderBootstrapped()
+      getUsagesWithVehicles.mockResolvedValueOnce(page(usages(1, 2), null))
       authenticatedFetch.mockResolvedValue(
         new Response(JSON.stringify({ message: 'nope' }), {
           status: 403,
           headers: { 'Content-Type': 'application/json' },
         }),
       )
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('2 Nutzungen gefunden')
 
       await userEvent.click(screen.getAllByTitle('Löschen')[0])
@@ -519,8 +555,9 @@ describe('Übersicht Nutzungen', () => {
     })
 
     it('does nothing when the dialog is cancelled', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(1, 2), null))
-      renderWithIntl(<UebersichtEintraege />)
+      await renderBootstrapped()
+      getUsagesWithVehicles.mockResolvedValueOnce(page(usages(1, 2), null))
+      await goToListView()
       await screen.findByText('2 Nutzungen gefunden')
 
       await userEvent.click(screen.getAllByTitle('Löschen')[0])
@@ -535,12 +572,13 @@ describe('Übersicht Nutzungen', () => {
 
   describe('edit dialog', () => {
     it('offers all vehicles of the organization, also those without any usage', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(1, 1), null))
       getOrganizationVehicles.mockResolvedValue([
         vehicle,
         { id: 'v2', name: 'Quad ohne Nutzung', vehicleType: 'Quad' },
       ])
-      renderWithIntl(<UebersichtEintraege />)
+      await renderBootstrapped()
+      getUsagesWithVehicles.mockResolvedValueOnce(page(usages(1, 1), null))
+      await goToListView()
       await screen.findByText('1 Nutzungen gefunden')
       await waitFor(() => expect(getOrganizationVehicles).toHaveBeenCalledWith('org-1', expect.anything()))
 
@@ -554,11 +592,12 @@ describe('Übersicht Nutzungen', () => {
     })
 
     it('still resolves the vehicle of an entry that is no longer in the active fleet', async () => {
-      getUsagesWithVehicles.mockResolvedValue(
+      getOrganizationVehicles.mockResolvedValue([{ id: 'v2', name: 'Aktiv', vehicleType: 'Quad' }])
+      await renderBootstrapped()
+      getUsagesWithVehicles.mockResolvedValueOnce(
         page([makeUsage(1, { vehicleId: 'old', vehicle: { id: 'old', name: 'Ausrangiert', vehicleType: 'Quad' } })], null),
       )
-      getOrganizationVehicles.mockResolvedValue([{ id: 'v2', name: 'Aktiv', vehicleType: 'Quad' }])
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('1 Nutzungen gefunden')
       await waitFor(() => expect(getOrganizationVehicles).toHaveBeenCalled())
 
@@ -570,7 +609,8 @@ describe('Übersicht Nutzungen', () => {
     })
 
     it('saves the changes via PUT and updates the list entry', async () => {
-      getUsagesWithVehicles.mockResolvedValue(page(usages(1, 1), null))
+      await renderBootstrapped()
+      getUsagesWithVehicles.mockResolvedValueOnce(page(usages(1, 1), null))
       authenticatedFetch.mockResolvedValue(
         new Response(
           JSON.stringify({
@@ -584,7 +624,7 @@ describe('Übersicht Nutzungen', () => {
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         ),
       )
-      renderWithIntl(<UebersichtEintraege />)
+      await goToListView()
       await screen.findByText('1 Nutzungen gefunden')
       await userEvent.click(screen.getByTitle('Bearbeiten'))
 
