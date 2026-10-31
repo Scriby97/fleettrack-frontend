@@ -20,6 +20,8 @@ import { UsageEditDialog } from './UsageEditDialog';
 import { vehicleUsesKm, counterDecimals } from '@/lib/vehicles/metric';
 import { getVehicleUsageHistory, getOrganizationVehicles, type OrganizationVehicle, type VehicleUsageHistory } from '@/lib/api/vehicles';
 import { getUsagesWithVehicles, getInconsistentPairs, type UsageWithVehicle, type InconsistentUsagePair } from '@/lib/api/usages';
+import { useCreatorFilter } from '@/lib/hooks/useCreatorFilter';
+import { CreatorFilterSelect } from './CreatorFilterSelect';
 
 // Nutzungen-Tab: so viele Eintraege pro Seite, weitere laden beim Scrollen nach
 // (gleiches Muster/gleiche Seitengroesse wie die Listenansicht der Nutzungsuebersicht).
@@ -311,6 +313,13 @@ const VehicleDetail = ({
   const [inconsistentPairs, setInconsistentPairs] = useState<InconsistentUsagePair[]>([]);
   const [isLoadingInconsistentPairs, setIsLoadingInconsistentPairs] = useState(false);
   const [inconsistentPairsError, setInconsistentPairsError] = useState<string | null>(null);
+  // Erfasser-Auswahl (nur Admin/Owner): filtert die Liste serverseitig, die
+  // Luecken-/Ueberschneidungs-Paare clientseitig (Paar betrifft die Person).
+  const creatorFilter = useCreatorFilter();
+  const { creatorId } = creatorFilter;
+  const visibleInconsistentPairs = creatorId
+    ? inconsistentPairs.filter((pair) => pair.previous.creatorId === creatorId || pair.current.creatorId === creatorId)
+    : inconsistentPairs;
 
   // Normale Liste: betroffene, aufeinanderfolgende Eintraege werden wie im
   // Filter zu gelb/rot umrahmten Gruppen zusammengefasst.
@@ -379,6 +388,7 @@ const VehicleDetail = ({
         const page = await getUsagesWithVehicles(selectedOrgId ?? undefined, {
           vehicleId: initialVehicle.id,
           limit: USAGES_PAGE_SIZE,
+          creatorId,
           signal: controller.signal,
         });
         if (requestId !== usagesRequestRef.current) return;
@@ -404,7 +414,7 @@ const VehicleDetail = ({
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, initialVehicle.id, selectedOrgId, usagesReloadKey, dataVersion]);
+  }, [tab, initialVehicle.id, selectedOrgId, creatorId, usagesReloadKey, dataVersion]);
 
   const loadMoreUsages = useCallback(async () => {
     if (!usagesNextCursor || loadingMoreUsagesRef.current) return;
@@ -418,6 +428,7 @@ const VehicleDetail = ({
         vehicleId: initialVehicle.id,
         limit: USAGES_PAGE_SIZE,
         cursor: usagesNextCursor,
+        creatorId,
       });
       if (requestId !== usagesRequestRef.current) return;
 
@@ -437,7 +448,7 @@ const VehicleDetail = ({
         setIsLoadingMoreUsages(false);
       }
     }
-  }, [usagesNextCursor, selectedOrgId, initialVehicle.id]);
+  }, [usagesNextCursor, selectedOrgId, initialVehicle.id, creatorId]);
 
   // Endlos-Scrollen: gleiches Muster wie die Listenansicht der Nutzungsuebersicht.
   useEffect(() => {
@@ -804,6 +815,7 @@ const VehicleDetail = ({
 
       {tab === 'usages' && (
         <div className="space-y-3">
+          <CreatorFilterSelect id="vehicleUsagesCreatorSelect" filter={creatorFilter} />
           <label className="inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
             <input
               type="checkbox"
@@ -817,7 +829,7 @@ const VehicleDetail = ({
 
           {showOnlyInconsistent ? (
             <>
-              {inconsistentPairsError && inconsistentPairs.length === 0 && (
+              {inconsistentPairsError && visibleInconsistentPairs.length === 0 && (
                 <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
                   <p className="text-sm text-red-900 dark:text-red-100">{inconsistentPairsError}</p>
                 </div>
@@ -827,9 +839,9 @@ const VehicleDetail = ({
                 <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 p-4 text-center">
                   <p className="text-zinc-600 dark:text-zinc-400">{tUsages('loadingUsagesEllipsis')}</p>
                 </div>
-              ) : inconsistentPairs.length > 0 ? (
+              ) : visibleInconsistentPairs.length > 0 ? (
                 <div className="grid gap-3">
-                  {inconsistentPairs.map((pair) => (
+                  {visibleInconsistentPairs.map((pair) => (
                     <InconsistentGroupCard
                       key={`${pair.previous.id}-${pair.current.id}`}
                       pairs={[pair]}

@@ -127,7 +127,8 @@
     "noInconsistentUsagesFound": "Aucune utilisation incohérente trouvée",
     "inconsistentGapLabel": "Lacune de",
     "inconsistentOverlapLabel": "Chevauchement de",
-    "selectDayHint": "Sélectionnez un jour dans le calendrier pour afficher ses utilisations."
+    "selectDayHint": "Sélectionnez un jour dans le calendrier pour afficher ses utilisations.",
+    "allCreators": "Tous"
   },
   "calendar": {
     "today": "Aujourd'hui",

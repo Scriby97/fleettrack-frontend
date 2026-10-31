@@ -19,6 +19,8 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { UsageEditDialog } from './UsageEditDialog';
 import { VehicleTypeIcon } from './VehicleTypeIcon';
 import { vehicleUsesKm } from '@/lib/vehicles/metric';
+import { useCreatorFilter } from '@/lib/hooks/useCreatorFilter';
+import { CreatorFilterSelect } from './CreatorFilterSelect';
 
 interface Report {
   id: number | string;
@@ -212,6 +214,9 @@ const UebersichtEintraege: FC = () => {
   const canEditReport = (report: Report) =>
     canManageSelectedOrganization || report.creatorId === userProfile?.id;
   const { toasts, showToast, removeToast } = useToast();
+  // Erfasser-Auswahl (nur Admin/Owner), gilt fuer Liste und Kalender.
+  const creatorFilter = useCreatorFilter();
+  const { creatorId } = creatorFilter;
   // Listenansicht: seitenweise geladen (neueste zuerst), nextCursor = null -> alles geladen.
   const [reports, setReports] = useState<Report[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -342,6 +347,7 @@ const UebersichtEintraege: FC = () => {
       try {
         const page = await getUsagesWithVehicles(selectedOrgId, {
           limit: PAGE_SIZE,
+          creatorId,
           signal: controller.signal,
         });
         if (requestId !== listRequestRef.current) return;
@@ -372,7 +378,7 @@ const UebersichtEintraege: FC = () => {
     // sich irgendwo Nutzungen/Fahrzeuge geaendert haben koennten - noetig,
     // seit Tabs nicht mehr bei jedem Wechsel neu gemountet werden.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, selectedOrgId, dataVersion]);
+  }, [view, selectedOrgId, creatorId, dataVersion]);
 
   const loadMore = useCallback(async () => {
     if (!nextCursor || !selectedOrgId || loadingMoreRef.current) return;
@@ -385,6 +391,7 @@ const UebersichtEintraege: FC = () => {
       const page = await getUsagesWithVehicles(selectedOrgId, {
         limit: PAGE_SIZE,
         cursor: nextCursor,
+        creatorId,
       });
       // Organisation/Filter wurde inzwischen gewechselt - Antwort verwerfen.
       if (requestId !== listRequestRef.current) return;
@@ -409,7 +416,7 @@ const UebersichtEintraege: FC = () => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nextCursor, selectedOrgId]);
+  }, [nextCursor, selectedOrgId, creatorId]);
 
   // Endlos-Scrollen: sobald das Ende der Liste (leicht vorher) sichtbar wird,
   // die naechste Seite laden. Bei einem Fehler pausiert das Nachladen bis zum
@@ -458,6 +465,7 @@ const UebersichtEintraege: FC = () => {
         const page = await getUsagesWithVehicles(selectedOrgId, {
           startDate: calendarRange.start,
           endDate: calendarRange.end,
+          creatorId,
           signal: controller.signal,
         });
         if (cancelled) return;
@@ -480,7 +488,7 @@ const UebersichtEintraege: FC = () => {
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, selectedOrgId, calendarRange, dataVersion]);
+  }, [view, selectedOrgId, calendarRange, creatorId, dataVersion]);
 
   return (
     <section className="space-y-4">
@@ -508,6 +516,7 @@ const UebersichtEintraege: FC = () => {
               </select>
             </div>
           )}
+          <CreatorFilterSelect id="usagesCreatorSelect" filter={creatorFilter} />
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               {isLoading

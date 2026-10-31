@@ -14,6 +14,10 @@ vi.mock('@/lib/api/usages', () => ({
 vi.mock('@/lib/api/vehicles', () => ({
   getOrganizationVehicles: (...args: unknown[]) => getOrganizationVehicles(...args),
 }))
+const getOrganizationMembers = vi.fn()
+vi.mock('@/lib/api/organizationMembers', () => ({
+  getOrganizationMembers: (...args: unknown[]) => getOrganizationMembers(...args),
+}))
 vi.mock('@/lib/api/authenticatedFetch', () => ({
   authenticatedFetch: (...args: unknown[]) => authenticatedFetch(...args),
 }))
@@ -140,6 +144,8 @@ describe('Übersicht Nutzungen', () => {
     getOrganizationVehicles.mockReset()
     authenticatedFetch.mockReset()
     getOrganizationVehicles.mockResolvedValue([])
+    getOrganizationMembers.mockReset()
+    getOrganizationMembers.mockResolvedValue([])
     orgState.selectedOrgId = 'org-1'
     orgState.canManageSelectedOrganization = true
     orgState.setSelectedOrgId.mockReset()
@@ -473,6 +479,37 @@ describe('Übersicht Nutzungen', () => {
       expect(await screen.findByText('2 Nutzungen gefunden')).toBeInTheDocument()
       expect(getUsagesWithVehicles.mock.calls[0][1]).toMatchObject({ limit: 10 })
       expect(getUsagesWithVehicles.mock.calls[0][1].startDate).toBeUndefined()
+    })
+  })
+
+  describe('creator filter', () => {
+    const members = [
+      { userId: 'me', user: { id: 'me', email: 'n@example.test', firstName: 'Nicolas', lastName: 'Balmer' } },
+      { userId: 'anna', user: { id: 'anna', email: 'a@example.test', firstName: 'Anna', lastName: 'Muster' } },
+    ]
+
+    it('loads only the usages of the selected creator', async () => {
+      getOrganizationMembers.mockResolvedValue(members)
+      getUsagesWithVehicles.mockResolvedValue(page([], null))
+      renderWithIntl(<UebersichtEintraege />)
+
+      const select = await screen.findByLabelText('Erfasst von:')
+      getUsagesWithVehicles.mockClear()
+      await userEvent.selectOptions(select, 'anna')
+
+      await waitFor(() => expect(getUsagesWithVehicles).toHaveBeenCalled())
+      expect(getUsagesWithVehicles.mock.calls.at(-1)![1]).toMatchObject({ creatorId: 'anna' })
+    })
+
+    it('is hidden for employees', async () => {
+      orgState.canManageSelectedOrganization = false
+      getOrganizationMembers.mockResolvedValue(members)
+      getUsagesWithVehicles.mockResolvedValue(page([], null))
+      renderWithIntl(<UebersichtEintraege />)
+
+      await waitFor(() => expect(getUsagesWithVehicles).toHaveBeenCalled())
+      expect(screen.queryByLabelText('Erfasst von:')).toBeNull()
+      expect(getOrganizationMembers).not.toHaveBeenCalled()
     })
   })
 

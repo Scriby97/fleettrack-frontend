@@ -51,6 +51,8 @@ export interface GetUsagesWithVehiclesOptions {
   cursor?: string;
   // Nur Nutzungen dieses einen Fahrzeugs (Nutzungen-Tab der Fahrzeug-Detailseite).
   vehicleId?: string;
+  // Nur Nutzungen dieser Person (Erfasser-Auswahl fuer Admin/Owner).
+  creatorId?: string;
   signal?: AbortSignal;
 }
 
@@ -81,6 +83,9 @@ export async function getUsagesWithVehicles(
   }
   if (options.vehicleId) {
     url.searchParams.set('vehicleId', options.vehicleId);
+  }
+  if (options.creatorId) {
+    url.searchParams.set('creatorId', options.creatorId);
   }
 
   const response = await authenticatedFetch(url.toString(), {

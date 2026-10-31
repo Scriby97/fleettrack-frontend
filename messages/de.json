@@ -127,7 +127,8 @@
     "noInconsistentUsagesFound": "Keine inkonsistenten Nutzungen gefunden",
     "inconsistentGapLabel": "Lücke von",
     "inconsistentOverlapLabel": "Überschneidung von",
-    "selectDayHint": "Wähle im Kalender einen Tag aus, um die Nutzungen anzuzeigen."
+    "selectDayHint": "Wähle im Kalender einen Tag aus, um die Nutzungen anzuzeigen.",
+    "allCreators": "Alle"
   },
   "calendar": {
     "today": "Heute",
