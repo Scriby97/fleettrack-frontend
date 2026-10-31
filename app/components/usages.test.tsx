@@ -33,6 +33,7 @@ const orgState = {
   selectedOrgId: 'org-1' as string | null,
   setSelectedOrgId: vi.fn(),
   canManageSelectedOrganization: true,
+  selectedOrganizationRole: null as string | null,
 }
 vi.mock('@/lib/contexts/OrganizationContext', () => ({
   useOrganization: () => ({ ...orgState }),
@@ -148,6 +149,7 @@ describe('Übersicht Nutzungen', () => {
     getOrganizationMembers.mockResolvedValue([])
     orgState.selectedOrgId = 'org-1'
     orgState.canManageSelectedOrganization = true
+    orgState.selectedOrganizationRole = null
     orgState.setSelectedOrgId.mockReset()
   })
 
@@ -499,6 +501,23 @@ describe('Übersicht Nutzungen', () => {
 
       await waitFor(() => expect(getUsagesWithVehicles).toHaveBeenCalled())
       expect(getUsagesWithVehicles.mock.calls.at(-1)![1]).toMatchObject({ creatorId: 'anna' })
+    })
+
+    it('preselects the own usages for an organization admin/owner', async () => {
+      orgState.selectedOrganizationRole = 'owner'
+      getOrganizationMembers.mockResolvedValue(members)
+      getUsagesWithVehicles.mockResolvedValue(page([], null))
+      renderWithIntl(<UebersichtEintraege />)
+
+      await waitFor(() => expect(getUsagesWithVehicles).toHaveBeenCalled())
+      expect(getUsagesWithVehicles.mock.calls[0][1]).toMatchObject({ creatorId: 'me' })
+      const select = (await screen.findByLabelText('Erfasst von:')) as HTMLSelectElement
+      expect(select.value).toBe('me')
+
+      getUsagesWithVehicles.mockClear()
+      await userEvent.selectOptions(select, '')
+      await waitFor(() => expect(getUsagesWithVehicles).toHaveBeenCalled())
+      expect(getUsagesWithVehicles.mock.calls.at(-1)![1].creatorId).toBeUndefined()
     })
 
     it('is hidden for employees', async () => {

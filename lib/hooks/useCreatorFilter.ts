@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import { useOrganization } from "@/lib/contexts/OrganizationContext";
 import { useDateLocale } from "@/lib/i18n/formatDate";
 import { getApiBaseUrlOrNull } from "@/lib/api/url";
@@ -21,9 +22,20 @@ export interface CreatorFilter {
  * ohnehin nur ihre eigenen Nutzungen. Die Auswahl gilt nur fuer die
  * Organisation, in der sie getroffen wurde - beim Organisationswechsel faellt
  * sie ohne zusaetzlichen Ladevorgang weg.
+ *
+ * defaultToSelf: ohne eigene Auswahl sind die eigenen Nutzungen vorgewaehlt
+ * (wie in Buerolist) - nur fuer Mitglieder der Organisation, globale
+ * Administratoren ohne Mitgliedschaft sehen weiterhin alle.
  */
-export function useCreatorFilter(): CreatorFilter {
-  const { selectedOrgId, canManageSelectedOrganization } = useOrganization();
+export function useCreatorFilter({
+  defaultToSelf = false,
+}: { defaultToSelf?: boolean } = {}): CreatorFilter {
+  const {
+    selectedOrgId,
+    canManageSelectedOrganization,
+    selectedOrganizationRole,
+  } = useOrganization();
+  const { userProfile } = useAuth();
   const dateLocale = useDateLocale();
   // Mitglieder samt Organisation, fuer die sie geladen wurden - veraltete
   // Listen (anderes Org) werden so ohne setState im Effect ignoriert.
@@ -72,10 +84,13 @@ export function useCreatorFilter(): CreatorFilter {
       .sort((a, b) => a.name.localeCompare(b.name, dateLocale));
   }, [canManageSelectedOrganization, loaded, selectedOrgId, dateLocale]);
 
-  const creatorId =
-    canManageSelectedOrganization && filter && filter.orgId === selectedOrgId
+  const defaultCreatorId =
+    defaultToSelf && selectedOrganizationRole ? userProfile?.id : undefined;
+  const creatorId = !canManageSelectedOrganization
+    ? undefined
+    : filter && filter.orgId === selectedOrgId
       ? filter.creatorId || undefined
-      : undefined;
+      : defaultCreatorId;
 
   return {
     creatorId,

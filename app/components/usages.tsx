@@ -214,8 +214,9 @@ const UebersichtEintraege: FC = () => {
   const canEditReport = (report: Report) =>
     canManageSelectedOrganization || report.creatorId === userProfile?.id;
   const { toasts, showToast, removeToast } = useToast();
-  // Erfasser-Auswahl (nur Admin/Owner), gilt fuer Liste und Kalender.
-  const creatorFilter = useCreatorFilter();
+  // Erfasser-Auswahl (nur Admin/Owner), gilt fuer Liste und Kalender -
+  // standardmaessig die eigenen Nutzungen.
+  const creatorFilter = useCreatorFilter({ defaultToSelf: true });
   const { creatorId } = creatorFilter;
   // Listenansicht: seitenweise geladen (neueste zuerst), nextCursor = null -> alles geladen.
   const [reports, setReports] = useState<Report[]>([]);
