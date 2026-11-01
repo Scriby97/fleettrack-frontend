@@ -109,7 +109,9 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onSelect }) => {
           {vehicle.snowsatNumber && (
             <span>{t('snowsatLabel')}: <span className="font-medium">{vehicle.snowsatNumber}</span></span>
           )}
-          <span>{t('plateLabel')}: <span className="font-medium">{vehicle.plate}</span></span>
+          {vehicle.plate && (
+            <span>{t('plateLabel')}: <span className="font-medium">{vehicle.plate}</span></span>
+          )}
         </div>
       </div>
       <svg className="w-5 h-5 shrink-0 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

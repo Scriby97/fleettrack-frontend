@@ -56,7 +56,7 @@ const CreateVehicle: FC = () => {
     setError(null);
 
     // Validate first, before setting isSubmitting
-    if (!formData.name.trim() || !formData.plate.trim() || !formData.snowsatNumber.trim()) {
+    if (!formData.name.trim() || !formData.snowsatNumber.trim()) {
       setError(t('allFieldsRequiredError'));
       return;
     }
@@ -184,7 +184,6 @@ const CreateVehicle: FC = () => {
             onChange={(e) => handleChange('plate', e.target.value)}
             placeholder={t('platePlaceholder')}
             className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
-            required
           />
         </div>
 
