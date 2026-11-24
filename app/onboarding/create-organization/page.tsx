@@ -43,8 +43,8 @@ export default function CreateOrganizationOnboardingPage() {
       id: 'lieutenant',
       label: tTier('lieutenant'),
       price: t('freeLabel'),
-      maxVehicles: '2',
-      maxMembers: '5',
+      maxVehicles: '3',
+      maxMembers: '6',
       paid: false,
     },
     {
