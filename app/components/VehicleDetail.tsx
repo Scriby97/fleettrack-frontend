@@ -270,10 +270,12 @@ const VehicleDetail = ({
   const getApiErrorMessage = useApiErrorMessage();
   const { toasts, showToast, removeToast } = useToast();
   const { selectedOrgId } = useOrganization();
-  const { inconsistentVehicleIds, getWarningLabel, refresh: refreshFleetConsistency } = useFleetConsistency();
+  const { inconsistentVehicleIds, vehiclesWithoutStartingReadingIds, refresh: refreshFleetConsistency } = useFleetConsistency();
   const { dataVersion, markStale } = useDataFreshness();
-  const vehicleWarningLabel = getWarningLabel(initialVehicle.id);
   const hasInconsistentUsages = inconsistentVehicleIds.has(initialVehicle.id);
+  // Eigenes Badge am Bearbeiten-Button (nicht am Nutzungen-Tab): der fehlende
+  // Startwert wird im Bearbeiten-Dialog behoben, nicht in der Nutzungenliste.
+  const isMissingStartingReading = vehiclesWithoutStartingReadingIds.has(initialVehicle.id);
 
   const [tab, setTab] = useState<'overview' | 'usages'>('overview');
 
@@ -711,9 +713,15 @@ const VehicleDetail = ({
         <div className="flex gap-2 shrink-0">
           <button
             onClick={openEdit}
-            className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
+            className="relative p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
             title={tCommon('edit')}
           >
+            {isMissingStartingReading && (
+              <InconsistencyBadge
+                className="absolute -top-1 -right-1"
+                label={tCommon('missingStartingReadingWarning')}
+              />
+            )}
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
@@ -751,7 +759,7 @@ const VehicleDetail = ({
           }`}
         >
           {t('detailTabUsages')}
-          {vehicleWarningLabel && <InconsistencyBadge label={vehicleWarningLabel} />}
+          {hasInconsistentUsages && <InconsistencyBadge />}
         </button>
       </div>
 
@@ -1079,7 +1087,11 @@ const VehicleDetail = ({
                     onChange={(e) => setEditForm((p) => ({ ...p, currentOperatingHours: e.target.value }))}
                     min="0"
                     step={counterStep}
-                    className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                    className={`block w-full rounded-lg border bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:ring-blue-500 ${
+                      isMissingStartingReading
+                        ? 'border-red-500 dark:border-red-500 focus:border-red-500'
+                        : 'border-zinc-300 dark:border-zinc-600 focus:border-blue-500'
+                    }`}
                   />
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('startingReadingHint')}</p>
                 </Field>
