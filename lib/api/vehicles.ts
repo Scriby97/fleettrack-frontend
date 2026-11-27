@@ -67,6 +67,7 @@ export interface OrganizationVehicle {
   name: string
   plate?: string
   vehicleType?: string
+  snowsatNumber?: string
 }
 
 /**

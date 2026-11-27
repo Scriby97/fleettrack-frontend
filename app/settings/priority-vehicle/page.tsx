@@ -125,7 +125,7 @@ export default function SettingsPriorityVehiclePage() {
                   <option value="">{t('noVehicleOption')}</option>
                   {vehicles.map((vehicle) => (
                     <option key={vehicle.id} value={vehicle.id}>
-                      {vehicle.name}
+                      {vehicle.snowsatNumber ? `${vehicle.snowsatNumber} - ${vehicle.name}` : vehicle.name}
                     </option>
                   ))}
                 </select>
