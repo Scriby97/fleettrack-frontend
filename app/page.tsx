@@ -28,7 +28,8 @@ export default function Home() {
   const [active, setActive] = useState<MenuKey>("nutzung");
   const { userProfile, hasOrganization } = useAuth();
   const { canManageSelectedOrganization: canManageOrganization, selectedOrgId } = useOrganization();
-  const { hasInconsistentUsages } = useFleetConsistency();
+  const { getWarningLabel } = useFleetConsistency();
+  const fleetWarningLabel = getWarningLabel();
 
   // Über die Nav (Tabs, Logo) - im Unterschied zum direkten Auswählen eines
   // Fahrzeugs in der Flottenübersicht - immer sauber navigieren: ein evtl.
@@ -130,7 +131,7 @@ export default function Home() {
                 }
               >
                 {t("fleetOverview")}
-                {hasInconsistentUsages && <InconsistencyBadge className="ml-2" />}
+                {fleetWarningLabel && <InconsistencyBadge className="ml-2" label={fleetWarningLabel} />}
               </button>
 
               <button

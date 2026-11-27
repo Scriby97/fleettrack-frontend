@@ -12,7 +12,8 @@
     "unexpectedError": "An unexpected error occurred",
     "switchOrganization": "Switch organization",
     "moreActions": "More actions",
-    "inconsistentUsagesWarning": "Inconsistent usages (gaps/overlaps)"
+    "inconsistentUsagesWarning": "Inconsistent usages (gaps/overlaps)",
+    "missingStartingReadingWarning": "Vehicle has no starting reading yet (operating hours/km)"
   },
   "nav": {
     "createUsage": "Log usage",

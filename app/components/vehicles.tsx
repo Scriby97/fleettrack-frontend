@@ -83,8 +83,8 @@ interface VehicleItemProps {
 
 const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onSelect }) => {
   const t = useTranslations('fleetOverview');
-  const { inconsistentVehicleIds } = useFleetConsistency();
-  const hasInconsistentUsages = inconsistentVehicleIds.has(vehicle.id);
+  const { getWarningLabel } = useFleetConsistency();
+  const warningLabel = getWarningLabel(vehicle.id);
 
   return (
     <button
@@ -96,7 +96,7 @@ const VehicleItem: FC<VehicleItemProps> = ({ vehicle, onSelect }) => {
           type={vehicle.vehicleType}
           className="w-5 h-5 text-blue-600 dark:text-blue-400"
         />
-        {hasInconsistentUsages && <InconsistencyBadge className="absolute -top-1 -right-1" />}
+        {warningLabel && <InconsistencyBadge className="absolute -top-1 -right-1" label={warningLabel} />}
       </span>
       <div className="min-w-0 flex-1">
         <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 truncate">

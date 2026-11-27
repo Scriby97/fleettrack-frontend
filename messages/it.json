@@ -12,7 +12,8 @@
     "unexpectedError": "Si è verificato un errore imprevisto",
     "switchOrganization": "Cambia organizzazione",
     "moreActions": "Altre azioni",
-    "inconsistentUsagesWarning": "Utilizzi incoerenti (lacune/sovrapposizioni)"
+    "inconsistentUsagesWarning": "Utilizzi incoerenti (lacune/sovrapposizioni)",
+    "missingStartingReadingWarning": "Il veicolo non ha ancora un valore iniziale (ore di esercizio/km)"
   },
   "nav": {
     "createUsage": "Registra utilizzo",

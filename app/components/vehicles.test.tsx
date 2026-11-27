@@ -33,9 +33,31 @@ vi.mock('@/lib/contexts/OrganizationContext', () => ({
   useOrganization: () => ({ ...orgState }),
 }))
 
-const fleetConsistencyState = { inconsistentVehicleIds: new Set<string>() }
+const fleetConsistencyState = {
+  inconsistentVehicleIds: new Set<string>(),
+  vehiclesWithoutStartingReadingIds: new Set<string>(),
+}
+// Mini-Nachbau der echten getWarningLabel-Kombinationslogik (siehe
+// FleetConsistencyContext.tsx) - mit den gleichen Texten wie messages/de.json,
+// damit bestehende Assertions auf den Badge-Text unveraendert funktionieren.
 vi.mock('@/lib/contexts/FleetConsistencyContext', () => ({
-  useFleetConsistency: () => ({ ...fleetConsistencyState }),
+  useFleetConsistency: () => ({
+    ...fleetConsistencyState,
+    getWarningLabel: (vehicleId?: string) => {
+      const hasInconsistent = vehicleId
+        ? fleetConsistencyState.inconsistentVehicleIds.has(vehicleId)
+        : fleetConsistencyState.inconsistentVehicleIds.size > 0
+      const hasMissingStart = vehicleId
+        ? fleetConsistencyState.vehiclesWithoutStartingReadingIds.has(vehicleId)
+        : fleetConsistencyState.vehiclesWithoutStartingReadingIds.size > 0
+      if (hasInconsistent && hasMissingStart) {
+        return 'Inkonsistente Nutzungen (Lücken/Überschneidungen) / Fahrzeug hat noch keinen Startwert (Betriebsstunden/Kilometer)'
+      }
+      if (hasInconsistent) return 'Inkonsistente Nutzungen (Lücken/Überschneidungen)'
+      if (hasMissingStart) return 'Fahrzeug hat noch keinen Startwert (Betriebsstunden/Kilometer)'
+      return undefined
+    },
+  }),
 }))
 
 const markStale = vi.fn()
@@ -307,6 +329,41 @@ describe('Flottenübersicht', () => {
       expect(screen.getAllByLabelText('Inkonsistente Nutzungen (Lücken/Überschneidungen)')).toHaveLength(1)
 
       fleetConsistencyState.inconsistentVehicleIds = new Set()
+    })
+
+    it('shows the missing-starting-reading badge for a vehicle without any usage', async () => {
+      fleetConsistencyState.vehiclesWithoutStartingReadingIds = new Set(['a'])
+      respondWith([
+        stat('a', 'Alt', { plate: 'BE 555' }),
+        stat('b', 'Aktiv', { plate: 'BE 111' }),
+      ])
+
+      renderWithIntl(<FlottenUebersicht />)
+      await screen.findByText('BE 555')
+
+      expect(
+        screen.getAllByLabelText('Fahrzeug hat noch keinen Startwert (Betriebsstunden/Kilometer)'),
+      ).toHaveLength(1)
+
+      fleetConsistencyState.vehiclesWithoutStartingReadingIds = new Set()
+    })
+
+    it('combines both warnings into one badge label when a vehicle has both issues', async () => {
+      fleetConsistencyState.inconsistentVehicleIds = new Set(['a'])
+      fleetConsistencyState.vehiclesWithoutStartingReadingIds = new Set(['a'])
+      respondWith([stat('a', 'Alt', { plate: 'BE 555' })])
+
+      renderWithIntl(<FlottenUebersicht />)
+      await screen.findByText('BE 555')
+
+      expect(
+        screen.getByLabelText(
+          'Inkonsistente Nutzungen (Lücken/Überschneidungen) / Fahrzeug hat noch keinen Startwert (Betriebsstunden/Kilometer)',
+        ),
+      ).toBeInTheDocument()
+
+      fleetConsistencyState.inconsistentVehicleIds = new Set()
+      fleetConsistencyState.vehiclesWithoutStartingReadingIds = new Set()
     })
   })
 

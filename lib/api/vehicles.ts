@@ -112,3 +112,25 @@ export async function getInconsistentVehicleIds(
   const data: { vehicleIds: string[] } = await res.json()
   return data.vehicleIds ?? []
 }
+
+/**
+ * Fahrzeuge ganz ohne Nutzung (auch nicht die Referenz-Nutzung von der
+ * Erfassung) - brauchen noch einen Startwert, siehe "Startwert bearbeiten"
+ * in VehicleDetail.tsx.
+ */
+export async function getVehicleIdsWithoutStartingReading(
+  organizationId?: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<string[]> {
+  const url = new URL(buildApiUrl('/vehicles/missing-starting-reading'))
+  if (organizationId) {
+    url.searchParams.set('organizationId', organizationId)
+  }
+
+  const res = await authenticatedFetch(url.toString(), { signal: options.signal })
+  if (!res.ok) {
+    await throwApiError(res, `HTTP ${res.status}`)
+  }
+  const data: { vehicleIds: string[] } = await res.json()
+  return data.vehicleIds ?? []
+}

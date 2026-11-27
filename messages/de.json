@@ -12,7 +12,8 @@
     "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
     "switchOrganization": "Organisation wechseln",
     "moreActions": "Weitere Aktionen",
-    "inconsistentUsagesWarning": "Inkonsistente Nutzungen (Lücken/Überschneidungen)"
+    "inconsistentUsagesWarning": "Inkonsistente Nutzungen (Lücken/Überschneidungen)",
+    "missingStartingReadingWarning": "Fahrzeug hat noch keinen Startwert (Betriebsstunden/Kilometer)"
   },
   "nav": {
     "createUsage": "Nutzung erfassen",

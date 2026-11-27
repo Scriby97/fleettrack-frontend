@@ -12,7 +12,8 @@
     "unexpectedError": "Une erreur inattendue s'est produite",
     "switchOrganization": "Changer d'organisation",
     "moreActions": "Plus d'actions",
-    "inconsistentUsagesWarning": "Utilisations incohérentes (lacunes/chevauchements)"
+    "inconsistentUsagesWarning": "Utilisations incohérentes (lacunes/chevauchements)",
+    "missingStartingReadingWarning": "Le véhicule n'a pas encore de valeur de départ (heures de service/km)"
   },
   "nav": {
     "createUsage": "Saisir une utilisation",

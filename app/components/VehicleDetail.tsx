@@ -270,8 +270,9 @@ const VehicleDetail = ({
   const getApiErrorMessage = useApiErrorMessage();
   const { toasts, showToast, removeToast } = useToast();
   const { selectedOrgId } = useOrganization();
-  const { inconsistentVehicleIds, refresh: refreshFleetConsistency } = useFleetConsistency();
+  const { inconsistentVehicleIds, getWarningLabel, refresh: refreshFleetConsistency } = useFleetConsistency();
   const { dataVersion, markStale } = useDataFreshness();
+  const vehicleWarningLabel = getWarningLabel(initialVehicle.id);
   const hasInconsistentUsages = inconsistentVehicleIds.has(initialVehicle.id);
 
   const [tab, setTab] = useState<'overview' | 'usages'>('overview');
@@ -750,7 +751,7 @@ const VehicleDetail = ({
           }`}
         >
           {t('detailTabUsages')}
-          {hasInconsistentUsages && <InconsistencyBadge />}
+          {vehicleWarningLabel && <InconsistencyBadge label={vehicleWarningLabel} />}
         </button>
       </div>
 
