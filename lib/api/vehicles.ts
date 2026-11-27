@@ -30,6 +30,11 @@ export interface VehicleUsageHistory {
     usageCount: number
   }
   daily: UsageHistoryDay[]
+  // Lebenslange Anzahl Nutzungen, unabhaengig vom Zeitraum-Filter oben (siehe
+  // totals.usageCount) - <= 1 heisst: ausser der beim Anlegen automatisch
+  // erzeugten Referenz-Nutzung gibt es noch keine echte, der Startwert darf
+  // also noch direkt bearbeitet werden (siehe VehicleDetail.tsx).
+  allTimeUsageCount: number
 }
 
 /**

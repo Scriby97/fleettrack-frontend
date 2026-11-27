@@ -17,7 +17,7 @@ import { VehicleTypeIcon } from './VehicleTypeIcon';
 import { ActivityBarChart } from './ActivityBarChart';
 import { InconsistencyBadge } from './InconsistencyBadge';
 import { UsageEditDialog } from './UsageEditDialog';
-import { vehicleUsesKm, counterDecimals } from '@/lib/vehicles/metric';
+import { vehicleUsesKm, counterDecimals, decimalPlaces } from '@/lib/vehicles/metric';
 import { getVehicleUsageHistory, getOrganizationVehicles, type OrganizationVehicle, type VehicleUsageHistory } from '@/lib/api/vehicles';
 import { getUsagesWithVehicles, getInconsistentPairs, type UsageWithVehicle, type InconsistentUsagePair } from '@/lib/api/usages';
 import { useCreatorFilter } from '@/lib/hooks/useCreatorFilter';
@@ -252,6 +252,7 @@ const emptyEditForm = {
   vehicleType: '',
   fuelType: '',
   notes: '',
+  currentOperatingHours: '',
 };
 
 const VehicleDetail = ({
@@ -336,6 +337,12 @@ const VehicleDetail = ({
   const usesKm = vehicleUsesKm(vehicle.vehicleType);
   const counterUnit = usesKm ? t('chartKmUnit') : t('chartHoursUnit');
   const fmtCounter = (n: number) => (usesKm ? Math.round(n).toString() : n.toFixed(1));
+  const counterStep = usesKm ? '1' : '0.1';
+  // Startwert nur bearbeitbar, solange ausser der beim Anlegen automatisch
+  // erzeugten Referenz-Nutzung noch keine echte Nutzung existiert (siehe
+  // Backend VehiclesService.updateStartingReading) - allTimeUsageCount ist
+  // dafuer bewusst NICHT vom Zeitraum-Filter oben betroffen.
+  const canEditStartingReading = history != null && history.allTimeUsageCount <= 1;
 
   useEffect(() => {
     if (!rangeStart || !rangeEnd || rangeInvalid) return;
@@ -499,7 +506,29 @@ const VehicleDetail = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, initialVehicle.id, selectedOrgId, usagesReloadKey, dataVersion]);
 
-  const openEdit = useCallback(() => {
+  const openEdit = useCallback(async () => {
+    // Fuer den Startwert bewusst NICHT history.totals.lastHours nehmen - das
+    // ist vom aktuellen Zeitraum-Filter oben abhaengig und koennte bei einem
+    // engen Filter null sein, obwohl ein Startwert existiert. Stattdessen
+    // frisch und zeitraum-unabhaengig nachfragen, nur wenn ueberhaupt
+    // bearbeitbar (sonst unnoetiger Request).
+    let currentOperatingHours = '';
+    if (canEditStartingReading) {
+      try {
+        const res = await authenticatedFetch(
+          buildApiUrl(`/vehicles/${initialVehicle.id}/last-operating-hours`),
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data.endOperatingHours !== undefined && data.endOperatingHours !== null) {
+            currentOperatingHours = String(data.endOperatingHours);
+          }
+        }
+      } catch (err) {
+        console.error('Fehler beim Laden des Startwerts:', err);
+      }
+    }
+
     setEditForm({
       name: vehicle.name ?? '',
       plate: vehicle.plate ?? '',
@@ -508,15 +537,36 @@ const VehicleDetail = ({
       vehicleType: vehicle.vehicleType ?? '',
       fuelType: vehicle.fuelType ?? '',
       notes: vehicle.notes ?? '',
+      currentOperatingHours,
     });
     setError(null);
     setEditing(true);
-  }, [vehicle]);
+  }, [vehicle, canEditStartingReading, initialVehicle.id]);
 
   const handleSaveEdit = async (event: FormEvent) => {
     event.preventDefault();
-    setIsSubmitting(true);
     setError(null);
+
+    let startingReading: number | undefined;
+    if (canEditStartingReading) {
+      const raw = editForm.currentOperatingHours;
+      const parsed = parseFloat(raw);
+      if (raw.trim() === '' || Number.isNaN(parsed)) {
+        setError(usesKm ? t('startingKmRequiredError') : t('startingHoursRequiredError'));
+        return;
+      }
+      if (parsed < 0) {
+        setError(t('negativeNumberError'));
+        return;
+      }
+      if (decimalPlaces(raw) > counterDecimals(usesKm)) {
+        setError(counterDecimals(usesKm) === 0 ? t('wholeNumberError') : t('oneDecimalError'));
+        return;
+      }
+      startingReading = parsed;
+    }
+
+    setIsSubmitting(true);
     try {
       const payload = {
         name: editForm.name,
@@ -532,6 +582,14 @@ const VehicleDetail = ({
         body: JSON.stringify(payload),
       });
       if (!res.ok) await throwApiError(res, `API error ${res.status}`);
+
+      if (startingReading !== undefined) {
+        const startingRes = await authenticatedFetch(
+          buildApiUrl(`/vehicles/${initialVehicle.id}/starting-reading`),
+          { method: 'PATCH', body: JSON.stringify({ currentOperatingHours: startingReading }) },
+        );
+        if (!startingRes.ok) await throwApiError(startingRes, `API error ${startingRes.status}`);
+      }
 
       setEditing(false);
       showToast(t('updateSuccess'), 'success');
@@ -944,7 +1002,7 @@ const VehicleDetail = ({
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-5">
+            <form onSubmit={handleSaveEdit} className="space-y-5" noValidate>
               <Field label={t('vehicleNameLabel')}>
                 <input
                   type="text"
@@ -1012,6 +1070,19 @@ const VehicleDetail = ({
                   className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
                 />
               </Field>
+              {canEditStartingReading && (
+                <Field label={usesKm ? t('startingKmReadingLabel') : t('startingHoursReadingLabel')}>
+                  <input
+                    type="number"
+                    value={editForm.currentOperatingHours}
+                    onChange={(e) => setEditForm((p) => ({ ...p, currentOperatingHours: e.target.value }))}
+                    min="0"
+                    step={counterStep}
+                    className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-zinc-900 dark:text-zinc-50 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('startingReadingHint')}</p>
+                </Field>
+              )}
 
               {error && (
                 <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3">
