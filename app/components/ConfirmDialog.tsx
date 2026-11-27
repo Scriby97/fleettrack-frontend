@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type FC } from 'react';
+import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext';
 
 interface ConfirmDialogProps {
   // Kein deutscher Default mehr - Aufrufer muessen die Labels immer explizit
@@ -34,6 +35,10 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
   typedConfirmationLabel,
 }) => {
   const [typedValue, setTypedValue] = useState('');
+
+  // Solange gemountet, ist dieser Dialog offen (der Aufrufer rendert ihn nur
+  // bedingt) - siehe ModalVisibilityContext.
+  useRegisterModalOpen(true);
 
   // Close on Escape key
   useEffect(() => {

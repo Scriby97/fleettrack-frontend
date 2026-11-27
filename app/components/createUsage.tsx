@@ -8,6 +8,7 @@ import { ApiError, throwApiError } from '@/lib/api/ApiError';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useDataFreshness } from '@/lib/contexts/DataFreshnessContext';
+import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
 import { appendSecondaryContinuityIssue } from '@/lib/i18n/continuityWarning';
@@ -148,6 +149,7 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
   const [dismissedNoVehiclesDialog, setDismissedNoVehiclesDialog] = useState(false);
   const showNoVehiclesDialog =
     !vehiclesLoading && !vehiclesError && vehicles.length === 0 && !!selectedOrgId && !dismissedNoVehiclesDialog;
+  useRegisterModalOpen(showNoVehiclesDialog);
   // Lücken-/Überschneidungswarnung vom Server (siehe HOURS_CONTINUITY_ERROR_CODES) -
   // haelt das Payload fest, damit "Trotzdem speichern" denselben Request mit
   // confirmDespiteWarning=true wiederholen kann, ohne das Formular neu zu bauen.

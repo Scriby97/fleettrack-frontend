@@ -11,6 +11,7 @@ import { useToast } from '@/lib/hooks/useToast';
 import { useOrganization } from '@/lib/contexts/OrganizationContext';
 import { useFleetConsistency } from '@/lib/contexts/FleetConsistencyContext';
 import { useDataFreshness } from '@/lib/contexts/DataFreshnessContext';
+import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext';
 import { ToastContainer } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import { VehicleTypeIcon } from './VehicleTypeIcon';
@@ -286,6 +287,7 @@ const VehicleDetail = ({
   const [metric, setMetric] = useState<'hours' | 'fuel'>('hours');
 
   const [editing, setEditing] = useState(false);
+  useRegisterModalOpen(editing);
   const [editForm, setEditForm] = useState(emptyEditForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);

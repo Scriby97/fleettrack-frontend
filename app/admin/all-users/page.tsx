@@ -13,6 +13,7 @@ import { ToastContainer } from '@/app/components/Toast'
 import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { useDateLocale } from '@/lib/i18n/formatDate'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
+import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext'
 
 export default function AdminAllUsersPage() {
   const router = useRouter()
@@ -66,6 +67,7 @@ export default function AdminAllUsersPage() {
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [inviteSubmitting, setInviteSubmitting] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  useRegisterModalOpen(!!confirmUser || showInviteModal)
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {

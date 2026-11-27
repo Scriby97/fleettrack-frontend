@@ -7,6 +7,7 @@ import { vehicleUsesKm } from '@/lib/vehicles/metric';
 import { buildXlsx, XLSX_MIME, type XlsxCell } from '@/lib/xlsx/xlsx';
 import { useDateLocale } from '@/lib/i18n/formatDate';
 import { useToast } from '@/lib/hooks/useToast';
+import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext';
 import { ToastContainer } from './Toast';
 import { typeRank, VEHICLE_GROUPS, type Vehicle } from './vehicles';
 
@@ -37,6 +38,9 @@ const ExportFleetModal: FC<ExportFleetModalProps> = ({
   const tCommon = useTranslations('common');
   const dateLocale = useDateLocale();
   const { toasts, showToast, removeToast } = useToast();
+  // Solange gemountet, ist dieser Dialog offen (der Aufrufer rendert ihn nur
+  // bedingt) - siehe ModalVisibilityContext.
+  useRegisterModalOpen(true);
 
   const [rangeStart, setRangeStart] = useState(initialRangeStart);
   const [rangeEnd, setRangeEnd] = useState(initialRangeEnd);

@@ -10,6 +10,7 @@ import { appendSecondaryContinuityIssue } from '@/lib/i18n/continuityWarning';
 import { toDatetimeLocalValue } from '@/lib/dates/rangeDefaults';
 import { vehicleUsesKm, counterDecimals, decimalPlaces } from '@/lib/vehicles/metric';
 import type { UsageWithVehicle } from '@/lib/api/usages';
+import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext';
 import { ConfirmDialog } from './ConfirmDialog';
 import { DateTimePicker } from './DateTimePicker';
 
@@ -63,6 +64,9 @@ export const UsageEditDialog: FC<UsageEditDialogProps> = ({
   const tCommon = useTranslations('common');
   const tErrors = useTranslations('errors');
   const getApiErrorMessage = useApiErrorMessage();
+  // Solange gemountet, ist dieser Dialog offen (der Aufrufer rendert ihn nur
+  // bedingt) - siehe ModalVisibilityContext.
+  useRegisterModalOpen(true);
 
   const [form, setForm] = useState({
     vehicleId: usage.vehicleId || '',

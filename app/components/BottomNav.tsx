@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useOrganization } from "@/lib/contexts/OrganizationContext";
 import { useFleetConsistency } from "@/lib/contexts/FleetConsistencyContext";
+import { useModalVisibility } from "@/lib/contexts/ModalVisibilityContext";
 import { InconsistencyBadge } from "./InconsistencyBadge";
 
 type MenuKey = "nutzung" | "uebersichtEintraege" | "uebersicht" | "fahrzeug";
@@ -35,8 +36,15 @@ export function BottomNav({ active, onNavigate, showFleetTab }: BottomNavProps) 
   const { canManageSelectedOrganization } = useOrganization();
   const { getWarningLabel } = useFleetConsistency();
   const fleetWarningLabel = getWarningLabel();
+  const { isAnyModalOpen } = useModalVisibility();
   const accountActive = pathname.startsWith("/settings") || pathname.startsWith("/admin");
   const effectiveShowFleetTab = showFleetTab ?? canManageSelectedOrganization;
+
+  // Komplett ausblenden statt per z-index unter das Modal zu legen: auf
+  // manchen mobilen Browsern (siehe ModalVisibilityContext) rendert eine
+  // fixed-positionierte BottomNav trotz niedrigerem z-index ueber dem
+  // Modal-Hintergrund durch - das Entfernen aus dem DOM umgeht das zuverlaessig.
+  if (isAnyModalOpen) return null;
 
   const handleTabClick = (key: MenuKey) => {
     if (onNavigate) {

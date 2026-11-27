@@ -12,6 +12,7 @@ import { canPromoteToAdmin, canDemoteToEmployee, canTransferOwnership, canRemove
 import type { InviteEntity, InviteStatus, OrganizationMemberDetail } from '@/lib/types/user'
 import { useDateLocale } from '@/lib/i18n/formatDate'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
+import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext'
 
 export default function UsersPage() {
   const router = useRouter()
@@ -65,6 +66,7 @@ export default function UsersPage() {
   const [confirmDemoteMember, setConfirmDemoteMember] = useState<OrganizationMemberDetail | null>(null)
   const [confirmTransferMember, setConfirmTransferMember] = useState<OrganizationMemberDetail | null>(null)
   const [confirmRemoveMember, setConfirmRemoveMember] = useState<OrganizationMemberDetail | null>(null)
+  useRegisterModalOpen(showInviteModal || !!confirmDemoteMember || !!confirmTransferMember || !!confirmRemoveMember)
 
   useEffect(() => {
     // Erst entscheiden, wenn sowohl Auth ALS AUCH die Organisationsdaten

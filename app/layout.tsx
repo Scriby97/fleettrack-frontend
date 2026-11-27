@@ -8,6 +8,7 @@ import { OrganizationProvider } from "@/lib/contexts/OrganizationContext";
 import { PendingInvitesProvider } from "@/lib/contexts/PendingInvitesContext";
 import { FleetConsistencyProvider } from "@/lib/contexts/FleetConsistencyContext";
 import { DataFreshnessProvider } from "@/lib/contexts/DataFreshnessContext";
+import { ModalVisibilityProvider } from "@/lib/contexts/ModalVisibilityContext";
 import { BackendLoadingWrapper } from "./components/BackendLoadingWrapper";
 import { InvitePopup } from "./components/InvitePopup";
 import { PastDueSubscriptionBanner } from "./components/PastDueSubscriptionBanner";
@@ -128,10 +129,12 @@ export default async function RootLayout({
                   <PendingInvitesProvider>
                     <FleetConsistencyProvider>
                       <DataFreshnessProvider>
-                        <InvitePopup />
-                        <PastDueSubscriptionBanner />
-                        <AppChrome />
-                        {children}
+                        <ModalVisibilityProvider>
+                          <InvitePopup />
+                          <PastDueSubscriptionBanner />
+                          <AppChrome />
+                          {children}
+                        </ModalVisibilityProvider>
                       </DataFreshnessProvider>
                     </FleetConsistencyProvider>
                   </PendingInvitesProvider>

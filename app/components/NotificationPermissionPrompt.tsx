@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth/AuthProvider';
+import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext';
 import { getReminderSettings, updateReminderSettings } from '@/lib/api/notifications';
 import {
   ensurePushSubscription,
@@ -33,6 +34,7 @@ export function NotificationPermissionPrompt() {
   const [phase, setPhase] = useState<Phase>('hidden');
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
+  useRegisterModalOpen(phase !== 'hidden');
 
   useEffect(() => {
     if (checked) return;

@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth/AuthProvider'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 import { useDateLocale } from '@/lib/i18n/formatDate'
 import { usePendingInvites } from '@/lib/contexts/PendingInvitesContext'
+import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext'
 import type { OrganizationRole } from '@/lib/types/user'
 
 /**
@@ -54,6 +55,7 @@ export const InvitePopup: FC = () => {
   }, [opened, isLoading, hasPendingInvites, popupShownThisSession, markPopupShown])
 
   const shouldShow = opened && !dismissed
+  useRegisterModalOpen(shouldShow)
 
   // Popup wieder ausblenden, sobald keine offenen Einladungen mehr da sind
   // (z.B. weil die letzte gerade angenommen/abgelehnt wurde).
