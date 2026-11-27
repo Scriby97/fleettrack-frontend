@@ -317,6 +317,8 @@
     "appearanceDescription": "Hell, dunkel, Systemstandard oder Sprache wählen.",
     "remindersTitle": "Erinnerung",
     "remindersDescription": "Tägliche Benachrichtigung zum Erfassen deiner Nutzung einrichten.",
+    "priorityVehicleTitle": "Prioritätsfahrzeug",
+    "priorityVehicleDescription": "Ein Fahrzeug festlegen, das bei \"Nutzung erfassen\" immer vorausgewählt ist.",
     "userManagementTitle": "Benutzerverwaltung",
     "userManagementDescription": "Einladungen verwalten und Mitgliederrollen ändern.",
     "allUsersTitle": "Alle Benutzer",
@@ -416,6 +418,19 @@
     "loadError": "Fehler beim Laden der Erinnerung",
     "saveSuccess": "Erinnerung gespeichert",
     "saveErrorGeneric": "Fehler beim Speichern der Erinnerung"
+  },
+  "settingsPriorityVehicle": {
+    "title": "Prioritätsfahrzeug",
+    "subtitle": "Dieses Fahrzeug wird bei \"Nutzung erfassen\" immer vorausgewählt, getrennt pro Organisation.",
+    "vehicleLabel": "Fahrzeug",
+    "noVehicleOption": "Kein Prioritätsfahrzeug (zuletzt verwendetes Fahrzeug)",
+    "hint": "Ohne Auswahl bleibt es wie bisher: vorausgewählt wird das Fahrzeug, mit dem zuletzt eine Nutzung erfasst wurde.",
+    "noVehiclesMessage": "Diese Organisation hat noch keine Fahrzeuge.",
+    "saveButton": "Speichern",
+    "saving": "Wird gespeichert...",
+    "loadError": "Fehler beim Laden der Fahrzeuge",
+    "saveSuccess": "Prioritätsfahrzeug gespeichert",
+    "saveErrorGeneric": "Fehler beim Speichern des Prioritätsfahrzeugs"
   },
   "subscriptionTiers": {
     "lieutenant": "Leutnant",

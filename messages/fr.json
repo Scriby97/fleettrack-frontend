@@ -317,6 +317,8 @@
     "appearanceDescription": "Choisissez clair, sombre, système ou la langue.",
     "remindersTitle": "Rappel",
     "remindersDescription": "Configurer une notification quotidienne pour saisir ton utilisation.",
+    "priorityVehicleTitle": "Véhicule prioritaire",
+    "priorityVehicleDescription": "Choisir un véhicule toujours présélectionné lors de la saisie d'une utilisation.",
     "userManagementTitle": "Gestion des utilisateurs",
     "userManagementDescription": "Gérer les invitations et modifier les rôles des membres.",
     "allUsersTitle": "Tous les utilisateurs",
@@ -416,6 +418,19 @@
     "loadError": "Erreur lors du chargement du rappel",
     "saveSuccess": "Rappel enregistré",
     "saveErrorGeneric": "Erreur lors de l'enregistrement du rappel"
+  },
+  "settingsPriorityVehicle": {
+    "title": "Véhicule prioritaire",
+    "subtitle": "Ce véhicule est toujours présélectionné lors de la saisie d'une utilisation, séparément par organisation.",
+    "vehicleLabel": "Véhicule",
+    "noVehicleOption": "Aucun véhicule prioritaire (dernier véhicule utilisé)",
+    "hint": "Sans sélection, le comportement précédent reste inchangé : le dernier véhicule utilisé pour une utilisation saisie est présélectionné.",
+    "noVehiclesMessage": "Cette organisation n'a pas encore de véhicules.",
+    "saveButton": "Enregistrer",
+    "saving": "Enregistrement...",
+    "loadError": "Erreur lors du chargement des véhicules",
+    "saveSuccess": "Véhicule prioritaire enregistré",
+    "saveErrorGeneric": "Erreur lors de l'enregistrement du véhicule prioritaire"
   },
   "subscriptionTiers": {
     "lieutenant": "Lieutenant",

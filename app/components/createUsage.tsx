@@ -90,7 +90,7 @@ interface CreateUsageProps {
 
 const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
   const { isAdmin } = useAuth();
-  const { organizations, selectedOrgId, setSelectedOrgId, canManageSelectedOrganization } = useOrganization();
+  const { organizations, selectedOrgId, setSelectedOrgId, canManageSelectedOrganization, priorityVehicleId } = useOrganization();
   const { markStale } = useDataFreshness();
   const { toasts, showToast, removeToast } = useToast();
   const t = useTranslations('createUsage');
@@ -161,18 +161,34 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
   const startLabel = usesKm ? t('startKmLabel') : t('startHoursLabel');
   const endLabel = usesKm ? t('endKmLabel') : t('endHoursLabel');
 
+  // Fuer welche Organisation dieser Effekt zuletzt gelaufen ist - so laesst
+  // sich ein echter Organisationswechsel von einer blossen Aenderung des
+  // Prioritaetsfahrzeugs (bei gleichbleibender Organisation) unterscheiden,
+  // siehe unten.
+  const lastDraftOrgIdRef = useRef<string | null>(null);
+
   // Entwurf laden, sobald (und jedes Mal wenn) die ausgewaehlte Organisation
-  // bekannt ist bzw. wechselt.
+  // bekannt ist bzw. wechselt - oder sich das Prioritaetsfahrzeug aendert
+  // (z.B. gerade in den Einstellungen gesetzt, waehrend dieser Tab im
+  // Hintergrund gemountet blieb, siehe DataFreshnessContext-Architektur).
   useEffect(() => {
     if (!selectedOrgId) return;
+
+    const isOrgChange = lastDraftOrgIdRef.current !== selectedOrgId;
+    lastDraftOrgIdRef.current = selectedOrgId;
 
     setDismissedNoVehiclesDialog(false);
 
     const draft = loadDraft(selectedOrgId);
-    currentVehicleIdRef.current = draft?.vehicleId ?? '';
+    // Das persoenliche Prioritaetsfahrzeug (Einstellungen) hat Vorrang vor dem
+    // zuletzt verwendeten Fahrzeug aus dem Entwurf - ist keins gesetzt, bleibt
+    // es beim bisherigen Verhalten. Ob die ID tatsaechlich noch existiert,
+    // prueft der Fahrzeuge-Fetch-Effekt unten anhand der echten Fahrzeugliste.
+    const preferredVehicleId = priorityVehicleId || draft?.vehicleId || '';
+    currentVehicleIdRef.current = preferredVehicleId;
 
     setFormData({
-      vehicleId: draft?.vehicleId ?? '',
+      vehicleId: preferredVehicleId,
       startOperatingHours: draft?.startOperatingHours ?? '',
       endOperatingHours: draft?.endOperatingHours ?? '',
       fuel: draft?.fuel || '0',
@@ -182,7 +198,17 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
       draft ? calculateHoursDifference(draft.startOperatingHours ?? '', draft.endOperatingHours ?? '') : null
     );
     setActiveDraftOrgId(selectedOrgId);
-  }, [selectedOrgId]);
+
+    // Bei einem echten Organisationswechsel erledigt der Fahrzeuge-Fetch-
+    // Effekt unten den Start-Zaehlerstand bereits mit (kein doppelter
+    // Request, siehe dessen Kommentar) - nur bei einer reinen Aenderung des
+    // Prioritaetsfahrzeugs (Organisation bleibt gleich, Fahrzeuge sind schon
+    // geladen) muss der Wert hier frisch nachgeladen werden.
+    if (!isOrgChange && preferredVehicleId) {
+      fetchVehicleEndOperatingHours(preferredVehicleId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedOrgId, priorityVehicleId]);
 
   // Formular-Eingaben laufend zwischenspeichern (auch waehrend der Eingabe,
   // nicht erst beim Verlassen der Seite) - nach erfolgreichem Speichern wird
@@ -297,9 +323,16 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
   const handleSaveSuccess = (vehicleId: string) => {
     // Zuletzt gewaehltes Fahrzeug bleibt fuer die naechste Erfassung
     // voreingestellt (statt auf das erste Fahrzeug der Liste zurueckzufallen) -
-    // Start-Zaehlerstand wird dafuer frisch vom Server nachgeladen, da sich
-    // dieser durch die soeben gespeicherte Nutzung veraendert hat.
-    setFormData({ vehicleId, startOperatingHours: '', endOperatingHours: '', fuel: '0', usageDate: getNowDateTime() });
+    // ausser der User hat ein Prioritaetsfahrzeug gesetzt, dann bleibt
+    // IMMER dieses voreingestellt. Start-Zaehlerstand wird dafuer frisch vom
+    // Server nachgeladen, da sich dieser durch die soeben gespeicherte
+    // Nutzung veraendert hat.
+    const nextVehicleId =
+      priorityVehicleId && vehicles.some((v) => v.id === priorityVehicleId)
+        ? priorityVehicleId
+        : vehicleId;
+    currentVehicleIdRef.current = nextVehicleId;
+    setFormData({ vehicleId: nextVehicleId, startOperatingHours: '', endOperatingHours: '', fuel: '0', usageDate: getNowDateTime() });
     setCalculatedHours(null);
     showToast(t('saveSuccess'), 'success');
     // Andere offene Tabs/Geraete (Flottenuebersicht, Nutzungsliste) sollen
@@ -307,8 +340,8 @@ const CreateUsage: FC<CreateUsageProps> = ({ onNavigateToAddVehicle }) => {
     // dieselbe Aenderung zusaetzlich per SSE, aber das hier ist sofort statt
     // vom Roundtrip ueber den Server abzuhaengen.
     markStale();
-    if (vehicleId) {
-      fetchVehicleEndOperatingHours(vehicleId);
+    if (nextVehicleId) {
+      fetchVehicleEndOperatingHours(nextVehicleId);
     }
     setShowNotificationPrompt(true);
   };

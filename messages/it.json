@@ -317,6 +317,8 @@
     "appearanceDescription": "Scegli chiaro, scuro, sistema o la lingua.",
     "remindersTitle": "Promemoria",
     "remindersDescription": "Configura una notifica giornaliera per registrare il tuo utilizzo.",
+    "priorityVehicleTitle": "Veicolo prioritario",
+    "priorityVehicleDescription": "Scegli un veicolo sempre preselezionato durante la registrazione di un utilizzo.",
     "userManagementTitle": "Gestione utenti",
     "userManagementDescription": "Gestisci gli inviti e modifica i ruoli dei membri.",
     "allUsersTitle": "Tutti gli utenti",
@@ -416,6 +418,19 @@
     "loadError": "Errore durante il caricamento del promemoria",
     "saveSuccess": "Promemoria salvato",
     "saveErrorGeneric": "Errore durante il salvataggio del promemoria"
+  },
+  "settingsPriorityVehicle": {
+    "title": "Veicolo prioritario",
+    "subtitle": "Questo veicolo viene sempre preselezionato durante la registrazione di un utilizzo, separatamente per organizzazione.",
+    "vehicleLabel": "Veicolo",
+    "noVehicleOption": "Nessun veicolo prioritario (ultimo veicolo utilizzato)",
+    "hint": "Senza selezione, il comportamento precedente resta invariato: viene preselezionato l'ultimo veicolo utilizzato per un utilizzo registrato.",
+    "noVehiclesMessage": "Questa organizzazione non ha ancora veicoli.",
+    "saveButton": "Salva",
+    "saving": "Salvataggio in corso...",
+    "loadError": "Errore durante il caricamento dei veicoli",
+    "saveSuccess": "Veicolo prioritario salvato",
+    "saveErrorGeneric": "Errore durante il salvataggio del veicolo prioritario"
   },
   "subscriptionTiers": {
     "lieutenant": "Tenente",

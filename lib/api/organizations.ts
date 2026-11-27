@@ -167,6 +167,30 @@ export async function deleteOrganizationLogo(
 }
 
 /**
+ * Set (or clear, with null) the current user's priority vehicle for this
+ * organization - always preselected in "Nutzung erfassen" (see createUsage.tsx).
+ * Any role may call this for their own membership.
+ */
+export async function updateMyPriorityVehicle(
+  organizationId: string,
+  priorityVehicleId: string | null
+): Promise<OrganizationMembership> {
+  const response = await authenticatedFetch(
+    buildApiUrl(`/organizations/${organizationId}/priority-vehicle`),
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ priorityVehicleId }),
+    }
+  )
+
+  if (!response.ok) {
+    await throwApiError(response, 'Fehler beim Speichern des Prioritätsfahrzeugs')
+  }
+
+  return response.json()
+}
+
+/**
  * Create a Stripe Customer Portal session (invoices, payment method, cancel)
  * for self-service billing management. Owner only; only available once the
  * organization has a Stripe customer (i.e. not on the free Lieutenant tier).

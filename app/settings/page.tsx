@@ -117,6 +117,23 @@ export default function SettingsPage() {
             </Link>
 
             <Link
+              href="/settings/priority-vehicle"
+              className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+            >
+              <SettingsIcon>
+                <rect x="2" y="11" width="14" height="7" rx="1.5" />
+                <circle cx="6" cy="19" r="1.8" />
+                <circle cx="13" cy="19" r="1.8" />
+                <path d="M16 13h4l2 3v2h-2" />
+                <path d="M9 3l1.5 3h-3L9 3z" />
+              </SettingsIcon>
+              <div className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t('priorityVehicleTitle')}</div>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                {t('priorityVehicleDescription')}
+              </p>
+            </Link>
+
+            <Link
               href="/onboarding/invitations"
               className="relative rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-6 shadow-sm transition-colors hover:border-blue-300 dark:hover:border-blue-600"
             >

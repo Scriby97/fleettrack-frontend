@@ -117,7 +117,7 @@ describe('Einstellungen', () => {
     it('always shows the personal tiles', () => {
       renderWithIntl(<SettingsPage />)
 
-      for (const href of ['/settings/account', '/settings/appearance', '/settings/reminders', '/impressum']) {
+      for (const href of ['/settings/account', '/settings/appearance', '/settings/reminders', '/settings/priority-vehicle', '/impressum']) {
         expect(hasLink(href)).toBe(true)
       }
     })

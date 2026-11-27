@@ -317,6 +317,8 @@
     "appearanceDescription": "Choose light, dark, system default, or language.",
     "remindersTitle": "Reminder",
     "remindersDescription": "Set up a daily notification to log your usage.",
+    "priorityVehicleTitle": "Priority vehicle",
+    "priorityVehicleDescription": "Choose a vehicle that's always preselected when logging a usage.",
     "userManagementTitle": "User Management",
     "userManagementDescription": "Manage invitations and change member roles.",
     "allUsersTitle": "All Users",
@@ -416,6 +418,19 @@
     "loadError": "Error loading the reminder",
     "saveSuccess": "Reminder saved",
     "saveErrorGeneric": "Error saving the reminder"
+  },
+  "settingsPriorityVehicle": {
+    "title": "Priority vehicle",
+    "subtitle": "This vehicle is always preselected when logging a usage, separately per organization.",
+    "vehicleLabel": "Vehicle",
+    "noVehicleOption": "No priority vehicle (last used vehicle)",
+    "hint": "Without a selection, the previous behavior stays the same: the vehicle last used for a logged usage is preselected.",
+    "noVehiclesMessage": "This organization has no vehicles yet.",
+    "saveButton": "Save",
+    "saving": "Saving...",
+    "loadError": "Error loading the vehicles",
+    "saveSuccess": "Priority vehicle saved",
+    "saveErrorGeneric": "Error saving the priority vehicle"
   },
   "subscriptionTiers": {
     "lieutenant": "Lieutenant",

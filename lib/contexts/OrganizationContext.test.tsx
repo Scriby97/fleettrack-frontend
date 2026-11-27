@@ -6,8 +6,10 @@ import { renderWithIntl } from '@/test/renderWithIntl'
 import type { Organization, OrganizationMembership } from '@/lib/types/user'
 
 const getAllOrganizations = vi.fn()
+const updateMyPriorityVehicle = vi.fn()
 vi.mock('@/lib/api/organizations', () => ({
   getAllOrganizations: (...args: unknown[]) => getAllOrganizations(...args),
+  updateMyPriorityVehicle: (...args: unknown[]) => updateMyPriorityVehicle(...args),
 }))
 
 const refreshOrganizations = vi.fn()
@@ -34,6 +36,7 @@ const org = (id: string, name: string, logoUrl: string | null = null): Organizat
 const membership = (
   organization: Organization,
   role: OrganizationMembership['role'],
+  priorityVehicleId: string | null = null,
 ): OrganizationMembership => ({
   id: `m-${organization.id}`,
   userId: 'me',
@@ -41,6 +44,7 @@ const membership = (
   organization,
   role,
   joinedAt: '2026-01-01T00:00:00.000Z',
+  priorityVehicleId,
 })
 
 function Probe() {
@@ -51,6 +55,7 @@ function Probe() {
       <p data-testid="selected">{ctx.selectedOrgId ?? 'none'}</p>
       <p data-testid="role">{ctx.selectedOrganizationRole ?? 'none'}</p>
       <p data-testid="canManage">{String(ctx.canManageSelectedOrganization)}</p>
+      <p data-testid="priorityVehicle">{ctx.priorityVehicleId ?? 'none'}</p>
       <p data-testid="error">{ctx.error ?? ''}</p>
       <ul>
         {ctx.organizations.map((o) => (
@@ -60,6 +65,7 @@ function Probe() {
       <button onClick={() => void ctx.refetchOrganizations()}>refetch</button>
       <button onClick={() => ctx.setSelectedOrgId('org-2')}>select-2</button>
       <button onClick={() => ctx.setSelectedOrgId(null)}>select-none</button>
+      <button onClick={() => void ctx.setPriorityVehicleId('vehicle-9')}>set-priority</button>
     </div>
   )
 }
@@ -74,6 +80,8 @@ const renderProbe = () =>
 describe('OrganizationContext', () => {
   beforeEach(() => {
     getAllOrganizations.mockReset()
+    updateMyPriorityVehicle.mockReset()
+    updateMyPriorityVehicle.mockResolvedValue(undefined)
     refreshOrganizations.mockReset()
     refreshOrganizations.mockResolvedValue(undefined)
     window.localStorage.clear()
@@ -290,6 +298,31 @@ describe('OrganizationContext', () => {
       })
 
       expect(await screen.findByText('Gamma|no-logo')).toBeInTheDocument()
+    })
+
+    it('exposes the priority vehicle of the SELECTED organization membership', async () => {
+      auth.organizationMemberships = [
+        membership(org('org-1', 'Alpha'), 'employee', 'vehicle-1'),
+        membership(org('org-2', 'Beta'), 'employee', null),
+      ]
+      renderProbe()
+      await waitFor(() => expect(screen.getByTestId('selected')).toHaveTextContent('org-1'))
+      expect(screen.getByTestId('priorityVehicle')).toHaveTextContent('vehicle-1')
+
+      await userEvent.click(screen.getByRole('button', { name: 'select-2' }))
+
+      expect(screen.getByTestId('priorityVehicle')).toHaveTextContent('none')
+    })
+
+    it('setPriorityVehicleId saves via the API and refetches the memberships', async () => {
+      auth.organizationMemberships = [membership(org('org-1', 'Alpha'), 'employee')]
+      renderProbe()
+      await waitFor(() => expect(screen.getByTestId('selected')).toHaveTextContent('org-1'))
+
+      await userEvent.click(screen.getByRole('button', { name: 'set-priority' }))
+
+      expect(updateMyPriorityVehicle).toHaveBeenCalledWith('org-1', 'vehicle-9')
+      expect(refreshOrganizations).toHaveBeenCalledTimes(1)
     })
   })
 })

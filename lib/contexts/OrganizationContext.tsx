@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
-import { getAllOrganizations } from '@/lib/api/organizations';
+import { getAllOrganizations, updateMyPriorityVehicle } from '@/lib/api/organizations';
 import type { Organization, OrganizationRole } from '@/lib/types/user';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage';
@@ -21,6 +21,13 @@ interface OrganizationContextType {
   // das auf die AKTUELL AUSGEWÄHLTE Organisation reagieren muss, nicht auf die
   // erste Mitgliedschaft.
   canManageSelectedOrganization: boolean;
+  // Persoenliche Praeferenz des Users fuer die AKTUELL AUSGEWAEHLTE
+  // Organisation: welches Fahrzeug bei "Nutzung erfassen" immer vorausgewaehlt
+  // werden soll - null, solange keins gewaehlt ist (altes Verhalten,
+  // zuletzt verwendetes Fahrzeug) oder fuer globale Administratoren ohne
+  // eigene Mitgliedschaft in dieser Organisation.
+  priorityVehicleId: string | null;
+  setPriorityVehicleId: (vehicleId: string | null) => Promise<void>;
   isLoading: boolean;
   error: string | null;
   // Laedt die Organisationsliste neu - fuer normale User genuegt
@@ -184,6 +191,17 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     isAdmin ||
     selectedOrganizationRole === 'admin' ||
     selectedOrganizationRole === 'owner';
+  const priorityVehicleId = selectedMembership?.priorityVehicleId ?? null;
+
+  // Speichert die Praeferenz serverseitig und laedt anschliessend die
+  // Memberships neu (statt den lokalen State selbst zu mutieren) - so bleiben
+  // alle Konsumenten (createUsage.tsx, Settings-Seite) garantiert konsistent,
+  // auch bei mehreren offenen Tabs/Geraeten.
+  const setPriorityVehicleId = useCallback(async (vehicleId: string | null) => {
+    if (!selectedOrgId) return;
+    await updateMyPriorityVehicle(selectedOrgId, vehicleId);
+    await refetchOrganizations();
+  }, [selectedOrgId, refetchOrganizations]);
 
   return (
     <OrganizationContext.Provider value={{
@@ -192,6 +210,8 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       setSelectedOrgId,
       selectedOrganizationRole,
       canManageSelectedOrganization,
+      priorityVehicleId,
+      setPriorityVehicleId,
       isLoading,
       error,
       refetchOrganizations,

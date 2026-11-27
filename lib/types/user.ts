@@ -32,6 +32,10 @@ export interface OrganizationMembership {
   organization?: Organization
   role: OrganizationRole
   joinedAt: string
+  // Persönliche Präferenz: welches Fahrzeug dieser Organisation bei "Nutzung
+  // erfassen" immer vorausgewählt werden soll (null = bisheriges Verhalten,
+  // zuletzt verwendetes Fahrzeug) - siehe OrganizationContext/createUsage.tsx.
+  priorityVehicleId?: string | null
 }
 
 // Mitgliederliste inkl. verknüpftem User (Backend liefert

@@ -22,6 +22,7 @@ const orgState = {
   selectedOrgId: 'org-1' as string | null,
   setSelectedOrgId: vi.fn(),
   canManageSelectedOrganization: false,
+  priorityVehicleId: null as string | null,
 }
 vi.mock('@/lib/contexts/OrganizationContext', () => ({
   useOrganization: () => ({ ...orgState }),
@@ -122,6 +123,7 @@ describe('Nutzung erfassen', () => {
     auth.isAdmin = false
     orgState.selectedOrgId = 'org-1'
     orgState.canManageSelectedOrganization = false
+    orgState.priorityVehicleId = null
     orgState.setSelectedOrgId.mockReset()
     window.localStorage.clear()
   })
@@ -777,6 +779,53 @@ describe('Nutzung erfassen', () => {
       await waitFor(() => expect(readDraft('org-1')?.endOperatingHours).toBe(''))
       expect(readDraft('org-1')?.fuel).toBe('0')
       expect(readDraft('org-1')?.vehicleId).toBe('v1')
+    })
+  })
+
+  describe('priority vehicle', () => {
+    it('preselects the priority vehicle over the last used (drafted) vehicle', async () => {
+      window.localStorage.setItem(
+        DRAFT_KEY('org-1'),
+        JSON.stringify({ vehicleId: 'v1', startOperatingHours: '', endOperatingHours: '' }),
+      )
+      orgState.priorityVehicleId = 'v2'
+
+      renderWithIntl(<CreateUsage />)
+
+      await waitFor(() => expect(vehicleSelect().value).toBe('v2'))
+      await waitFor(() => expect(startInput().value).toBe('12000'))
+    })
+
+    it('falls back to the first vehicle (like any unknown preselection) when the priority vehicle no longer exists', async () => {
+      orgState.priorityVehicleId = 'deleted'
+
+      renderWithIntl(<CreateUsage />)
+
+      await waitFor(() => expect(vehicleSelect().value).toBe('v1'))
+    })
+
+    it('keeps the priority vehicle preselected for the next entry instead of the just-used one', async () => {
+      orgState.priorityVehicleId = 'v2'
+      await renderReady()
+      await userEvent.selectOptions(vehicleSelect(), 'v1')
+      await waitFor(() => expect(startInput().value).toBe('636.7'))
+      await fillEnd('700')
+
+      await userEvent.click(submitButton())
+      await screen.findByText('Nutzung erfolgreich gespeichert')
+
+      await waitFor(() => expect(vehicleSelect().value).toBe('v2'))
+    })
+
+    it('reloads the start reading for the priority vehicle when it is set while the same organization stays selected', async () => {
+      const { rerender } = await renderReady()
+      expect(vehicleSelect().value).toBe('v1')
+
+      orgState.priorityVehicleId = 'v2'
+      rerender(<CreateUsage />)
+
+      await waitFor(() => expect(vehicleSelect().value).toBe('v2'))
+      await waitFor(() => expect(startInput().value).toBe('12000'))
     })
   })
 })
