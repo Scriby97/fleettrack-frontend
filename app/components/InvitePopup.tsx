@@ -8,6 +8,7 @@ import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 import { useDateLocale } from '@/lib/i18n/formatDate'
 import { usePendingInvites } from '@/lib/contexts/PendingInvitesContext'
 import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext'
+import { ModalPortal } from './ModalPortal'
 import type { OrganizationRole } from '@/lib/types/user'
 
 /**
@@ -105,6 +106,7 @@ export const InvitePopup: FC = () => {
   }
 
   return (
+    <ModalPortal>
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
       role="dialog"
@@ -179,5 +181,6 @@ export const InvitePopup: FC = () => {
         </div>
       </div>
     </div>
+    </ModalPortal>
   )
 }

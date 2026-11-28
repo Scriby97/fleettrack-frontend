@@ -8,6 +8,7 @@ import { buildXlsx, XLSX_MIME, type XlsxCell } from '@/lib/xlsx/xlsx';
 import { useDateLocale } from '@/lib/i18n/formatDate';
 import { useToast } from '@/lib/hooks/useToast';
 import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext';
+import { ModalPortal } from './ModalPortal';
 import { ToastContainer } from './Toast';
 import { typeRank, VEHICLE_GROUPS, type Vehicle } from './vehicles';
 
@@ -173,6 +174,7 @@ const ExportFleetModal: FC<ExportFleetModalProps> = ({
   };
 
   return (
+    <ModalPortal>
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="bg-white dark:bg-zinc-800 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
@@ -271,6 +273,7 @@ const ExportFleetModal: FC<ExportFleetModalProps> = ({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 };
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext';
+import { ModalPortal } from './ModalPortal';
 import { getReminderSettings, updateReminderSettings } from '@/lib/api/notifications';
 import {
   ensurePushSubscription,
@@ -109,6 +110,7 @@ export function NotificationPermissionPrompt() {
   if (phase === 'hidden') return null;
 
   return (
+    <ModalPortal>
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
       role="dialog"
@@ -162,5 +164,6 @@ export function NotificationPermissionPrompt() {
         )}
       </div>
     </div>
+    </ModalPortal>
   );
 }

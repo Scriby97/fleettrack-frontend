@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FC } from 'react';
 import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext';
+import { ModalPortal } from './ModalPortal';
 
 interface ConfirmDialogProps {
   // Kein deutscher Default mehr - Aufrufer muessen die Labels immer explizit
@@ -53,6 +54,7 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
     requireTypedConfirmation !== undefined && typedValue !== requireTypedConfirmation;
 
   return (
+    <ModalPortal>
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
       role="dialog"
@@ -104,5 +106,6 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 };

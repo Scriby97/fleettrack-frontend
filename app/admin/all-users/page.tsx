@@ -14,6 +14,7 @@ import Breadcrumbs from '@/app/components/Breadcrumbs'
 import { useDateLocale } from '@/lib/i18n/formatDate'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext'
+import { ModalPortal } from '@/app/components/ModalPortal'
 
 export default function AdminAllUsersPage() {
   const router = useRouter()
@@ -649,6 +650,7 @@ export default function AdminAllUsersPage() {
       </div>
 
       {confirmUser && (
+        <ModalPortal>
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl max-w-md w-full">
             <div className="p-6 space-y-4">
@@ -677,9 +679,11 @@ export default function AdminAllUsersPage() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {showInviteModal && (
+        <ModalPortal>
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl max-w-lg w-full">
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
@@ -763,6 +767,7 @@ export default function AdminAllUsersPage() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   )

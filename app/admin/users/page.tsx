@@ -13,6 +13,7 @@ import type { InviteEntity, InviteStatus, OrganizationMemberDetail } from '@/lib
 import { useDateLocale } from '@/lib/i18n/formatDate'
 import { useApiErrorMessage } from '@/lib/i18n/useApiErrorMessage'
 import { useRegisterModalOpen } from '@/lib/contexts/ModalVisibilityContext'
+import { ModalPortal } from '@/app/components/ModalPortal'
 
 export default function UsersPage() {
   const router = useRouter()
@@ -684,6 +685,7 @@ export default function UsersPage() {
       </div>
 
       {showInviteModal && (
+        <ModalPortal>
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-sm sm:max-w-lg">
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
@@ -748,9 +750,11 @@ export default function UsersPage() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {confirmDemoteMember && (
+        <ModalPortal>
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-sm">
             <div className="p-6 space-y-4">
@@ -779,9 +783,11 @@ export default function UsersPage() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {confirmTransferMember && (
+        <ModalPortal>
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-sm">
             <div className="p-6 space-y-4">
@@ -810,9 +816,11 @@ export default function UsersPage() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {confirmRemoveMember && (
+        <ModalPortal>
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-sm">
             <div className="p-6 space-y-4">
@@ -841,6 +849,7 @@ export default function UsersPage() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   )
